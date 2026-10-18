@@ -8,6 +8,7 @@ quadplane) or in % of the arm length (separate lift ESCs of a multicopter / tric
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -78,6 +79,54 @@ def _fuselage(project: Project) -> tuple[float, float]:
     return 0.0, 0.0
 
 
+def phase_path(
+    project: Project, index: int, esc_x_mm: float, esc_y_mm: float
+) -> list[tuple[float, float, float]]:
+    """Path of the phase cables ESC → motor (x, y, z in mm), following the structure.
+
+    - diagonal booms: along the fuselage to the boom anchor, across to the anchor of the
+      motor's side, then along the boom;
+    - winged aircraft, off-centreline motor: along the fuselage to the wing spar, along the
+      spar to the boom, along the boom;
+    - otherwise straight (arm of a frame, centreline motor).
+    """
+    from predimrc_wrapper.aircraft.booms import anchor  # noqa: PLC0415
+
+    m = project.motors[index]
+    spec = project.booms
+    start = (esc_x_mm, esc_y_mm, 0.0)
+    if (
+        spec is not None
+        and spec.layout == "diagonal"
+        and m.role in ("lift", "tilt")
+        and project.aero is not None
+    ):
+        x_a, half, z_a = anchor(project, spec)
+        y_a = float(np.sign(m.y_mm)) * half
+        return [
+            start,
+            (x_a, esc_y_mm, 0.0),
+            (x_a, y_a, z_a),
+            (m.x_mm, m.y_mm, spec.motor_z_mm),
+        ]
+    if project.aero is not None and abs(m.y_mm) > 1.0:
+        spar = 0.25 * project.aero.wing.root_chord_mm
+        return [
+            start,
+            (spar, esc_y_mm, 0.0),
+            (spar, m.y_mm, 0.0),
+            (m.x_mm, m.y_mm, 0.0),
+        ]
+    return [start, (m.x_mm, m.y_mm, 0.0)]
+
+
+def path_length_mm(path: list[tuple[float, float, float]]) -> float:
+    """Length of a polyline (mm)."""
+    return float(
+        sum(np.linalg.norm(np.subtract(b, a)) for a, b in itertools.pairwise(path))
+    )
+
+
 def default_layout(project: Project) -> WiringLayout:
     """Cable lengths from the geometry and the wiring choices of the project."""
     from predimrc_wrapper.aircraft.project import WiringSpec  # noqa: PLC0415
@@ -120,11 +169,7 @@ def default_layout(project: Project) -> WiringLayout:
         else:
             f = spec.lift_esc_position_pct / 100.0
             ex, ey, origin = f * m.x_mm, f * m.y_mm, "separate ESC at % of the arm"
-        if wing_borne and abs(m.y_mm) > 1.0:
-            # Along the fuselage to the wing spar, laterally to the boom, along the boom.
-            phase = abs(ex - spar) + abs(m.y_mm - ey) + abs(m.x_mm - spar)
-        else:
-            phase = float(np.hypot(m.x_mm - ex, m.y_mm - ey))
+        phase = path_length_mm(phase_path(project, i, ex, ey))
         if four_in_one and m.role != "cruise":
             dc = 0.0
         elif wing_borne:

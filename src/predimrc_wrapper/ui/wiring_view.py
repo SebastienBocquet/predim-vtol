@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 import plotly.graph_objects as go
 
 from predimrc_wrapper.propulsion.wiring import default_layout
+from predimrc_wrapper.propulsion.wiring import phase_path
 
 if TYPE_CHECKING:
     from predimrc_wrapper.aircraft import Project
@@ -29,13 +30,10 @@ TERMS = """
 COLORS = {"main": "black", "DC": "#1f77b4", "phase": "#ff7f0e"}
 
 
-def _path(
-    project: Project, ex: float, ey: float, mx: float, my: float, spar: float
-) -> tuple[list, list]:
+def _path(project: Project, index: int, ex: float, ey: float) -> tuple[list, list]:
     """Phase cable path in the top view (same rule as the length computation)."""
-    if project.aero is not None and abs(my) > 1.0:
-        return [ex, spar, spar, mx], [ey, ey, my, my]
-    return [ex, mx], [ey, my]
+    points = phase_path(project, index, ex, ey)
+    return [p[0] for p in points], [p[1] for p in points]
 
 
 def diagram(project: Project) -> go.Figure:
@@ -43,7 +41,7 @@ def diagram(project: Project) -> go.Figure:
     layout = default_layout(project)
     fig = go.Figure()
     wing_borne = project.aero is not None
-    spar = 0.25 * project.aero.wing.root_chord_mm if wing_borne else 0.0
+    0.25 * project.aero.wing.root_chord_mm if wing_borne else 0.0
     battery_length = project.wiring.battery_length_mm if project.wiring else 120.0
     front = layout.battery_rear_x_mm - battery_length
     if wing_borne:
@@ -108,7 +106,7 @@ def diagram(project: Project) -> go.Figure:
                     line={"color": COLORS["DC"], "width": 3},
                 )
             )
-        px, py = _path(project, b.esc_x_mm, b.esc_y_mm, m.x_mm, m.y_mm, spar)
+        px, py = _path(project, b.motor_index, b.esc_x_mm, b.esc_y_mm)
         fig.add_trace(
             go.Scatter(
                 x=py,

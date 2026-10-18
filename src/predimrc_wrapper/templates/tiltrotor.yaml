@@ -62,8 +62,8 @@ mass_items:
   - {name: tilt servos and mounts, category: vtol_structure, mass_g: 120}
   - {name: camera, category: payload, mass_g: 150}
   - {name: "flight controller, GPS, receiver", category: avionics, mass_g: 120}
+booms: {layout: parallel, section: round, thickness_mm: 16}
 drag_sources:
-  - {name: front motor booms, kind: boom, count: 2, diameter_mm: 16, length_mm: 250}
   - {name: stopped rear propeller, kind: stopped_rotor, count: 1, n_blades: 2, blade_chord_mm: 22, radius_mm: 127}
 max_takeoff_mass_kg: 3.0
 sizing:

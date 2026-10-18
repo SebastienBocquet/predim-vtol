@@ -16,6 +16,7 @@ from predimrc_wrapper.mission.power_budget import budget_rows  # noqa: E402
 from predimrc_wrapper.mission.power_budget import power_budget  # noqa: E402
 from predimrc_wrapper.sizing import motor_power_ranges  # noqa: E402
 from predimrc_wrapper.ui import charts  # noqa: E402
+from predimrc_wrapper.ui import drag_view as dv  # noqa: E402
 from predimrc_wrapper.ui import hover_view as hv  # noqa: E402
 from predimrc_wrapper.ui import mic_page  # noqa: E402
 from predimrc_wrapper.ui import prop_sizing as ps  # noqa: E402
@@ -55,6 +56,12 @@ def _displayed_labels() -> set[str]:
         labels.update(summary), rows(per_pair)
         rows(tdv.compare_points(p, backend))
         rows(budget_rows(power_budget(AircraftModel(p, aero_backend=backend), r)))
+        rows(
+            dv.boom_rows(
+                p.with_overrides({"booms": {"layout": "diagonal"}}),
+                r,
+            )
+        )
         aircraft = AircraftModel(p, aero_backend=backend)
         for unit in p.propulsion_units:
             table, rec = ps.cruise_pitch_rows(aircraft, r, unit)
@@ -160,3 +167,32 @@ def test_mission_speeds_in_kmh():
     assert not at.exception, at.exception
     speeds = at.session_state["app"].data["mission"]["target_speeds_m_s"]
     assert speeds[0] == pytest.approx(15.0)
+
+
+def test_positions_figure_dimensions():
+    from predimrc_wrapper.ui.positions_view import overlapping  # noqa: PLC0415
+    from predimrc_wrapper.ui.positions_view import positions_figure  # noqa: PLC0415
+
+    data = Project.template("quadplane").to_dict()
+    fig = positions_figure(data["motors"], data["propulsion_units"], True)
+    texts = [a.text for a in fig.layout.annotations]
+    n_x = sum(1 for m in data["motors"] if abs(m["x_mm"]) > 0.5)
+    n_y = sum(1 for m in data["motors"] if abs(m["y_mm"]) > 0.5)
+    assert sum(t.startswith("x = ") for t in texts) == n_x
+    assert sum(t.startswith("y = ") for t in texts) == n_y
+    assert any("wing root leading edge" in (t.name or "") for t in fig.data)
+    data["motors"][1]["x_mm"] = -100.0  # motor 2 onto motor 1
+    assert overlapping(data["motors"], data["propulsion_units"]) == {0, 1}
+
+
+def test_tilt_mask_quick_choice_updates_the_roles():
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    at = AppTest.from_file(str(APP), default_timeout=300).run()
+    at.selectbox(key="configuration").set_value("tiltrotor").run()
+    next(s for s in at.selectbox if "tiltquick" in str(s.key)).set_value("rear").run()
+    assert not at.exception, at.exception
+    roles = [m["role"] for m in at.session_state["app"].data["motors"]]
+    assert roles == ["lift", "lift", "tilt"]
+    mask = next(m for m in at.multiselect if "tiltmask" in str(m.key))
+    assert mask.value == [3]

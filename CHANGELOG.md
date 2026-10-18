@@ -13,7 +13,18 @@ versions from git tags (setuptools-scm).
 - Studies page in the sidebar (exploration, optimisation, stored studies).
 - PredimRC folder in the first tab of winged configurations.
 
+- Tilt mask (ArduPilot Q_TILT_MASK): any set of tilting motors, e.g. tricopter with wing and only
+  the rear motor tilting; quick choices front / rear / all / none.
+- User templates: save the current project as a template, rename and delete them.
+- Booms set in the first tab: parallel or diagonal (one per lift motor from an anchor under the
+  fuselage), section round / square / profiled; drag on the frontal area (cross-flow, Hoerner)
+  shown in the Drag tab; cables along the booms.
+- Motor positions drawing with the reference point and the dimensions of each motor.
+
 ### Changed
+- Wing, stabiliser and fuselage entered in the first tab (the Cruise tab shows the results).
+- Propeller overlap error names the motors, their diameters and the distance missing.
+- Templates: the manual boom drag sources become the booms of the configuration (same drag).
 - Thrust shown in N with kg in parentheses, speeds in km/h (pitch stays in inches).
 - Tab order: Cruise and Drag before Hover.
 - Propeller sizing: cruise motors (V1 / V2) apart from the lift-only motors (hover).

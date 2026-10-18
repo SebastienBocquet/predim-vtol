@@ -221,10 +221,16 @@ class AircraftModel:
         return min(limits) / (self.total_mass_kg * GRAVITY)
 
     def drag_sources(self) -> list[dict]:
-        """Dedicated drag sources in SI."""
+        """Dedicated drag sources in SI, the booms of ``project.booms`` first."""
+        from predimrc_wrapper.aircraft.booms import boom_drag  # noqa: PLC0415
         from predimrc_wrapper.aircraft.drag_sources import source_cds  # noqa: PLC0415
 
-        out = []
+        out = [
+            {"kind": "cds", "count": 1, "cds_m2": b.cds_m2}
+            for b in boom_drag(
+                self.project, self.drag_model.p.boom_cf, self.drag_model.p.boom_cd_end
+            )
+        ]
         for s in self.project.drag_sources:
             if s.kind in ("v_arms", "body_part"):
                 out.append({

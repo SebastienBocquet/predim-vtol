@@ -64,6 +64,14 @@
   arm per motor from its root (x_a, ±w/2, z_a) to the motor; frontal area
   A = Σ t·L_i·√(1 − u_x,i²); CdS = C_d(shape)·A; area from the geometry unless entered.
 - Body part: CdS = C_d(shape)·A, A entered.
+- Booms of the configuration (`Project.booms`, `aircraft/booms.py`, INC3-003), section
+  round / square / profiled with C_d from Hoerner (`data/boom_sections.yaml`: 1.2, 2.0,
+  0.1, referred to the frontal area t·L of a member normal to the flow):
+  - parallel booms (along the flow, from the front to the rear motor, at least to the wing
+    spar): CdS = C_f·p·L + C_d,end·A_section (p: perimeter of the section);
+  - diagonal booms (one per lift motor from an anchor under the fuselage, or the frame
+    centre): cross-flow principle on the frontal area A_i = t·L_i·sin θ_i,
+    CdS_i = C_d,section·sin²θ_i·A_i + C_f·p·L_i (θ_i: angle between boom i and the flow).
 - Every source reports its model, formula and coefficient source
   (`aircraft/drag_sources.py`, Drag tab).
 - Quadplane: D(V) = D_PredimRC(V_eas, m) + ½·ρ·V²·ΣCdS, with V = V_eas·√(ρ₀/ρ); PredimRC
@@ -75,7 +83,10 @@
 ### Model limitations
 
 - Generic coefficients; stopped rotors assumed aligned with the flow.
-- V-arms as straight beams of constant thickness; no interference drag.
+- V-arms and booms as straight beams of constant section; no interference drag.
+- Cross-flow principle: valid for bluff sections (round, square); for a profiled boom
+  inclined to the flow it is an approximation (the profile is not aligned with the local
+  flow).
 - No mass scaling of the polar: each new mass is a PredimRC evaluation (memoised).
 
 ### Model classification
@@ -91,5 +102,5 @@
 
 ## Traceability
 
-- Requirements: REQ-CFG-004, REQ-CFG-006, REQ-AERO-005, REQ-NFR-006
-- Canvas: MVP-004
+- Requirements: REQ-CFG-004, REQ-CFG-006, REQ-CFG-014, REQ-AERO-005, REQ-NFR-006
+- Canvas: MVP-004, INC2-006, INC3-003 (booms)

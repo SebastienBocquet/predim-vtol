@@ -16,9 +16,11 @@ import yaml
 from predimrc_wrapper.aircraft import AircraftModel
 from predimrc_wrapper.aircraft import Project
 from predimrc_wrapper.aircraft import layouts
+from predimrc_wrapper.aircraft import templates as user_templates
 from predimrc_wrapper.aircraft.project import TEMPLATES
 from predimrc_wrapper.aircraft.project import AeroSpec
 from predimrc_wrapper.aircraft.project import BatterySpec
+from predimrc_wrapper.aircraft.project import BoomSpec
 from predimrc_wrapper.aircraft.project import CruiseReference
 from predimrc_wrapper.aircraft.project import DragSource
 from predimrc_wrapper.aircraft.project import EnvironmentSpec
@@ -44,11 +46,13 @@ from predimrc_wrapper.settings import available_profiles
 from predimrc_wrapper.sizing import motor_power_ranges
 from predimrc_wrapper.ui import charts
 from predimrc_wrapper.ui import cruise_view as cv
+from predimrc_wrapper.ui import drag_view as dv
 from predimrc_wrapper.ui import explanations
 from predimrc_wrapper.ui import forms
 from predimrc_wrapper.ui import geometry
 from predimrc_wrapper.ui import hover_view as hv
 from predimrc_wrapper.ui import mic_page
+from predimrc_wrapper.ui import positions_view
 from predimrc_wrapper.ui import prop_sizing as ps
 from predimrc_wrapper.ui import propulsion_charts as pc
 from predimrc_wrapper.ui import state as ui_state
@@ -139,19 +143,64 @@ with st.sidebar:
         st.session_state["configuration"] = None
         app.load(yaml.safe_load(upload.getvalue()), Path(upload.name))
         st.rerun()
+    all_templates = user_templates.all_templates()
+    if st.session_state.get("configuration") not in (None, *all_templates):
+        st.session_state["configuration"] = None
     st.selectbox(
         "Configuration (loads its template)",
-        list(TEMPLATES),
-        format_func=TEMPLATES.get,
+        list(all_templates),
+        format_func=all_templates.get,
         key="configuration",
         placeholder="from a project file",
         on_change=_switch_configuration,
-        help="Quadplane 4+1, tricopter, quadcopter or tilt-rotor. Changing it replaces the project.",
+        help="Shipped templates (quadplane 4+1, tricopter, quadcopter, tricopter with wing) and your "
+        "own templates. Changing it replaces the project.",
     )
     data = app.data
     gen = app.generation
     architecture = data.get("architecture", "multicopter")
-    with st.expander("Settings (studies folder)"):
+    with st.expander("Save as template"):
+        st.caption(
+            "A template is a complete project file: geometry, propulsion unit types, motors with "
+            "their positions and tilt mask, booms, battery, masses, drag sources, wiring, mission, "
+            "sizing, test data. Saved templates appear in the Configuration list."
+        )
+        template_name = st.text_input(
+            "Template name",
+            app.data.get("name", ""),
+            key=f"{app.generation}:template.name",
+        )
+        overwrite = st.checkbox("Replace if it exists", key="template.overwrite")
+        if st.button("Save as template", key="template.save"):
+            try:
+                path = user_templates.save_user(app.data, template_name, overwrite)
+                # Rerun so that the Configuration list above shows the new template.
+                st.session_state["template.saved"] = str(path)
+                st.rerun()
+            except (ValueError, FileExistsError) as error:
+                st.error(str(error))
+        if st.session_state.get("template.saved"):
+            st.success(f"Saved {st.session_state.pop('template.saved')}")
+        own = [k for k in all_templates if k.startswith(user_templates.USER)]
+        if own:
+            chosen = st.selectbox(
+                "Your templates",
+                own,
+                format_func=lambda k: k.removeprefix(user_templates.USER),
+                key="template.chosen",
+            )
+            new_name = st.text_input("New name", key="template.new_name")
+            c1, c2 = st.columns(2)
+            if c1.button("Rename", key="template.rename") and new_name:
+                try:
+                    user_templates.rename_user(chosen, new_name)
+                    st.rerun()
+                except (ValueError, FileExistsError) as error:
+                    st.error(str(error))
+            if c2.button("Delete", key="template.delete"):
+                user_templates.delete_user(chosen)
+                st.rerun()
+    with st.expander("Settings (studies and templates folders)"):
         settings = Settings.load()
         root = st.text_input(
             "Studies root folder",
@@ -159,8 +208,15 @@ with st.sidebar:
             key="settings.studies",
             help="Explorations and optimisations are stored in dated sub-folders of this folder.",
         )
+        templates_root = st.text_input(
+            "User templates folder",
+            settings.templates_folder,
+            key="settings.templates",
+            placeholder="~/.predimrc_wrapper/templates",
+            help="Folder of the templates saved with 'Save as template'.",
+        )
         if st.button("Save the settings"):
-            settings.studies_root = root
+            settings.studies_root, settings.templates_folder = root, templates_root
             st.success(f"Saved {settings.save()}")
         st.caption(
             "The PredimRC folder is set in the first tab (winged configurations)."
@@ -270,15 +326,37 @@ with tabs[config_label]:
                     f"Naming rule: `PredimRC_<profile>.xls` → profiles found in "
                     f"`{profiles_dir().resolve()}`: **{', '.join(profiles) or 'none'}**. "
                     f"Profile of this project: **{current}** (chosen with the wing geometry, "
-                    "Cruise tab)."
+                    "below)."
                     + (
                         ""
                         if current in profiles
                         else f" :red[No workbook PredimRC_{current}.xls in this folder.]"
                     )
                 )
+            with st.expander(
+                "Wing, stabiliser and fuselage (PredimRC geometry)", expanded=False
+            ):
+                st.caption(
+                    "Labels as in PredimRC (page 3-Geometrie). The accessory surface (S.ac) is "
+                    "forced to 0: the parasitic drag is in the Drag tab."
+                )
+                data["aero"] = forms.render_model(
+                    st,
+                    AeroSpec,
+                    data.get("aero"),
+                    "aero",
+                    errors,
+                    {"aero.profile": available_profiles() or ["SD7003"]},
+                    gen,
+                )
         units = dict(data.get("propulsion_units") or {})
         st.subheader("Propulsion unit types")
+        st.caption(
+            "A propulsion unit type is one **motor + propeller + ESC** combination. Each motor of "
+            "the table below uses one type, so the motors can differ (e.g. `front` with 12 in "
+            "propellers, `rear` with 10 in). Add a type to give some motors another motor or "
+            "propeller; a type can be removed once no motor uses it."
+        )
         only_in_range = bool(ranges) and st.checkbox(
             "Offer only the motors in the power range",
             value=True,
@@ -317,8 +395,14 @@ with tabs[config_label]:
                     data["propulsion_units"] = units
                     st.rerun()
         c1, c2 = st.columns([3, 1])
-        new_unit = c1.text_input("New unit type name", key=f"{gen}:new_unit")
-        if c2.button("Add unit type") and new_unit and new_unit not in units:
+        new_unit = c1.text_input(
+            "Add a propulsion unit type: its name",
+            key=f"{gen}:new_unit",
+            placeholder="e.g. rear",
+            help="Name of the new type (copied from the first type, then edit it). Use it in "
+            "the 'unit' column of the motors.",
+        )
+        if c2.button("Add the type") and new_unit and new_unit not in units:
             units[new_unit] = (
                 dict(next(iter(units.values())))
                 if units
@@ -331,18 +415,20 @@ with tabs[config_label]:
         winged = architecture == "quadplane"
         st.subheader("Motors and tilting motors" if winged else "Motors")
         st.caption(
-            "One motor per arm or boom end, numbered in this order (ArduPilot outputs). x aft-positive from the "
-            + ("wing root LE" if winged else "frame centre")
-            + ", y right. "
+            "One motor per arm or boom end, numbered in this order (ArduPilot outputs). Positions "
+            "in mm from the reference point "
+            + ("(**wing root leading edge**)" if winged else "(**frame centre**)")
+            + ": x aft-positive, y right-positive — see the drawing on the right. "
             + (
-                "Role: lift (vertical flight) or cruise (forward flight); tick **tilts** for a motor that lifts "
-                "in hover and pushes in cruise (ArduPilot Q_TILT_MASK)."
+                "Role: lift (vertical flight) or cruise (forward flight); the tilting motors are "
+                "chosen below with the tilt mask."
                 if winged
-                else "A multicopter flies forward by tilting the whole frame: every motor lifts, no tilting motor "
-                "(a tricopter's rear motor tilts for yaw only). For tilting motors, choose a configuration with "
-                "a wing (e.g. tricopter with wing)."
+                else "A multicopter flies forward by tilting the whole frame: every motor lifts, no "
+                "tilting motor (a tricopter's rear motor tilts for yaw only). For tilting motors, "
+                "choose a configuration with a wing (e.g. tricopter with wing)."
             )
         )
+        motors_in = data.get("motors") or []
         rows = [
             {
                 "unit": m.get("unit"),
@@ -351,7 +437,7 @@ with tabs[config_label]:
                 "x_mm": m.get("x_mm"),
                 "y_mm": m.get("y_mm"),
             }
-            for m in data.get("motors") or []
+            for m in motors_in
         ]
         layout_version = st.session_state.setdefault("layout_version", 0)
         edited = st.data_editor(
@@ -370,7 +456,7 @@ with tabs[config_label]:
                     help=HELP.tooltip("motors.*.role"),
                 ),
                 "tilts": st.column_config.CheckboxColumn(
-                    "tilts", help=HELP.tooltip("tilts"), disabled=not winged
+                    "tilts (mask)", help=HELP.tooltip("tilts"), disabled=True
                 ),
                 "x_mm": st.column_config.NumberColumn(
                     "x (mm)", help=HELP.tooltip("motors.*.x_mm")
@@ -395,6 +481,78 @@ with tabs[config_label]:
             and r.get("x_mm") is not None
             and r.get("y_mm") is not None
         ]
+        if winged:
+            numbers = list(range(1, len(data["motors"]) + 1))
+            mask = [i + 1 for i, m in enumerate(data["motors"]) if m["role"] == "tilt"]
+            cg = data.get("cg_x_mm")
+            ref = (
+                cg
+                if cg is not None
+                else float(np.mean([m["x_mm"] for m in data["motors"]] or [0.0]))
+            )
+            quick = {
+                "none": [],
+                "front": [
+                    i + 1 for i, m in enumerate(data["motors"]) if m["x_mm"] < ref
+                ],
+                "rear": [
+                    i + 1 for i, m in enumerate(data["motors"]) if m["x_mm"] > ref
+                ],
+                "all": numbers,
+            }
+            c1, c2 = st.columns([3, 2])
+            chosen = c1.multiselect(
+                "Tilting motors (tilt mask)",
+                numbers,
+                default=[n for n in mask if n in numbers],
+                key=f"{gen}:tiltmask:{layout_version}",
+                help="Motor numbers that tilt: they lift in hover and push in cruise (ArduPilot "
+                "Q_TILT_MASK). The others keep their role. A wing-borne aircraft needs at least "
+                "one motor able to push in cruise (cruise or tilting).",
+            )
+            pick = c2.selectbox(
+                "Quick choice",
+                ["—", *quick],
+                key=f"{gen}:tiltquick:{layout_version}",
+                help="front / rear: the motors ahead of / behind the CG (or of the mean station).",
+            )
+            new_mask = quick[pick] if pick != "—" else chosen
+            if sorted(new_mask) != sorted(mask):
+                for i, m in enumerate(data["motors"]):
+                    if i + 1 in new_mask:
+                        m["role"] = "tilt"
+                    elif m["role"] == "tilt":
+                        m["role"] = "lift"
+                st.session_state["layout_version"] = layout_version + 1
+                app.data = data
+                st.rerun()
+        with st.expander(
+            "Booms carrying the lift motors", expanded=data.get("booms") is not None
+        ):
+            st.caption(
+                "**Parallel**: booms along the flow carrying the off-centreline lift motors (quadplane "
+                "4+1). **Diagonal**: one straight boom per lift motor from an anchor under the "
+                "fuselage (or the frame centre). The section sets the drag (Drag tab, cross-flow "
+                "model on the frontal area for diagonal booms); the cables follow the booms "
+                "(Power chain tab)."
+            )
+            if st.checkbox(
+                "The aircraft has booms",
+                value=data.get("booms") is not None,
+                key=f"{gen}:booms.on",
+            ):
+                data["booms"] = forms.render_model(
+                    st,
+                    BoomSpec,
+                    data.get("booms")
+                    or {"layout": "parallel" if winged else "diagonal"},
+                    "booms",
+                    errors,
+                    {},
+                    gen,
+                )
+            else:
+                data.pop("booms", None)
         c1, c2 = st.columns(2)
         with c1:
             data["cg_x_mm"] = forms.render_field(
@@ -534,11 +692,32 @@ It depends on the propellers through their disc areas (diameters), not on their 
         ):
             table(pc.motor_rows(db, ranges))
     with right:
-        if checked.project is not None:
-            st.plotly_chart(geometry.top_view(checked.project), width="stretch")
-            st.plotly_chart(geometry.front_view(checked.project), width="stretch")
+        # Validated again here: the drawings follow the table edits of this very run.
+        current = ui_state.check(data)
+        st.plotly_chart(
+            positions_view.positions_figure(
+                data.get("motors") or [],
+                data.get("propulsion_units") or {},
+                architecture == "quadplane",
+                data.get("cg_x_mm"),
+            ),
+            width="stretch",
+            key="config.positions",
+        )
+        overlap = [m for m in current.errors.values() if "overlap" in m]
+        if overlap:
+            st.error(overlap[0])
+        if current.project is not None:
+            st.plotly_chart(
+                geometry.top_view(current.project), width="stretch", key="config.top"
+            )
+            st.plotly_chart(
+                geometry.front_view(current.project),
+                width="stretch",
+                key="config.front",
+            )
         else:
-            st.info("The geometry is drawn once the project is valid.")
+            st.info("The top and front views are drawn once the project is valid.")
 
 with tabs["Masses and battery"]:
     left, right = st.columns(2)
@@ -664,27 +843,19 @@ with tabs["Cruise"]:
             f"PredimRC folder `{profiles_dir().resolve()}` — profiles: {', '.join(available_profiles()) or 'none'}. "
             "Accessory surface (S.ac) forced to 0: the parasitic drag is in the Drag tab."
         )
-        left, right = st.columns([2, 3])
-        with left:
-            data["aero"] = forms.render_model(
-                st,
-                AeroSpec,
-                data.get("aero"),
-                "aero",
-                errors,
-                {"aero.profile": available_profiles() or ["SD7003"]},
-                gen,
-            )
-        with right:
-            if two is None or two.curve is None:
-                st.info("Press Run to compute the PredimRC curves.")
-            else:
-                passed, message = cv.iso_text(two)
-                (st.success if passed else st.warning)(message)
-                table(cv.results_rows(two))
-                st.plotly_chart(cv.power_figure(two), width="stretch")
-                st.plotly_chart(cv.imposed_figure(two), width="stretch")
-                st.plotly_chart(cv.palier_figure(two), width="stretch")
+        st.caption(
+            "Wing, stabiliser and fuselage are entered in the first tab (PredimRC geometry)."
+        )
+        if two is None or two.curve is None:
+            st.info("Press Run to compute the PredimRC curves.")
+        else:
+            passed, message = cv.iso_text(two)
+            (st.success if passed else st.warning)(message)
+            table(cv.results_rows(two))
+            c1, c2 = st.columns(2)
+            c1.plotly_chart(cv.power_figure(two), width="stretch")
+            c2.plotly_chart(cv.imposed_figure(two), width="stretch")
+            st.plotly_chart(cv.palier_figure(two), width="stretch")
 
 with tabs["Drag"]:
     st.caption(
@@ -736,6 +907,24 @@ with tabs["Drag"]:
                 )
         if checked.project is not None:
             st.info("Body drag model: " + checked.project.body_drag()[1])
+    if checked.project is not None and checked.project.booms is not None:
+        st.subheader("Booms (set in the configuration tab)")
+        st.markdown(
+            "Diagonal booms: **cross-flow principle** on the frontal area (Hoerner, *Fluid-Dynamic "
+            "Drag*): the flow component normal to the boom sets the force, plus the skin friction."
+        )
+        st.latex(dv.BOOM_DRAG_LATEX)
+        st.caption(
+            "θ_i: angle between boom i and the flow, t: thickness seen by the flow, L_i: boom "
+            "length, p: perimeter of the section. Parallel booms (along the flow): skin friction "
+            "plus base drag of the section."
+        )
+        table(dv.boom_rows(checked.project, two))
+        if any(s_.kind == "boom" for s_ in checked.project.drag_sources):
+            st.warning(
+                "A drag source of kind 'boom' is also listed below: the booms are then counted "
+                "twice. Remove it, the booms of the configuration tab replace it."
+            )
     st.subheader("Parasitic drag sources")
     from predimrc_wrapper.data.drag_shapes import drag_shapes  # noqa: E402
 

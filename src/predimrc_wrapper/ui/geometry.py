@@ -154,9 +154,36 @@ def _v_arms(fig: go.Figure, project: Project, front: bool) -> None:
             )
 
 
+def _project_booms(fig: go.Figure, project: Project, front: bool) -> None:
+    """Draw the booms of ``project.booms`` (top view: y–x, front view: y–z)."""
+    from predimrc_wrapper.aircraft.booms import booms  # noqa: PLC0415
+
+    if project.booms is None:
+        return
+    name = f"boom ({project.booms.layout}, {project.booms.section})"
+    width = 3 if project.booms.thickness_mm < 20 else 5
+    for b in booms(project):
+        (x0, y0, z0), (x1, y1, z1) = b.root, b.tip
+        fig.add_trace(
+            go.Scatter(
+                x=[y0, y1],
+                y=[z0, z1] if front else [x0, x1],
+                mode="lines+markers" if front and abs(y1 - y0) < 1e-6 else "lines",
+                name=name,
+                legendgroup="boom",
+                showlegend=_legend(fig, name),
+                line={"color": BOOM, "width": width},
+                hovertext=f"boom of motor(s) {', '.join(str(i + 1) for i in b.motors)}: "
+                f"L = {b.length_mm:.0f} mm, θ = {b.angle_to_flow_deg:.0f}° to the flow",
+                hoverinfo="text",
+            )
+        )
+
+
 def top_view(project: Project) -> go.Figure:
     fig = go.Figure()
     _v_arms(fig, project, front=False)
+    _project_booms(fig, project, front=False)
     if project.architecture == "quadplane" and project.aero is not None:
         fus, wing, stab = project.aero.fuselage, project.aero.wing, project.aero.stab
         x0 = -fus.nose_lever_mm
@@ -182,7 +209,7 @@ def top_view(project: Project) -> go.Figure:
             stab, stab.lateral_gap_mm / 2, np.cos(np.radians(stab_dihedral_deg(stab)))
         )
         _mirror(fig, s.x, s.y, "stabiliser", STAB, dx=stab.lever_mm)
-        for y, xa, xb in _booms(project):
+        for y, xa, xb in _booms(project) if project.booms is None else []:
             fig.add_trace(
                 go.Scatter(
                     x=[y, y],
@@ -266,6 +293,7 @@ def top_view(project: Project) -> go.Figure:
 def front_view(project: Project) -> go.Figure:
     fig = go.Figure()
     _v_arms(fig, project, front=True)
+    _project_booms(fig, project, front=True)
     z_rotor = 40.0
     if project.architecture == "quadplane" and project.aero is not None:
         fus, wing, stab = project.aero.fuselage, project.aero.wing, project.aero.stab
@@ -296,7 +324,7 @@ def front_view(project: Project) -> go.Figure:
             STAB,
             fill=False,
         )
-        for y, _, _ in _booms(project):
+        for y, _, _ in _booms(project) if project.booms is None else []:
             fig.add_trace(
                 go.Scatter(
                     x=[y],

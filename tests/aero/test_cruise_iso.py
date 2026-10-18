@@ -75,7 +75,10 @@ def test_predimrc_inputs_accessory_off_and_atmosphere():
 
 def test_curve_with_sources_and_parabolic_speeds():
     """Parabolic polar: V_minP / V_maxL/D = 3^-0.25; sources add ½ρV³ΣCdS exactly."""
-    project = Project.template("quadplane").with_overrides({"drag_sources": []})
+    project = Project.template("quadplane").with_overrides({
+        "drag_sources": [],
+        "booms": None,
+    })
     aircraft = AircraftModel(project, aero_backend=ParabolicAero())
     curve = cruise_curve(aircraft)
     np.testing.assert_allclose(curve.power_total_w, curve.power_predimrc_w, rtol=1e-12)

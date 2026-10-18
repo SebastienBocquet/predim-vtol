@@ -211,6 +211,45 @@ class MotorSlot(_Strict):
     y_mm: float = req(description="Lateral position, right-positive (mm)")
 
 
+class BoomSpec(_Strict):
+    """Booms carrying the lift motors, set in the configuration tab (REQ-CFG-014)."""
+
+    layout: Literal["parallel", "diagonal"] = req(
+        description=(
+            "parallel: booms along the flow carrying the off-centreline lift motors (quadplane); "
+            "diagonal: one straight boom per lift motor from an anchor under the fuselage"
+        )
+    )
+    section: Literal["round", "square", "profiled"] = opt(
+        "round",
+        description="Boom section: round tube, square tube, profiled (streamlined)",
+    )
+    thickness_mm: float = opt(
+        16.0,
+        gt=0,
+        description="Boom thickness seen by the flow (mm): diameter, side or profile thickness",
+    )
+    chord_mm: float | None = opt(
+        None,
+        gt=0,
+        description="Chord of a profiled section (mm); 4 × thickness when not set",
+    )
+    anchor_x_mm: float | None = opt(
+        None,
+        description="Diagonal booms: anchor station (mm); wing quarter chord or frame centre when not set",
+    )
+    anchor_half_width_mm: float | None = opt(
+        None,
+        ge=0,
+        description="Diagonal booms: half distance between the left and right anchors (mm); fuselage half width when not set",
+    )
+    anchor_z_mm: float | None = opt(
+        None,
+        description="Diagonal booms: anchor height (mm, up-positive); under the fuselage (or 0 for a frame) when not set",
+    )
+    motor_z_mm: float = opt(0.0, description="Height of the motors on the booms (mm)")
+
+
 class BatterySpec(_Strict):
     """Battery pack, defined by its mass or its capacity."""
 
@@ -622,6 +661,10 @@ class Project(_Strict):
     wiring: WiringSpec | None = opt(
         None, description="Power chain: battery, cables, ESCs (defaults when not set)"
     )
+    booms: BoomSpec | None = opt(
+        None,
+        description="Booms carrying the lift motors: layout and section (drag and cable paths)",
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -709,20 +752,41 @@ class Project(_Strict):
         self._check_overlap()
         return self
 
-    def _check_overlap(self) -> None:
-        """Lift propeller discs must not overlap (one motor per arm end)."""
-        lift = self.lift_motors()
-        for i, a in enumerate(lift):
-            for b in lift[i + 1 :]:
+    def overlaps(self) -> list[tuple[int, int, float, float]]:
+        """Overlapping lift propeller discs: (motor i, motor j, centre distance, minimum distance) in mm."""
+        lift = [(i, m) for i, m in enumerate(self.motors) if m.role in LIFT_ROLES]
+        out = []
+        for k, (i, a) in enumerate(lift):
+            for j, b in lift[k + 1 :]:
                 ra = self.propulsion_units[a.unit].prop_diameter_in * 25.4 / 2
                 rb = self.propulsion_units[b.unit].prop_diameter_in * 25.4 / 2
                 gap = ((a.x_mm - b.x_mm) ** 2 + (a.y_mm - b.y_mm) ** 2) ** 0.5
                 if gap < ra + rb - 1e-6:
-                    msg = (
-                        f"Propellers of the motors at ({a.x_mm:g}, {a.y_mm:g}) and ({b.x_mm:g}, {b.y_mm:g}) mm "
-                        f"overlap: {gap:.0f} mm between centres < {ra + rb:.0f} mm."
-                    )
-                    raise ValueError(msg)
+                    out.append((i, j, gap, ra + rb))
+        return out
+
+    def _check_overlap(self) -> None:
+        """Lift propeller discs must not overlap (one motor per arm end)."""
+        found = self.overlaps()
+        if not found:
+            return
+        i, j, gap, minimum = found[0]
+        a, b = self.motors[i], self.motors[j]
+        da = self.propulsion_units[a.unit].prop_diameter_in
+        db = self.propulsion_units[b.unit].prop_diameter_in
+        msg = (
+            f"The propellers of motor {i + 1} ({da:g} in, at x = {a.x_mm:g}, y = {a.y_mm:g} mm) "
+            f"and motor {j + 1} ({db:g} in, at x = {b.x_mm:g}, y = {b.y_mm:g} mm) overlap: their centres are "
+            f"{gap:.0f} mm apart, they need at least {minimum:.0f} mm (sum of the two propeller radii). "
+            f"Move the motors {minimum - gap:.0f} mm further apart (longer arms or booms) or use smaller "
+            "propellers."
+            + (
+                f" {len(found) - 1} other pair(s) overlap too."
+                if len(found) > 1
+                else ""
+            )
+        )
+        raise ValueError(msg)
 
     # --- I/O -----------------------------------------------------------------
 
@@ -735,7 +799,11 @@ class Project(_Strict):
 
     @classmethod
     def template(cls, name: str) -> Project:
-        """Load a template project shipped with the tool (names in ``TEMPLATES``)."""
+        """Load a template: shipped (names in ``TEMPLATES``) or user (``user:<name>``)."""
+        from predimrc_wrapper.aircraft import templates  # noqa: PLC0415
+
+        if name.startswith(templates.USER):
+            return cls.model_validate(templates.load_user(name))
         text = (
             files("predimrc_wrapper.templates")
             .joinpath(f"{name}.yaml")
@@ -777,7 +845,7 @@ TEMPLATES = {
     "multicopter": "Quadcopter X (no wing)",
     "tricopter": "Tricopter (no wing)",
     "quadplane": "Quadplane 4+1 (wing, 4 lift + 1 pusher)",
-    "tiltrotor": "Tricopter with wing (2 tilting front motors + 1 rear lift)",
+    "tiltrotor": "Tricopter with wing (tilting motors chosen by the tilt mask)",
 }
 """Shipped templates: file name → configuration label."""
 
@@ -910,6 +978,7 @@ __all__ = [
     "TEMPLATES",
     "AeroSpec",
     "BatterySpec",
+    "BoomSpec",
     "BranchOverride",
     "CalibrationSpec",
     "CruiseReference",

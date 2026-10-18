@@ -63,8 +63,8 @@ mass_items:
   - {name: booms and motor mounts, category: vtol_structure, mass_g: 220}
   - {name: camera, category: payload, mass_g: 150}
   - {name: "flight controller, GPS, receiver", category: avionics, mass_g: 120}
+booms: {layout: parallel, section: round, thickness_mm: 16}
 drag_sources:
-  - {name: booms, kind: boom, count: 2, diameter_mm: 16, length_mm: 650}
   - {name: stopped lift propellers, kind: stopped_rotor, count: 4, n_blades: 2, blade_chord_mm: 25, radius_mm: 152}
 max_takeoff_mass_kg: 3.5
 sizing:

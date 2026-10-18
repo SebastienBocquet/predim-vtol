@@ -1,7 +1,7 @@
 ---
 id: INC3-003
 title: Configurations — tilt mask, user templates, positions drawing, geometry in first tab, diagonal booms
-status: Proposed
+status: Implemented
 branch: feat/configurations
 requirements: [REQ-CFG-002, REQ-CFG-004, REQ-CFG-013, REQ-CFG-014, REQ-UI-002, REQ-UI-008, REQ-UI-010, REQ-PROP-009]
 depends_on: [INC3-002]
@@ -99,3 +99,24 @@ BoomSpec ..> BoomSection : data/boom_sections.yaml
 
 1. Old project files without `booms` load unchanged (parallel layout, previous model).
 2. A tilt mask naming a motor that does not exist is rejected with the valid numbers.
+
+## Implementation notes (2026-10-18)
+
+- **Stale drawing, root cause:** the right column drew the project validated at the start of
+  the run, before the motor table edits of that run; it now validates the edited data again
+  before drawing. The editable "tilts" checkbox is replaced by the tilt mask (multiselect +
+  quick choice front / rear / all / none, front / rear relative to the CG); the table shows
+  the mask read-only and is rebuilt when the mask changes.
+- User templates: `aircraft/templates.py` (`user:<name>` keys, folder in the settings or
+  `$PREDIMRC_TEMPLATES`); a project is validated before being saved.
+- Booms: `aircraft/booms.py`, `data/boom_sections.yaml` / `.py`, `Project.booms`
+  (`BoomSpec`). The diagonal booms add the skin friction C_f·p·L to the cross-flow term so a
+  boom aligned with the flow keeps a drag. Frame (multicopter): anchor at the centre, in the
+  plane of the motors. The quadplane and tilt-rotor templates use parallel booms instead of
+  the manual boom sources, with identical drag (test). The former `v_arms` drag source
+  stays for old project files.
+- Cables: `propulsion/wiring.phase_path` gives the path (also drawn in the Power chain
+  tab): diagonal booms along the fuselage to the anchor, across to the side anchor, then
+  along the boom.
+- Positions drawing: `ui/positions_view.py`; the overlap message comes from
+  `Project.overlaps()`.

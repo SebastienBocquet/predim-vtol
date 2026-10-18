@@ -196,3 +196,11 @@ V1 (W): {definition: "Power of the sink in cruise at V1.", unit: W, model: MIC-M
 V1 (%): {definition: "Share of the battery chemical power taken by the sink at V1.", unit: "%", model: MIC-MIS-BUDGET}
 V2 (W): {definition: "Power of the sink in cruise at V2.", unit: W, model: MIC-MIS-BUDGET}
 V2 (%): {definition: "Share of the battery chemical power taken by the sink at V2.", unit: "%", model: MIC-MIS-BUDGET}
+
+# --- booms (MIC-CFG-DRAG, REQ-CFG-014) -------------------------------------------------------
+boom: {definition: "Boom number (booms of the configuration tab).", model: MIC-CFG-DRAG}
+layout: {definition: "Boom layout: parallel (along the flow, carrying the off-centreline lift motors) or diagonal (one straight boom per lift motor from an anchor under the fuselage).", model: MIC-CFG-DRAG}
+section: {definition: "Boom section: round tube, square tube (flat face to the flow) or profiled (streamlined); sets the drag coefficient (Hoerner).", model: MIC-CFG-DRAG}
+angle to the flow θ (°): {definition: "Angle between the boom and the flow (x axis); 0° for a boom aligned with the flow.", unit: "°", symbol: θ, model: MIC-CFG-DRAG}
+C_d effective: {definition: "Drag coefficient referred to the frontal area: diagonal boom C_d,section·sin²θ (cross-flow principle, without the skin friction); parallel boom CdS / section area.", model: MIC-CFG-DRAG}
+tilts (mask): {definition: "The motor is in the tilt mask: it lifts in hover and pushes in cruise (role tilt, ArduPilot Q_TILT_MASK). Set with the 'Tilting motors' selector below the table.", model: MIC-MIS-TWO}
