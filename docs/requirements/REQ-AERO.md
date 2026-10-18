@@ -69,7 +69,7 @@
 - **Status:** Proposed
 - **Verification:** Test — the polar drag increases with the accessory surface.
 - **Satisfied by:** SPEC-001, SPEC-004
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-AERO.md#req-aero-006`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-AERO.md#req-aero-006`.
 
 ### REQ-AERO-007 — Successive evaluations reuse one Excel session
 
@@ -91,7 +91,7 @@
 - **Status:** Proposed
 - **Verification:** Example — PNG produced from the reference case.
 - **Satisfied by:** SPEC-001, SPEC-007
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-AERO.md#req-aero-008`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-AERO.md#req-aero-008`.
 
 ### REQ-AERO-009 — Several airfoils are available
 
@@ -103,8 +103,8 @@
 - **Status:** Proposed
 - **Verification:** Test — the available profiles are the workbooks of the folder.
 - **Satisfied by:** SPEC-001
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-AERO.md#req-aero-009`.
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-AERO.md#req-aero-009`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-AERO.md#req-aero-009`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-AERO.md#req-aero-009`.
 
 ## Added by increment 2 (2026-10-14)
 

@@ -10,10 +10,10 @@ STATUS = re.compile(r"\*\*Verification status:\*\* ([^\n]*)")
 
 
 def cards_dir() -> Path | None:
-    """Folder of the cards: the repository's ``mvp/docs/models`` (development install)."""
+    """Folder of the cards: the repository's ``docs/models`` (development install)."""
     here = Path(__file__).resolve()
     for parent in here.parents:
-        candidate = parent / "mvp" / "docs" / "models"
+        candidate = parent / "docs" / "models"
         if candidate.is_dir():
             return candidate
     return None

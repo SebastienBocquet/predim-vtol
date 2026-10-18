@@ -87,7 +87,7 @@ MicPage --> HelpRegistry
     numbers, links to the data of each power.
 11. **Exploration, Optimisation, Studies:** definitions, progress, tables and charts,
     store, compare, apply (INC2-008).
-12. **Model cards page:** list of `mvp/docs/models/*.md` (id, title, status), rendered
+12. **Model cards page:** list of `docs/models/*.md` (id, title, status), rendered
     card, Mermaid diagrams rendered (`st.markdown` + mermaid component) or shown as code.
 13. **Help on every quantity (REQ-UI-010):** `HelpRegistry` built from (a) project
     schema `description` + new `json_schema_extra` keys `symbol`, `definition`,

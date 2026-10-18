@@ -81,7 +81,7 @@ ThrustPowerSurrogate --> ValidationReport
 3. Expected forms: physics-only for an empty database equals PhysicsMean; at a tested
    point the mean is within 2σ of the measurement; σ grows outside the tested range.
 
-### Create card - `mvp/docs/models/MIC-PROP-SUR.md`
+### Create card - `docs/models/MIC-PROP-SUR.md`
 1. Modelling choices, limitations (static only, ESC of the test), validation criteria.
 
 ### Create tests - `tests/propulsion/test_surrogate.py`

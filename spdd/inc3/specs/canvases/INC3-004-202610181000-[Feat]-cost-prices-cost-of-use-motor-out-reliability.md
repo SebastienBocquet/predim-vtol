@@ -66,7 +66,7 @@ ReliabilityModel ..> MotorSlot
 
 ### Create - `src/predimrc_wrapper/data/prices.yaml`, `data/prices.py`
 ### Create - `src/predimrc_wrapper/cost/model.py`, `src/predimrc_wrapper/reliability.py`
-### Create cards - `mvp/docs/models/MIC-COST.md`, `MIC-REL.md` (interfaces by `sync_mic`)
+### Create cards - `docs/models/MIC-COST.md`, `MIC-REL.md` (interfaces by `sync_mic`)
 ### Update - `aircraft/project.py` (CostSpec, MotorSlot.spin), `mdo/discipline.py`, `ui/app.py`
 ### Create tests
 1. Cost sums; override replaces a price; cost-of-use formula on a hand case.

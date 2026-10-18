@@ -95,7 +95,7 @@ ChainResult --> SegmentLoss
 2. Expected forms: losses sum exactly; zero length ⇒ zero cable loss; loss ∝ L at equal
    current.
 
-### Create card - `mvp/docs/models/MIC-PROP-CHAIN.md`
+### Create card - `docs/models/MIC-PROP-CHAIN.md`
 
 ### Create tests - `tests/propulsion/test_chain.py`
 1. Hand calculation of the tricopter defaults (lengths, sections, losses at 280 W)

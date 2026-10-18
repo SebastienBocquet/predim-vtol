@@ -13,7 +13,7 @@ from pathlib import Path
 from predimrc_wrapper.core.mic import write_interface
 from predimrc_wrapper.core.model import REGISTRY
 
-DEFAULT_CARDS = Path(__file__).resolve().parents[3] / "mvp" / "docs" / "models"
+DEFAULT_CARDS = Path(__file__).resolve().parents[3] / "docs" / "models"
 
 
 def main(cards: Path = DEFAULT_CARDS) -> None:

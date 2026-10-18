@@ -21,7 +21,7 @@
 - **Status:** Proposed
 - **Verification:** Inspection — docstrings; test — conversion helpers.
 - **Satisfied by:** SPEC-001, SPEC-002, SPEC-004
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-NFR.md#req-nfr-002`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-NFR.md#req-nfr-002`.
 
 ### REQ-NFR-003 — Fast tests do not need Excel
 
@@ -52,7 +52,7 @@
 - **Status:** Proposed
 - **Verification:** Test — `tests/propulsion/test_validation.py`.
 - **Satisfied by:** SPEC-002, SPEC-003
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-NFR.md#req-nfr-005`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-NFR.md#req-nfr-005`.
 
 ## Added by increment 2 (2026-10-14)
 
@@ -60,7 +60,7 @@
 
 - **Statement:** Every model and procedure used (including the surrogate, the power
   chain, the V-arm drag, the two-phase evaluation and the calibration) shall have a MIC
-  card in `mvp/docs/models/`, its Interface generated from the code when it is a `Model`.
+  card in `docs/models/`, its Interface generated from the code when it is a `Model`.
 - **Priority:** Must
 - **Status:** Implemented (2026-10-15)
 - **Verification:** Test — generated Interface matches each card.

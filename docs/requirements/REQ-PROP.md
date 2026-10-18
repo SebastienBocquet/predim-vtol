@@ -47,7 +47,7 @@
 - **Status:** Proposed
 - **Verification:** Test — static thrust and power for an APC propeller vs data.
 - **Satisfied by:** SPEC-002
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-PROP.md#req-prop-004`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-PROP.md#req-prop-004`.
 
 ### REQ-PROP-005 — The hover power is computed per rotor
 
@@ -59,7 +59,7 @@
 - **Status:** Proposed
 - **Verification:** Test — ideal momentum-theory power recovered with FM = 1.
 - **Satisfied by:** SPEC-002
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-PROP.md#req-prop-005`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-PROP.md#req-prop-005`.
 
 ### REQ-PROP-006 — The cruise power is computed from the drag
 
@@ -85,8 +85,8 @@
 - **Verification:** Test — the imposed propeller is used; the automatic one is the
   argmin over the candidates.
 - **Satisfied by:** SPEC-002, SPEC-003
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-PROP.md#req-prop-007`.
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-PROP.md#req-prop-007`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-PROP.md#req-prop-007`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-PROP.md#req-prop-007`.
 
 ### REQ-PROP-008 — Operating limits are checked
 
@@ -123,7 +123,7 @@
   twice as long doubles its loss at equal current; default lengths of the tricopter
   equal a hand calculation.
 - **Satisfied by:** INC2-004
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-PROP.md#req-prop-009`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-PROP.md#req-prop-009`.
 
 ### REQ-PROP-011 — Thrust–power surrogate with an error guarantee
 

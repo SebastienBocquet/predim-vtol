@@ -171,7 +171,7 @@ if page == "Model cards (MIC)":
     cards = mic_page.cards()
     if not cards:
         st.info(
-            "The MIC cards are in the repository folder mvp/docs/models (development install)."
+            "The MIC cards are in the repository folder docs/models (development install)."
         )
     else:
         table([{k: c[k] for k in ("id", "title", "verification")} for c in cards])

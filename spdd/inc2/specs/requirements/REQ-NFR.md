@@ -17,7 +17,7 @@
 
 - **Statement:** Every model and procedure used (including the surrogate, the power
   chain, the V-arm drag, the two-phase evaluation and the calibration) shall have a MIC
-  card in `mvp/docs/models/`, its Interface generated from the code when it is a `Model`.
+  card in `docs/models/`, its Interface generated from the code when it is a `Model`.
 - **Priority:** Must
 - **Status:** Implemented (2026-10-15)
 - **Verification:** Test — generated Interface matches each card.

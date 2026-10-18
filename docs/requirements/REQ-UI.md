@@ -21,8 +21,8 @@
 - **Status:** Proposed
 - **Verification:** Test — the plot builder returns the expected span and rotor count.
 - **Satisfied by:** SPEC-007
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-UI.md#req-ui-002`.
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-UI.md#req-ui-002`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-UI.md#req-ui-002`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-UI.md#req-ui-002`.
 
 ### REQ-UI-003 — The results are displayed
 
@@ -34,7 +34,7 @@
 - **Status:** Proposed
 - **Verification:** Inspection.
 - **Satisfied by:** SPEC-007
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-UI.md#req-ui-003`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-UI.md#req-ui-003`.
 
 ### REQ-UI-004 — The project is saved and loaded from the GUI
 
@@ -71,7 +71,7 @@
 - **Verification:** App test — the tab list per configuration; switching configuration
   updates the tabs and the geometry.
 - **Satisfied by:** INC2-009
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-UI.md#req-ui-008`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-UI.md#req-ui-008`.
 
 ### REQ-UI-009 — The MIC cards open from the sidebar
 
@@ -99,7 +99,7 @@
   axis label has a registry entry with definition and unit (a missing entry fails the
   test); app test — tooltips present on the inputs of each tab.
 - **Satisfied by:** INC2-009
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-UI.md#req-ui-010`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-UI.md#req-ui-010`.
 
 ## Added by increment 3 (2026-10-18)
 

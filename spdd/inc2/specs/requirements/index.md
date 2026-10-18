@@ -2,7 +2,7 @@
 
 Requirements new or changed in increment 2. Identifiers are those of the full
 specification (`docs/requirements/`), where the same statements are recorded; an MVP
-requirement not listed here keeps its MVP statement (`mvp/specs/requirements/`).
+requirement not listed here keeps its MVP statement (`spdd/mvp/specs/requirements/`).
 
 Status values: `Proposed` (to review by the owner), `Implemented (2026-10-13)` (coded
 after the MVP, described by INC2-001, still to review).

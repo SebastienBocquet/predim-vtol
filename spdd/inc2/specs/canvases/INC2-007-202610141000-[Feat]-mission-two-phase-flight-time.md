@@ -86,7 +86,7 @@ TwoPhaseEvaluation --> TwoPhaseResult
 1. Dataclasses above; `TwoPhaseEvaluation.evaluate`; `to_dict()`; `hand_check()` giving
    the formula of step 4 with the numbers (shown in the Results tab).
 
-### Create card - `mvp/docs/models/MIC-MIS-TWO.md`
+### Create card - `docs/models/MIC-MIS-TWO.md`
 
 ### Update - `api.py`, `mdo/discipline.py`, `mdo/optimise.py` (objectives)
 

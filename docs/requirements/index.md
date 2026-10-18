@@ -49,7 +49,7 @@ exploration and optimisation, and a Streamlit GUI helps entering the inputs.
 Two-phase flight time (hover from thrust–power test data through a Gaussian-process
 surrogate, cruise from the PredimRC aerodynamic power at two target speeds), power
 chain, V-arms, stored studies, help on every quantity. Scope, decisions and open
-questions: [`inc2/README.md`](../../inc2/README.md); canvases in `inc2/specs/canvases/`.
+questions: [`spdd/inc2/README.md`](../../spdd/inc2/README.md); canvases in `spdd/inc2/specs/canvases/`.
 
 | Id | Canvas | Depends on |
 |---|---|---|
@@ -117,7 +117,7 @@ Guidelines:
 Project tooling (vimseo template), GUI fixes and clarity (units, power budget, test data
 explanation, navigation), tilt mask, user templates, diagonal booms with frontal-area
 drag, cost models and motor-out reliability. Scope and decisions:
-[`inc3/README.md`](../../inc3/README.md); canvases in `inc3/specs/canvases/`.
+[`spdd/inc3/README.md`](../../spdd/inc3/README.md); canvases in `spdd/inc3/specs/canvases/`.
 
 | Id | Canvas | Depends on |
 |---|---|---|

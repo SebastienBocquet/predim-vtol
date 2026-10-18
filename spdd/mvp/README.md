@@ -1,6 +1,6 @@
 # predimrc_wrapper — MVP
 
-> **Next: increment 2** (`inc2/README.md`, 2026-10-14) reproduces the designer's
+> **Next: increment 2** (`spdd/inc2/README.md`, 2026-10-14) reproduces the designer's
 > two-phase flight-time process. The code added after the MVP on 2026-10-12/13 (motor
 > list and roles, tricopter and tilt-rotor templates, sizing law, calibration, pitch
 > study, optimisation tab, 150–250 W motor database) is recorded by canvas INC2-001;

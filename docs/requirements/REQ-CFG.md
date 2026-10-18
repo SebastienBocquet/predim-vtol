@@ -10,7 +10,7 @@
 - **Status:** Proposed
 - **Verification:** Example — one project file per architecture runs end to end.
 - **Satisfied by:** SPEC-004
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-CFG.md#req-cfg-001`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-CFG.md#req-cfg-001`.
 
 ### REQ-CFG-002 — The rotor layout is user-defined
 
@@ -24,8 +24,8 @@
 - **Verification:** Test — default symmetric layout generated from boom span; diameter
   bound respected.
 - **Satisfied by:** SPEC-004
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-CFG.md#req-cfg-002`.
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-CFG.md#req-cfg-002`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-CFG.md#req-cfg-002`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-CFG.md#req-cfg-002`.
 
 ### REQ-CFG-003 — A mass budget closes the total mass
 
@@ -51,8 +51,8 @@
 - **Verification:** Test — total drag area equals the sum of dedicated sources; routed
   sources reach the PredimRC accessory cell.
 - **Satisfied by:** SPEC-004
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-CFG.md#req-cfg-004`.
-- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-CFG.md#req-cfg-004`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-CFG.md#req-cfg-004`.
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-CFG.md#req-cfg-004`.
 
 ### REQ-CFG-005 — The battery can be sized for a target scenario
 

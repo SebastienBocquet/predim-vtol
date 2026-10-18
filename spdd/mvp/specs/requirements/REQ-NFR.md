@@ -31,7 +31,7 @@
 ### REQ-NFR-006 — Every model has a MIC card
 
 - **Statement:** Every MVP model outside PredimRC is described by a MIC card in
-  `mvp/docs/models/` (MIC Core groups + Interface + Traceability), kept up to date with
+  `docs/models/` (MIC Core groups + Interface + Traceability), kept up to date with
   the code; once MVP-002 exists, the Interface section is generated from the `Model`
   declarations.
 - **Priority:** Must

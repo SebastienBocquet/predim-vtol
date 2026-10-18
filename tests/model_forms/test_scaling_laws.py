@@ -29,7 +29,7 @@ for _module in (
     with contextlib.suppress(ModuleNotFoundError):
         importlib.import_module(f"predimrc_wrapper.{_module}")
 
-CARDS = Path(__file__).resolve().parents[2] / "mvp" / "docs" / "models"
+CARDS = Path(__file__).resolve().parents[2] / "docs" / "models"
 MODELS = {k: v for k, v in REGISTRY.items() if not k.startswith("MIC-TEST")}
 FORMS = [
     pytest.param(model_cls, form, id=f"{mic}:{i}")

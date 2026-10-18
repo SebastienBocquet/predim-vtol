@@ -12,7 +12,7 @@
 - **Status:** Proposed
 - **Verification:** Test — the database loads and every entry is complete.
 - **Satisfied by:** SPEC-003
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-DATA.md#req-data-001`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-DATA.md#req-data-001`.
 
 ### REQ-DATA-002 — A propeller database gives performance coefficients
 
@@ -26,7 +26,7 @@
 - **Verification:** Test — loaded coefficient tables are monotonic in advance ratio
   and positive at J = 0.
 - **Satisfied by:** SPEC-003
-- **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-DATA.md#req-data-002`.
+- **Increment 2 (2026-10-14):** statement changed, see `spdd/inc2/specs/requirements/REQ-DATA.md#req-data-002`.
 
 ### REQ-DATA-003 — Every data entry has a provenance
 
