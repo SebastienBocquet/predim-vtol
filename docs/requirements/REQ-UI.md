@@ -22,6 +22,7 @@
 - **Verification:** Test — the plot builder returns the expected span and rotor count.
 - **Satisfied by:** SPEC-007
 - **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-UI.md#req-ui-002`.
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-UI.md#req-ui-002`.
 
 ### REQ-UI-003 — The results are displayed
 
@@ -70,6 +71,7 @@
 - **Verification:** App test — the tab list per configuration; switching configuration
   updates the tabs and the geometry.
 - **Satisfied by:** INC2-009
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-UI.md#req-ui-008`.
 
 ### REQ-UI-009 — The MIC cards open from the sidebar
 
@@ -97,3 +99,19 @@
   axis label has a registry entry with definition and unit (a missing entry fails the
   test); app test — tooltips present on the inputs of each tab.
 - **Satisfied by:** INC2-009
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-UI.md#req-ui-010`.
+
+## Added by increment 3 (2026-10-18)
+
+### REQ-UI-011 — The test data comparison is explained with a sketch and formulas
+
+- **Statement:** The Test data tab shall explain what is compared and how each model
+  value is obtained, with formulas and a sketch of the energy chain: hover
+  P = Σ surrogate(T_i) + chain losses + avionics; winged cruise = PredimRC power at
+  imposed speed + drag sources; multicopter cruise = in-house body C_d·A + drag sources +
+  forward-flight rotor model (no PredimRC). The calibration section explains why one
+  factor per point and when it applies (scenario mode).
+- **Priority:** Should
+- **Status:** Proposed
+- **Verification:** Inspection.
+- **Satisfied by:** INC3-002

@@ -104,6 +104,7 @@
 - **Verification:** Test — the available profiles are the workbooks of the folder.
 - **Satisfied by:** SPEC-001
 - **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-AERO.md#req-aero-009`.
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-AERO.md#req-aero-009`.
 
 ## Added by increment 2 (2026-10-14)
 

@@ -21,6 +21,7 @@
 - **Status:** Proposed
 - **Verification:** Inspection — docstrings; test — conversion helpers.
 - **Satisfied by:** SPEC-001, SPEC-002, SPEC-004
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-NFR.md#req-nfr-002`.
 
 ### REQ-NFR-003 — Fast tests do not need Excel
 
@@ -76,3 +77,18 @@
 - **Status:** Implemented for the scenario mode; not applied to the two-phase evaluation
 - **Verification:** Test — calibrated model reproduces the measurement to 1e-6.
 - **Satisfied by:** INC2-001, INC2-009
+
+## Added by increment 3 (2026-10-18)
+
+### REQ-NFR-008 — The project follows the vimseo template
+
+- **Statement:** The repository shall provide: `tox` environments (tox-uv) for the tests
+  per Python version (full extras by default, core deps with the `core` factor), `check`
+  (pre-commit: ruff check and format, file hygiene), `dist` and `update-deps`; compiled
+  requirement files (`uv pip compile --universal`); `.ruff.toml` with the vimseo rules;
+  coverage settings; a GitHub Actions workflow running the tests and the check; a
+  changelog, a contributing guide and the licence.
+- **Priority:** Should
+- **Status:** Implemented (2026-10-18)
+- **Verification:** `tox -e check`, `tox -e py312` pass.
+- **Satisfied by:** INC3-001

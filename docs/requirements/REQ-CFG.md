@@ -25,6 +25,7 @@
   bound respected.
 - **Satisfied by:** SPEC-004
 - **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-CFG.md#req-cfg-002`.
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-CFG.md#req-cfg-002`.
 
 ### REQ-CFG-003 — A mass budget closes the total mass
 
@@ -51,6 +52,7 @@
   sources reach the PredimRC accessory cell.
 - **Satisfied by:** SPEC-004
 - **Increment 2 (2026-10-14):** statement changed, see `inc2/specs/requirements/REQ-CFG.md#req-cfg-004`.
+- **Increment 3 (2026-10-18):** statement changed, see `inc3/specs/requirements/REQ-CFG.md#req-cfg-004`.
 
 ### REQ-CFG-005 — The battery can be sized for a target scenario
 
@@ -121,3 +123,35 @@
 - **Status:** Implemented (2026-10-13) — MIC-CFG-SIZ.
 - **Verification:** Test — reference point reproduced; candidates within range.
 - **Satisfied by:** INC2-001
+
+## Added by increment 3 (2026-10-18)
+
+### REQ-CFG-013 — The current configuration can be saved as a user template
+
+- **Statement:** The GUI shall save the current project (geometry, propulsion unit types,
+  motors with positions, roles and tilt mask, booms, battery, masses, drag sources,
+  wiring, mission, sizing, test data) as a named user template in a templates folder
+  (setting, default `~/.predimrc_wrapper/templates`). The Configuration selector lists
+  the shipped and the user templates; user templates can be renamed and deleted.
+- **Rationale:** No template per tilt mask or layout is needed, since these are inputs.
+  The designer keeps their own starting points.
+- **Priority:** Should
+- **Status:** Proposed
+- **Verification:** Test — a saved template is listed and reloads into an identical
+  project.
+- **Satisfied by:** INC3-003
+
+### REQ-CFG-014 — Booms are parallel or diagonal, with a chosen section
+
+- **Statement:** The user shall choose, in the aircraft configuration tab, the boom layout
+  — parallel (booms along the flow carrying the motors) or diagonal (one straight boom
+  per lift motor from an anchor under the fuselage) — and the boom section — profiled,
+  square or round — with its thickness (and chord when profiled). The anchor position
+  (x, half width, depth under the fuselage) defaults from the fuselage. The booms are
+  drawn in the geometry views, give their drag (REQ-CFG-004) and the cable paths of the
+  power chain (REQ-PROP-009).
+- **Priority:** Must
+- **Status:** Proposed
+- **Verification:** Test — boom lengths and angles from the anchor equal a hand
+  calculation; the phase cable length of a diagonal boom motor includes the boom length.
+- **Satisfied by:** INC3-003

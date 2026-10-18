@@ -30,6 +30,7 @@ exploration and optimisation, and a Streamlit GUI helps entering the inputs.
 | MDO | [Exploration and optimisation](REQ-MDO.md) | GEMSEO discipline, DOE, optimisation |
 | UI | [User interface](REQ-UI.md) | Streamlit input forms, geometry preview, results |
 | NFR | [Non-functional](REQ-NFR.md) | platform, units, tests, reproducibility, validation |
+| COST | [Cost and reliability](REQ-COST.md) | purchase cost, cost of use, motor-out hover |
 
 ## Specifications
 
@@ -110,3 +111,17 @@ Guidelines:
 - **Scenario:** an ordered list of flight segments (hover, transition, cruise...).
 - **Endurance:** flight time achievable with the usable battery energy.
 - **Project file:** the YAML file holding all the inputs of one design study.
+
+### Increment 3 — feedback of 2026-10-17, configurations, cost and reliability (2026-10-18)
+
+Project tooling (vimseo template), GUI fixes and clarity (units, power budget, test data
+explanation, navigation), tilt mask, user templates, diagonal booms with frontal-area
+drag, cost models and motor-out reliability. Scope and decisions:
+[`inc3/README.md`](../../inc3/README.md); canvases in `inc3/specs/canvases/`.
+
+| Id | Canvas | Depends on |
+|---|---|---|
+| INC3-001 | [Chore] tooling — tox, ruff, pre-commit, coverage, CI | INC2-009 |
+| INC3-002 | [Fix] ui — bugs, units, explanations, power budget, navigation | INC3-001 |
+| INC3-003 | [Feat] cfg — tilt mask, user templates, positions drawing, diagonal booms | INC3-002 |
+| INC3-004 | [Feat] cost — prices, cost of use, motor-out reliability | INC3-003 |
