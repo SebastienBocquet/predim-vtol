@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 from predimrc_wrapper.aircraft import AircraftModel
@@ -11,6 +10,8 @@ from predimrc_wrapper.mission.solver import MissionResult
 from predimrc_wrapper.mission.solver import MissionSolver
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from predimrc_wrapper.predimrc_wrapper import AeroBackend
 
 
@@ -21,8 +22,11 @@ def profiles_dir() -> Path:
     return predimrc_folder()
 
 
-def evaluate(project: Project | str | Path, scenario_name: str | None = None,
-             backend: AeroBackend | None = None) -> MissionResult:
+def evaluate(
+    project: Project | str | Path,
+    scenario_name: str | None = None,
+    backend: AeroBackend | None = None,
+) -> MissionResult:
     """Evaluate one scenario of a project.
 
     Args:
@@ -43,7 +47,9 @@ def evaluate(project: Project | str | Path, scenario_name: str | None = None,
     if project.architecture == "quadplane" and backend is None:
         from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
 
-        with PredimRCWrapper(profile=project.aero.profile, template_dir=profiles_dir()) as session:
+        with PredimRCWrapper(
+            profile=project.aero.profile, template_dir=profiles_dir()
+        ) as session:
             return _solve(project, name, session)
     return _solve(project, name, backend)
 
@@ -62,9 +68,12 @@ def _solve(project: Project, name: str, backend: AeroBackend | None) -> MissionR
     return result
 
 
-def evaluate_two_phase(project: Project | str | Path, backend: AeroBackend | None = None,
-                       hover_time_s: float | None = None,
-                       target_speeds_m_s: tuple[float, float] | None = None):
+def evaluate_two_phase(
+    project: Project | str | Path,
+    backend: AeroBackend | None = None,
+    hover_time_s: float | None = None,
+    target_speeds_m_s: tuple[float, float] | None = None,
+):
     """Two-phase flight time of the designer's process (INC2-007).
 
     Args:
@@ -84,10 +93,18 @@ def evaluate_two_phase(project: Project | str | Path, backend: AeroBackend | Non
         project = Project.load(project)
     mission = project.mission
     t_h = mission.hover_time_s if hover_time_s is None else hover_time_s
-    speeds = target_speeds_m_s or (tuple(mission.target_speeds_m_s) if mission.target_speeds_m_s else None)
+    speeds = target_speeds_m_s or (
+        tuple(mission.target_speeds_m_s) if mission.target_speeds_m_s else None
+    )
     if project.architecture == "quadplane" and backend is None:
         from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
 
-        with PredimRCWrapper(profile=project.aero.profile, template_dir=profiles_dir()) as session:
-            return TwoPhaseEvaluation(AircraftModel(project, aero_backend=session)).solve(t_h, speeds)
-    return TwoPhaseEvaluation(AircraftModel(project, aero_backend=backend)).solve(t_h, speeds)
+        with PredimRCWrapper(
+            profile=project.aero.profile, template_dir=profiles_dir()
+        ) as session:
+            return TwoPhaseEvaluation(
+                AircraftModel(project, aero_backend=session)
+            ).solve(t_h, speeds)
+    return TwoPhaseEvaluation(AircraftModel(project, aero_backend=backend)).solve(
+        t_h, speeds
+    )

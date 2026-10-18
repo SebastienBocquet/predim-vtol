@@ -13,9 +13,17 @@ from predimrc_wrapper.core import ports
 
 
 def _decreasing(model: AtmosphereISA) -> bool:
-    h = model.evaluate({"altitude_m": np.array([0.0, 1000.0, 3000.0]), "delta_isa_k": 0.0})
-    dt = model.evaluate({"altitude_m": 500.0, "delta_isa_k": np.array([-20.0, 0.0, 20.0])})
-    return bool(np.all(np.diff(h["density"]) < 0) and np.all(np.diff(dt["density"]) < 0))
+    h = model.evaluate({
+        "altitude_m": np.array([0.0, 1000.0, 3000.0]),
+        "delta_isa_k": 0.0,
+    })
+    dt = model.evaluate({
+        "altitude_m": 500.0,
+        "delta_isa_k": np.array([-20.0, 0.0, 20.0]),
+    })
+    return bool(
+        np.all(np.diff(h["density"]) < 0) and np.all(np.diff(dt["density"]) < 0)
+    )
 
 
 def _sea_level(model: AtmosphereISA) -> bool:
@@ -37,13 +45,47 @@ class AtmosphereISA(Model):
     )
     outputs = ports(Port("density", "ρ", "kg/m³", "air density", (0, None)))
     parameters = params(
-        Param("t0", "T₀", "K", "sea-level temperature", default=288.15, bounds=(0, None), source="ISO 2533"),
-        Param("p0", "p₀", "Pa", "sea-level pressure", default=101325.0, bounds=(0, None), source="ISO 2533"),
-        Param("lapse_rate", "L", "K/m", "temperature lapse rate", default=0.0065, bounds=(0, None), source="ISO 2533"),
-        Param("r_air", "R", "J/(kg·K)", "gas constant of air", default=287.053, bounds=(0, None), source="ISO 2533"),
+        Param(
+            "t0",
+            "T₀",
+            "K",
+            "sea-level temperature",
+            default=288.15,
+            bounds=(0, None),
+            source="ISO 2533",
+        ),
+        Param(
+            "p0",
+            "p₀",
+            "Pa",
+            "sea-level pressure",
+            default=101325.0,
+            bounds=(0, None),
+            source="ISO 2533",
+        ),
+        Param(
+            "lapse_rate",
+            "L",
+            "K/m",
+            "temperature lapse rate",
+            default=0.0065,
+            bounds=(0, None),
+            source="ISO 2533",
+        ),
+        Param(
+            "r_air",
+            "R",
+            "J/(kg·K)",
+            "gas constant of air",
+            default=287.053,
+            bounds=(0, None),
+            source="ISO 2533",
+        ),
     )
     expected_forms = [
-        Invariant("density decreases with altitude and temperature offset", _decreasing),
+        Invariant(
+            "density decreases with altitude and temperature offset", _decreasing
+        ),
         Invariant("sea-level and 1000 m ISA densities", _sea_level),
     ]
 
@@ -60,4 +102,9 @@ class AtmosphereISA(Model):
 
 def density(altitude_m: float = 0.0, delta_isa_k: float = 0.0) -> float:
     """Return the ISA air density (kg/m³)."""
-    return float(AtmosphereISA().evaluate({"altitude_m": altitude_m, "delta_isa_k": delta_isa_k})["density"])
+    return float(
+        AtmosphereISA().evaluate({
+            "altitude_m": altitude_m,
+            "delta_isa_k": delta_isa_k,
+        })["density"]
+    )

@@ -76,7 +76,11 @@ def hover_scenario(architecture: str, hover_s: float = 90.0) -> Scenario:
 
 def _path(loc: tuple) -> str:
     # Pydantic adds the validator / union member names to the location: keep the data keys.
-    keys = [str(k) for k in loc if not (isinstance(k, str) and ("[" in k or k in ("float", "str", "int")))]
+    keys = [
+        str(k)
+        for k in loc
+        if not (isinstance(k, str) and ("[" in k or k in ("float", "str", "int")))
+    ]
     return ".".join(keys)
 
 
@@ -89,7 +93,9 @@ def check(data: dict[str, Any]) -> Check:
         missing: list[str] = []
         for e in error.errors():
             path = _path(e["loc"])
-            if e["type"] == "missing" or (e.get("input") is None and e["type"].endswith("_type")):
+            if e["type"] == "missing" or (
+                e.get("input") is None and e["type"].endswith("_type")
+            ):
                 missing.append(path)
             errors.setdefault(path, e["msg"])
         return Check(None, errors, missing)
@@ -107,13 +113,17 @@ def save_project(data: dict[str, Any], path: str | Path) -> Path:
 
 
 def project_key(data: dict[str, Any]) -> str:
-    return hashlib.sha1(json.dumps(data, sort_keys=True, default=str).encode()).hexdigest()
+    return hashlib.sha1(
+        json.dumps(data, sort_keys=True, default=str).encode()
+    ).hexdigest()
 
 
 def excel_available(profile: str = "SD7003") -> str | None:
     """None when PredimRC can run, else the reason to show."""
     if sys.platform != "win32":
-        return "PredimRC needs Windows and Excel: the quadplane cannot be evaluated here."
+        return (
+            "PredimRC needs Windows and Excel: the quadplane cannot be evaluated here."
+        )
     try:
         import winreg  # noqa: PLC0415
 

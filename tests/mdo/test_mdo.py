@@ -54,7 +54,9 @@ def test_design_space_types_and_bounds(parameters):
     assert space.get_type("battery_mass_g") == "float"
     assert space.get_type("n_series") == "integer"
     assert space.get_type("lift_motor") == "integer"
-    assert space.get_upper_bound("lift_motor")[0] == len(parameters[2].mapping.labels) - 1
+    assert (
+        space.get_upper_bound("lift_motor")[0] == len(parameters[2].mapping.labels) - 1
+    )
     assert space.get_current_value(["battery_mass_g"])[0] == 700.0
 
 
@@ -62,11 +64,21 @@ def test_discipline_matches_evaluate(parameters):
     base = Project.template("multicopter")
     disc = PresizingDiscipline(base, parameters)
     assert set(disc.output_grammar.names) == set(OUTPUTS)
-    x = {"battery_mass_g": np.array([900.0]), "n_series": np.array([4.0]),
-         "lift_motor": np.array([float(parameters[2].mapping.index("tmotor-mn2806-400kv"))])}
+    x = {
+        "battery_mass_g": np.array([900.0]),
+        "n_series": np.array([4.0]),
+        "lift_motor": np.array([
+            float(parameters[2].mapping.index("tmotor-mn2806-400kv"))
+        ]),
+    }
     out = disc.execute(x)
-    ref = evaluate(base.with_overrides({"battery.mass_g": 900.0, "battery.n_series": 4,
-                                        "propulsion_units.lift.motor_id": "tmotor-mn2806-400kv"}))
+    ref = evaluate(
+        base.with_overrides({
+            "battery.mass_g": 900.0,
+            "battery.n_series": 4,
+            "propulsion_units.lift.motor_id": "tmotor-mn2806-400kv",
+        })
+    )
     assert out["flight_time"][0] == pytest.approx(ref.flight_time_s)
     assert out["range"][0] == pytest.approx(ref.range_m)
     assert out["mass_total"][0] == pytest.approx(ref.mass_total_kg)
@@ -101,7 +113,8 @@ def test_failure_gives_nan(parameters, monkeypatch):
     from predimrc_wrapper.mdo import discipline as module  # noqa: PLC0415
 
     def boom(*args):
-        raise RuntimeError("injected")
+        msg = "injected"
+        raise RuntimeError(msg)
 
     monkeypatch.setattr(module, "_solve", boom)
     out = PresizingDiscipline(Project.template("multicopter"), parameters).execute()
@@ -120,11 +133,18 @@ def test_quadplane_with_fake_backend():
 
 
 def test_optim_multicopter_example(tmp_path):
-    result = subprocess.run([sys.executable, str(EXAMPLES / "optim_multicopter.py"), "5"],
-                            capture_output=True, text=True, timeout=600, cwd=ROOT,
-                            env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLES / "optim_multicopter.py"), "5"],
+        capture_output=True,
+        text=True,
+        timeout=600,
+        cwd=ROOT,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+    )
     assert result.returncode == 0, result.stderr
-    summary = json.loads((EXAMPLES / "outputs" / "optim_multicopter.json").read_text(encoding="utf-8"))
+    summary = json.loads(
+        (EXAMPLES / "outputs" / "optim_multicopter.json").read_text(encoding="utf-8")
+    )
     assert summary["best"]["outputs"]["flight_time"] > 0
     assert "propulsion_units.lift.motor_id" in summary["best"]["choice"]
 
@@ -132,11 +152,18 @@ def test_optim_multicopter_example(tmp_path):
 @pytest.mark.slow
 @requires_excel
 def test_optim_quadplane_example():
-    result = subprocess.run([sys.executable, str(EXAMPLES / "optim_quadplane.py"), "5"],
-                            capture_output=True, text=True, timeout=1800, cwd=ROOT,
-                            env={**os.environ, "PYTHONIOENCODING": "utf-8"})
+    result = subprocess.run(
+        [sys.executable, str(EXAMPLES / "optim_quadplane.py"), "5"],
+        capture_output=True,
+        text=True,
+        timeout=1800,
+        cwd=ROOT,
+        env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+    )
     assert result.returncode == 0, result.stderr
-    summary = json.loads((EXAMPLES / "outputs" / "optim_quadplane.json").read_text(encoding="utf-8"))
+    summary = json.loads(
+        (EXAMPLES / "outputs" / "optim_quadplane.json").read_text(encoding="utf-8")
+    )
     assert summary["best"]["outputs"]["flight_time"] > 0
 
 
@@ -147,13 +174,20 @@ def test_optimise_loop_and_best_design():
     assert "SLSQP" in available_algorithms()
     project = Project.template("multicopter")
     continuous = [Parameter("battery_mass_g", "battery.mass_g", "float", 400.0, 1200.0)]
-    summary = optimise(project, continuous, {"battery.n_series": [4, 6]}, algo="COBYQA", max_iter=8)
-    assert len(summary.runs) == 2 and all(r.history and not r.error for r in summary.runs)
+    summary = optimise(
+        project, continuous, {"battery.n_series": [4, 6]}, algo="COBYQA", max_iter=8
+    )
+    assert len(summary.runs) == 2
+    assert all(r.history and not r.error for r in summary.runs)
     best = summary.best
-    assert best.outputs["flight_time"] == max(r.outputs["flight_time"] for r in summary.runs if r.feasible)
+    assert best.outputs["flight_time"] == max(
+        r.outputs["flight_time"] for r in summary.runs if r.feasible
+    )
     overrides = summary.best_overrides(continuous)
     assert set(overrides) == {"battery.n_series", "battery.mass_g"}
-    assert evaluate(project.with_overrides(overrides)).flight_time_s == pytest.approx(best.outputs["flight_time"])
+    assert evaluate(project.with_overrides(overrides)).flight_time_s == pytest.approx(
+        best.outputs["flight_time"]
+    )
 
 
 def test_optimise_drops_not_applicable_constraints():
@@ -164,13 +198,22 @@ def test_optimise_drops_not_applicable_constraints():
     continuous = [Parameter("battery_mass_g", "battery.mass_g", "float", 250.0, 700.0)]
     run = optimise(project, continuous, algo="COBYQA", max_iter=10).runs[0]
     assert "margin_mass" not in run.constraints
-    assert run.feasible and run.outputs["margin_thrust_to_weight"] >= -1e-3
+    assert run.feasible
+    assert run.outputs["margin_thrust_to_weight"] >= -1e-3
 
 
 def test_calibrated_base_is_kept_for_variants():
-    disc = PresizingDiscipline(Project.template("tricopter"),
-                               [Parameter("battery_mass_g", "battery.mass_g", "float", 300.0, 900.0)])
+    disc = PresizingDiscipline(
+        Project.template("tricopter"),
+        [Parameter("battery_mass_g", "battery.mass_g", "float", 300.0, 900.0)],
+    )
     assert disc.calibration_report.points[0].point == "hover"
     assert disc.base_project.calibration is None
     fm = disc.base_project.propulsion_units["front"].figure_of_merit
-    assert disc.project_for({"battery_mass_g": np.array([700.0])}).propulsion_units["front"].figure_of_merit == fm
+    assert (
+        disc
+        .project_for({"battery_mass_g": np.array([700.0])})
+        .propulsion_units["front"]
+        .figure_of_merit
+        == fm
+    )

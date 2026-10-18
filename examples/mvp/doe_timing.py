@@ -32,7 +32,9 @@ if __name__ == "__main__":
         from_database("lift_motor", "propulsion_units.lift.motor_id", role="lift"),
     ]
     if architecture == "quadplane":
-        parameters.append(Parameter("span_t2_mm", "aero.wing.length_mm.1", "float", 250.0, 350.0))
+        parameters.append(
+            Parameter("span_t2_mm", "aero.wing.length_mm.1", "float", 250.0, 350.0)
+        )
         from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper
 
         context = PredimRCWrapper(template_dir=PROFILES)
@@ -41,22 +43,40 @@ if __name__ == "__main__":
         context = backend = None
     try:
         disc = PresizingDiscipline(project, parameters, backend=backend)
-        scenario = create_scenario([disc], "flight_time", build_design_space(parameters),
-                                   formulation_name="DisciplinaryOpt", scenario_type="DOE")
+        scenario = create_scenario(
+            [disc],
+            "flight_time",
+            build_design_space(parameters),
+            formulation_name="DisciplinaryOpt",
+            scenario_type="DOE",
+        )
         start = time.perf_counter()
         scenario.execute(algo_name="LHS", n_samples=20)
         elapsed = time.perf_counter() - start
-        print(f"{architecture}: 20 evaluations in {elapsed:.1f} s, {elapsed / 20:.3f} s per evaluation")
-        print(f"100 configurations would take about {5 * elapsed:.0f} s (budget 20 s, measured not required)")
+        print(
+            f"{architecture}: 20 evaluations in {elapsed:.1f} s, {elapsed / 20:.3f} s per evaluation"
+        )
+        print(
+            f"100 configurations would take about {5 * elapsed:.0f} s (budget 20 s, measured not required)"
+        )
         dataset = scenario.to_dataset()
         OUT.mkdir(exist_ok=True)
         study = {
             "seconds": elapsed,
-            "mappings": {p.name: list(p.mapping.labels) for p in parameters if p.mapping},
-            "samples": [{k: float(v) for k, v in row.items()} for row in
-                        dataset.get_view().droplevel([0, 2], axis=1).to_dict("records")],
+            "mappings": {
+                p.name: list(p.mapping.labels) for p in parameters if p.mapping
+            },
+            "samples": [
+                {k: float(v) for k, v in row.items()}
+                for row in dataset
+                .get_view()
+                .droplevel([0, 2], axis=1)
+                .to_dict("records")
+            ],
         }
-        (OUT / f"doe_timing_{architecture}.json").write_text(json.dumps(study, indent=2), encoding="utf-8")
+        (OUT / f"doe_timing_{architecture}.json").write_text(
+            json.dumps(study, indent=2), encoding="utf-8"
+        )
     finally:
         if context is not None:
             context.close()

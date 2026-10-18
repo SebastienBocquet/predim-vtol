@@ -26,8 +26,14 @@ def compare_points(project: Project, backend: AeroBackend | None = None) -> list
             p = p.with_overrides({"environment.delta_isa_k": point.temperature_c - isa})
         aircraft = AircraftModel(p, aero_backend=backend, total_mass_kg=point.mass_kg)
         model = TwoPhaseEvaluation(aircraft)
-        row = {"point": i + 1, "kind": point.kind, "date": point.date, "mass (kg)": round(aircraft.total_mass_kg, 3),
-               "speed (m/s)": point.speed_m_s, "measured (W)": point.battery_power_w}
+        row = {
+            "point": i + 1,
+            "kind": point.kind,
+            "date": point.date,
+            "mass (kg)": round(aircraft.total_mass_kg, 3),
+            "speed (m/s)": point.speed_m_s,
+            "measured (W)": point.battery_power_w,
+        }
         try:
             if point.kind == "hover":
                 h = model.hover()
@@ -35,10 +41,22 @@ def compare_points(project: Project, backend: AeroBackend | None = None) -> list
             else:
                 cruise, _ = model.cruise((point.speed_m_s, point.speed_m_s))
                 power, sd = cruise[0].battery_power_w, float("nan")
-            row.update({"model (W)": round(power, 1), "deviation (%)": round(100 * (power / point.battery_power_w - 1), 1),
-                        "inside the 95 % band": bool(abs(point.battery_power_w - power) <= 1.96 * sd)
-                        if np.isfinite(sd) else None, "error": ""})
-        except Exception as error:  # noqa: BLE001
-            row.update({"model (W)": None, "deviation (%)": None, "inside the 95 % band": None, "error": str(error)})
+            row.update({
+                "model (W)": round(power, 1),
+                "deviation (%)": round(100 * (power / point.battery_power_w - 1), 1),
+                "inside the 95 % band": bool(
+                    abs(point.battery_power_w - power) <= 1.96 * sd
+                )
+                if np.isfinite(sd)
+                else None,
+                "error": "",
+            })
+        except Exception as error:  # ruff: ignore[blind-except]
+            row.update({
+                "model (W)": None,
+                "deviation (%)": None,
+                "inside the 95 % band": None,
+                "error": str(error),
+            })
         rows.append(row)
     return rows

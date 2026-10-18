@@ -27,11 +27,19 @@ if TYPE_CHECKING:
     from predimrc_wrapper.aircraft.project import PropulsionSpec
     from predimrc_wrapper.predimrc_wrapper import AeroBackend
 
-ROLE_CATEGORY = {"lift": "lift propulsion", "cruise": "cruise propulsion", "tilt": "tilt propulsion"}
+ROLE_CATEGORY = {
+    "lift": "lift propulsion",
+    "cruise": "cruise propulsion",
+    "tilt": "tilt propulsion",
+}
 
 
-def hover_thrust_split(x_m: np.ndarray, y_m: np.ndarray, area_m2: np.ndarray,
-                       cg_m: tuple[float, float] | None = None) -> np.ndarray:
+def hover_thrust_split(
+    x_m: np.ndarray,
+    y_m: np.ndarray,
+    area_m2: np.ndarray,
+    cg_m: tuple[float, float] | None = None,
+) -> np.ndarray:
     """Fractions of the hover thrust carried by each lift rotor (sum 1).
 
     Minimises Σ T_i² / A_i (close to the minimum induced power) under the vertical force
@@ -44,7 +52,11 @@ def hover_thrust_split(x_m: np.ndarray, y_m: np.ndarray, area_m2: np.ndarray,
     area = np.asarray(area_m2, dtype=float)
     if cg_m is None:
         return area / area.sum()
-    m = np.vstack([np.ones_like(area), np.asarray(x_m, dtype=float), np.asarray(y_m, dtype=float)])
+    m = np.vstack([
+        np.ones_like(area),
+        np.asarray(x_m, dtype=float),
+        np.asarray(y_m, dtype=float),
+    ])
     b = np.array([1.0, cg_m[0], cg_m[1]])
     weighted = m * area
     lam = np.linalg.lstsq(weighted @ m.T, b, rcond=None)[0]
@@ -53,8 +65,10 @@ def hover_thrust_split(x_m: np.ndarray, y_m: np.ndarray, area_m2: np.ndarray,
         msg = "The CG cannot be balanced by the lift rotors (all rotors aligned with an offset CG)."
         raise ProjectError(msg)
     if np.any(fractions <= 0.0):
-        msg = (f"CG ({1000 * cg_m[0]:.0f}, {1000 * cg_m[1]:.0f}) mm outside the polygon of the lift rotors: "
-               f"thrust fractions {np.round(fractions, 3).tolist()}.")
+        msg = (
+            f"CG ({1000 * cg_m[0]:.0f}, {1000 * cg_m[1]:.0f}) mm outside the polygon of the lift rotors: "
+            f"thrust fractions {np.round(fractions, 3).tolist()}."
+        )
         raise ProjectError(msg)
     return fractions
 
@@ -70,26 +84,43 @@ class AircraftModel:
             another mass).
     """
 
-    def __init__(self, project: Project, db: MotorDatabase | None = None, aero_backend: AeroBackend | None = None,
-                 total_mass_kg: float | None = None) -> None:
+    def __init__(
+        self,
+        project: Project,
+        db: MotorDatabase | None = None,
+        aero_backend: AeroBackend | None = None,
+        total_mass_kg: float | None = None,
+    ) -> None:
         self.project = project
         self.db = db or default_database()
         self.wing_borne = project.architecture == "quadplane"
-        self.aero = (AeroModel(project.aero, aero_backend, project.environment)
-                     if (self.wing_borne and aero_backend is not None) else None)
+        self.aero = (
+            AeroModel(project.aero, aero_backend, project.environment)
+            if (self.wing_borne and aero_backend is not None)
+            else None
+        )
         self.drag_model = DragModel()
         self.battery = self._battery()
-        self.units: dict[str, PropulsionUnit] = {name: self._unit(spec) for name, spec in project.propulsion_units.items()}
-        self.rho = density(project.environment.altitude_m, project.environment.delta_isa_k)
+        self.units: dict[str, PropulsionUnit] = {
+            name: self._unit(spec) for name, spec in project.propulsion_units.items()
+        }
+        self.rho = density(
+            project.environment.altitude_m, project.environment.delta_isa_k
+        )
         self.mass = self._mass()
         if total_mass_kg is not None:
             self.mass["total_kg"] = total_mass_kg
         self.lift_motors: list[MotorSlot] = project.lift_motors()
-        self.cruise_motors: list[MotorSlot] = project.cruise_motors() if self.wing_borne else []
+        self.cruise_motors: list[MotorSlot] = (
+            project.cruise_motors() if self.wing_borne else []
+        )
         self.hover_fractions = hover_thrust_split(
-            np.array([m.x_mm * MM for m in self.lift_motors]), np.array([m.y_mm * MM for m in self.lift_motors]),
+            np.array([m.x_mm * MM for m in self.lift_motors]),
+            np.array([m.y_mm * MM for m in self.lift_motors]),
             np.array([self.disc_area_m2(m) for m in self.lift_motors]),
-            None if project.cg_x_mm is None else (project.cg_x_mm * MM, project.cg_y_mm * MM),
+            None
+            if project.cg_x_mm is None
+            else (project.cg_x_mm * MM, project.cg_y_mm * MM),
         )
 
     # --- components ----------------------------------------------------------
@@ -97,8 +128,12 @@ class AircraftModel:
     def _battery(self) -> BatteryModel:
         spec = self.project.battery
         if spec.mode == "mass":
-            return BatteryModel.from_mass(spec.chemistry, spec.n_series, spec.mass_g / 1000.0)
-        return BatteryModel.from_capacity(spec.chemistry, spec.n_series, spec.capacity_mah)
+            return BatteryModel.from_mass(
+                spec.chemistry, spec.n_series, spec.mass_g / 1000.0
+            )
+        return BatteryModel.from_capacity(
+            spec.chemistry, spec.n_series, spec.capacity_mah
+        )
 
     def _unit(self, spec: PropulsionSpec) -> PropulsionUnit:
         return PropulsionUnit(
@@ -120,13 +155,19 @@ class AircraftModel:
 
     def disc_area_m2(self, motor: MotorSlot) -> float:
         """Propeller disc area of a motor (m²)."""
-        return np.pi * (self.project.propulsion_units[motor.unit].prop_diameter_in * INCH) ** 2 / 4.0
+        return (
+            np.pi
+            * (self.project.propulsion_units[motor.unit].prop_diameter_in * INCH) ** 2
+            / 4.0
+        )
 
     def _mass(self) -> dict:
         p = self.project
         return MassBudget().evaluate({
             "mass_items": [(i.category, i.mass_g / 1000.0) for i in p.mass_items],
-            "propulsion_items": [(ROLE_CATEGORY[m.role], self.units[m.unit].mass_kg) for m in p.motors],
+            "propulsion_items": [
+                (ROLE_CATEGORY[m.role], self.units[m.unit].mass_kg) for m in p.motors
+            ],
             "battery_mass_kg": self.battery.p.mass_kg,
             "max_takeoff_mass_kg": p.max_takeoff_mass_kg,
         })
@@ -149,23 +190,31 @@ class AircraftModel:
         value = self.project.mission.download_factor
         return value if value is not None else (1.05 if self.wing_borne else 1.0)
 
-    def hover_loads(self, total_thrust_n: float | np.ndarray) -> list[tuple[PropulsionUnit, np.ndarray]]:
+    def hover_loads(
+        self, total_thrust_n: float | np.ndarray
+    ) -> list[tuple[PropulsionUnit, np.ndarray]]:
         """(unit, thrust) of each lift rotor for a total vertical thrust."""
-        return [(self.unit_of(m), f * np.asarray(total_thrust_n, dtype=float))
-                for m, f in zip(self.lift_motors, self.hover_fractions)]
+        return [
+            (self.unit_of(m), f * np.asarray(total_thrust_n, dtype=float))
+            for m, f in zip(self.lift_motors, self.hover_fractions, strict=False)
+        ]
 
-    def cruise_loads(self, thrust_n: np.ndarray) -> list[tuple[PropulsionUnit, np.ndarray]]:
+    def cruise_loads(
+        self, thrust_n: np.ndarray
+    ) -> list[tuple[PropulsionUnit, np.ndarray]]:
         """(unit, thrust) of each cruise motor of a wing-borne aircraft, shared by disc area."""
         areas = np.array([self.disc_area_m2(m) for m in self.cruise_motors])
-        return [(self.unit_of(m), a / areas.sum() * np.asarray(thrust_n, dtype=float))
-                for m, a in zip(self.cruise_motors, areas)]
+        return [
+            (self.unit_of(m), a / areas.sum() * np.asarray(thrust_n, dtype=float))
+            for m, a in zip(self.cruise_motors, areas, strict=False)
+        ]
 
     def lift_thrust_to_weight(self) -> float:
         """Largest total lift thrust keeping the hover split, over the weight, at nominal voltage."""
         v0 = self.battery.open_circuit_voltage
         cache: dict[str, float] = {}
         limits = []
-        for m, f in zip(self.lift_motors, self.hover_fractions):
+        for m, f in zip(self.lift_motors, self.hover_fractions, strict=False):
             if m.unit not in cache:
                 cache[m.unit] = self.unit_of(m).max_thrust(self.rho, v0)
             limits.append(cache[m.unit] / f)
@@ -178,12 +227,20 @@ class AircraftModel:
         out = []
         for s in self.project.drag_sources:
             if s.kind in ("v_arms", "body_part"):
-                out.append({"kind": "cds", "count": 1, "cds_m2": source_cds(s, self.project, self.drag_model).cds_m2})
+                out.append({
+                    "kind": "cds",
+                    "count": 1,
+                    "cds_m2": source_cds(s, self.project, self.drag_model).cds_m2,
+                })
                 continue
             out.append({
-                "kind": s.kind, "count": s.count, "n_blades": s.n_blades,
-                "diameter_m": (s.diameter_mm or 0) * MM, "length_m": (s.length_mm or 0) * MM,
-                "blade_chord_m": (s.blade_chord_mm or 0) * MM, "radius_m": (s.radius_mm or 0) * MM,
+                "kind": s.kind,
+                "count": s.count,
+                "n_blades": s.n_blades,
+                "diameter_m": (s.diameter_mm or 0) * MM,
+                "length_m": (s.length_mm or 0) * MM,
+                "blade_chord_m": (s.blade_chord_mm or 0) * MM,
+                "radius_m": (s.radius_mm or 0) * MM,
                 "cds_m2": s.cds_m2 or 0.0,
             })
         return out

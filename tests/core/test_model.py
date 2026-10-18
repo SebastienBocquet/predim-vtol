@@ -60,15 +60,21 @@ def test_describe_tables():
     md = _Square.describe().to_markdown()
     assert "| `k` | k | — | gain | 2.0 | ≥ 0 | test |" in md
     assert "| `c` | c | m² | offset | project | — | — |" in md
-    assert "### Inputs" in md and "### Outputs" in md
+    assert "### Inputs" in md
+    assert "### Outputs" in md
 
 
 def test_write_interface(tmp_path):
     card = tmp_path / "card.md"
-    card.write_text("# t\n<!-- interface:start -->\nold\n<!-- interface:end -->\nend\n", encoding="utf-8")
+    card.write_text(
+        "# t\n<!-- interface:start -->\nold\n<!-- interface:end -->\nend\n",
+        encoding="utf-8",
+    )
     assert write_interface(_Square, card)
     text = card.read_text(encoding="utf-8")
-    assert "old" not in text and "`k`" in text and text.endswith("end\n")
+    assert "old" not in text
+    assert "`k`" in text
+    assert text.endswith("end\n")
     assert not write_interface(_Square, card)
 
 

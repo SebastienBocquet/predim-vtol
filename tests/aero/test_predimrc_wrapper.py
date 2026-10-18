@@ -80,7 +80,7 @@ def test_invalid_label(predimrc, reference_case):
 def test_cz_reg_resolution(predimrc, reference_case):
     case = copy.deepcopy(reference_case)
     case["settings"] = Settings(mass=1920.0, static_margin=5.0, cz_reg=0.32)
-    with pytest.raises(ValueError, match="multiple of 0.05"):
+    with pytest.raises(ValueError, match=r"multiple of 0\.05"):
         predimrc.run(**case)
 
 
@@ -93,8 +93,11 @@ def test_template_unchanged(reference_case):
     before = hashlib.sha256(path.read_bytes()).hexdigest()
     with PredimRCWrapper(template_dir=PROFILES) as wrapper:
         wrapper.run(**reference_case)
-    with pytest.raises(PredimRCError), PredimRCWrapper(template_dir=PROFILES) as wrapper:
-        case = copy.deepcopy(reference_case)
-        case["stab"].profile = "unknown"
+    case = copy.deepcopy(reference_case)
+    case["stab"].profile = "unknown"
+    with (
+        pytest.raises(PredimRCError),
+        PredimRCWrapper(template_dir=PROFILES) as wrapper,
+    ):
         wrapper.run(**case)
     assert hashlib.sha256(path.read_bytes()).hexdigest() == before

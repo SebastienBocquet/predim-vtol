@@ -7,7 +7,9 @@ from predimrc_wrapper.predimrc_wrapper import Settings
 from predimrc_wrapper.predimrc_wrapper import StabGeometry
 from predimrc_wrapper.predimrc_wrapper import WingGeometry
 
-with PredimRCWrapper(profile="SD7003", template_dir=SRC_DIR / "../../profiles", visible=True) as w:
+with PredimRCWrapper(
+    profile="SD7003", template_dir=SRC_DIR / "../../profiles", visible=True
+) as w:
     result = w.run(
         WingGeometry(
             root_chord=200.0,

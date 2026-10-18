@@ -26,7 +26,6 @@ instead of re-calibrating.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -36,6 +35,8 @@ from predimrc_wrapper.aircraft.model import AircraftModel
 from predimrc_wrapper.mission.powers import SegmentPower
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from predimrc_wrapper.aircraft.project import Project
     from predimrc_wrapper.predimrc_wrapper import AeroBackend
 
@@ -65,7 +66,9 @@ class CalibrationReport:
         return [asdict(p) for p in self.points]
 
 
-def _solve(residual: Callable[[float], float], low: float, high: float) -> tuple[float, str]:
+def _solve(
+    residual: Callable[[float], float], low: float, high: float
+) -> tuple[float, str]:
     """Root of a monotonic residual on [low, high] by bisection; the closest bound otherwise."""
     r_low, r_high = residual(low), residual(high)
     if r_low * r_high > 0:
@@ -81,16 +84,34 @@ def _solve(residual: Callable[[float], float], low: float, high: float) -> tuple
     return 0.5 * (low + high), ""
 
 
-def _power(project: Project, kind: str, v: float, mass_kg: float | None, backend: AeroBackend | None) -> float:
+def _power(
+    project: Project,
+    kind: str,
+    v: float,
+    mass_kg: float | None,
+    backend: AeroBackend | None,
+) -> float:
     aircraft = AircraftModel(project, aero_backend=backend, total_mass_kg=mass_kg)
-    return float(SegmentPower(aircraft).evaluate({"kind": kind, "v_m_s": v})["battery_power_w"])
+    return float(
+        SegmentPower(aircraft).evaluate({"kind": kind, "v_m_s": v})["battery_power_w"]
+    )
 
 
-def _scaled(project: Project, units: list[str], field_name: str, base: dict[str, float], k: float) -> Project:
-    return project.with_overrides({f"propulsion_units.{u}.{field_name}": base[u] * k for u in units})
+def _scaled(
+    project: Project,
+    units: list[str],
+    field_name: str,
+    base: dict[str, float],
+    k: float,
+) -> Project:
+    return project.with_overrides({
+        f"propulsion_units.{u}.{field_name}": base[u] * k for u in units
+    })
 
 
-def calibrate(project: Project, backend: AeroBackend | None = None) -> tuple[Project, CalibrationReport]:
+def calibrate(
+    project: Project, backend: AeroBackend | None = None
+) -> tuple[Project, CalibrationReport]:
     """Calibrated copy of a project (``calibration`` block removed) and the report.
 
     Args:
@@ -109,19 +130,41 @@ def calibrate(project: Project, backend: AeroBackend | None = None) -> tuple[Pro
         top = max(base.values())
 
         def hover(k: float) -> float:
-            return _power(_scaled(current, units, "figure_of_merit", base, k), "hover", 0.0, spec.hover.mass_kg, backend)
+            return _power(
+                _scaled(current, units, "figure_of_merit", base, k),
+                "hover",
+                0.0,
+                spec.hover.mass_kg,
+                backend,
+            )
 
         before = hover(1.0)
-        k, note = _solve(lambda k: hover(k) - spec.hover.battery_power_w, 0.2 / top, 0.95 / top)
+        k, note = _solve(
+            lambda k: hover(k) - spec.hover.battery_power_w, 0.2 / top, 0.95 / top
+        )
         current = _scaled(current, units, "figure_of_merit", base, k)
-        report.points.append(CalibrationPoint(
-            "hover", spec.hover.battery_power_w, before, hover(k), "figure_of_merit", base,
-            {u: base[u] * k for u in units}, k, note))
+        report.points.append(
+            CalibrationPoint(
+                "hover",
+                spec.hover.battery_power_w,
+                before,
+                hover(k),
+                "figure_of_merit",
+                base,
+                {u: base[u] * k for u in units},
+                k,
+                note,
+            )
+        )
 
     if spec.cruise is not None:
         parameter = spec.cruise_parameter
         if parameter == "auto":
-            parameter = "propeller_efficiency" if current.architecture == "quadplane" else "drag"
+            parameter = (
+                "propeller_efficiency"
+                if current.architecture == "quadplane"
+                else "drag"
+            )
         c = spec.cruise
         if parameter == "propeller_efficiency":
             if current.architecture != "quadplane":
@@ -139,7 +182,9 @@ def calibrate(project: Project, backend: AeroBackend | None = None) -> tuple[Pro
             base = {"mission": current.mission.drag_factor}
 
             def variant(k: float) -> Project:
-                return current.with_overrides({"mission.drag_factor": base["mission"] * k})
+                return current.with_overrides({
+                    "mission.drag_factor": base["mission"] * k
+                })
 
             low, high, name = 0.2, 5.0, "drag_factor"
 
@@ -149,6 +194,17 @@ def calibrate(project: Project, backend: AeroBackend | None = None) -> tuple[Pro
         before = cruise(1.0)
         k, note = _solve(lambda k: cruise(k) - c.battery_power_w, low, high)
         current = variant(k)
-        report.points.append(CalibrationPoint(
-            "cruise", c.battery_power_w, before, cruise(k), name, base, {u: v * k for u, v in base.items()}, k, note))
+        report.points.append(
+            CalibrationPoint(
+                "cruise",
+                c.battery_power_w,
+                before,
+                cruise(k),
+                name,
+                base,
+                {u: v * k for u, v in base.items()},
+                k,
+                note,
+            )
+        )
     return current, report

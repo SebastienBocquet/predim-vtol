@@ -10,16 +10,19 @@ from __future__ import annotations
 
 from abc import ABC
 from abc import abstractmethod
-from collections.abc import Callable
-from collections.abc import Mapping
 from dataclasses import dataclass
 from dataclasses import field
 from types import MappingProxyType
 from types import SimpleNamespace
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import ClassVar
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from collections.abc import Mapping
 
 Bounds = tuple[float | None, float | None]
 """Physical bounds ``(lower, upper)``; ``None`` means unbounded."""
@@ -98,7 +101,9 @@ def params(*items: Param) -> MappingProxyType:
 
 def _check_bounds(name: str, value: Any, bounds: Bounds) -> None:
     lower, upper = bounds
-    values = np.atleast_1d(np.asarray(value, dtype=float)) if _is_numeric(value) else None
+    values = (
+        np.atleast_1d(np.asarray(value, dtype=float)) if _is_numeric(value) else None
+    )
     if values is None:
         return
     if lower is not None and np.any(values < lower):
@@ -134,10 +139,12 @@ class ScalingLaw:
     def slope(self, model: Model) -> float:
         """Return the log-log slope of the output with respect to the input."""
         x = np.geomspace(self.lower, self.upper, 12)
-        y = np.array(
-            [float(np.asarray(model.evaluate({**self.fixed, self.input: xi})[self.output]))
-             for xi in x]
-        )
+        y = np.array([
+            float(
+                np.asarray(model.evaluate({**self.fixed, self.input: xi})[self.output])
+            )
+            for xi in x
+        ])
         return float(np.polyfit(np.log(x), np.log(y), 1)[0])
 
 
@@ -221,7 +228,9 @@ class Model(ABC):
             The output values (SI), by port name.
         """
 
-    def check_io(self, x: Mapping[str, Any] | None, y: Mapping[str, Any] | None) -> None:
+    def check_io(
+        self, x: Mapping[str, Any] | None, y: Mapping[str, Any] | None
+    ) -> None:
         """Check inputs and outputs against their physical bounds."""
         for values, declared in ((x, self.inputs), (y, self.outputs)):
             if values is None:
@@ -246,6 +255,8 @@ class CompositeModel(Model, ABC):
         **values: The parameter values of the composite itself.
     """
 
-    def __init__(self, submodels: Mapping[str, Model] | None = None, **values: Any) -> None:
+    def __init__(
+        self, submodels: Mapping[str, Model] | None = None, **values: Any
+    ) -> None:
         super().__init__(**values)
         self.submodels = dict(submodels or {})

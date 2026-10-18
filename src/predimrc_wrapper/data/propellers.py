@@ -14,7 +14,17 @@ import yaml
 from predimrc_wrapper.data.database import DatabaseError
 from predimrc_wrapper.data.user import user_data_dir
 
-REQUIRED = ("id", "manufacturer", "name", "diameter_in", "pitch_in", "n_blades", "source", "retrieved", "status")
+REQUIRED = (
+    "id",
+    "manufacturer",
+    "name",
+    "diameter_in",
+    "pitch_in",
+    "n_blades",
+    "source",
+    "retrieved",
+    "status",
+)
 
 
 @dataclass(frozen=True)
@@ -48,10 +58,18 @@ def _parse(raw: dict, origin: str) -> PropellerRecord:
         raise DatabaseError(msg)
     retrieved = raw["retrieved"]
     return PropellerRecord(
-        id=raw["id"], manufacturer=raw["manufacturer"], name=raw["name"],
-        diameter_in=float(raw["diameter_in"]), pitch_in=float(raw["pitch_in"]), n_blades=int(raw["n_blades"]),
-        source=raw["source"], retrieved=retrieved.isoformat() if isinstance(retrieved, date) else str(retrieved),
-        status=raw["status"], mass_g=None if raw.get("mass_g") is None else float(raw["mass_g"]),
+        id=raw["id"],
+        manufacturer=raw["manufacturer"],
+        name=raw["name"],
+        diameter_in=float(raw["diameter_in"]),
+        pitch_in=float(raw["pitch_in"]),
+        n_blades=int(raw["n_blades"]),
+        source=raw["source"],
+        retrieved=retrieved.isoformat()
+        if isinstance(retrieved, date)
+        else str(retrieved),
+        status=raw["status"],
+        mass_g=None if raw.get("mass_g") is None else float(raw["mass_g"]),
         notes=raw.get("notes", ""),
     )
 
@@ -67,8 +85,12 @@ class PropellerDatabase:
         """Load the shipped file then ``<user data>/propellers.yaml`` (or the given files, in order)."""
         texts = []
         if paths is None:
-            texts.append(("propellers.yaml", files("predimrc_wrapper.data").joinpath("propellers.yaml")
-                          .read_text(encoding="utf-8")))
+            texts.append((
+                "propellers.yaml",
+                files("predimrc_wrapper.data")
+                .joinpath("propellers.yaml")
+                .read_text(encoding="utf-8"),
+            ))
             user = user_data_dir() / "propellers.yaml"
             if user.is_file():
                 texts.append((str(user), user.read_text(encoding="utf-8")))
@@ -96,7 +118,11 @@ class PropellerDatabase:
 
     def ids(self, diameter_in: float | None = None) -> list[str]:
         """Sorted ids, optionally of one diameter."""
-        return sorted(k for k, r in self.records.items() if diameter_in is None or abs(r.diameter_in - diameter_in) < 1e-9)
+        return sorted(
+            k
+            for k, r in self.records.items()
+            if diameter_in is None or abs(r.diameter_in - diameter_in) < 1e-9
+        )
 
 
 @cache

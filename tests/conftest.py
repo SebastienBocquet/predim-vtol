@@ -24,7 +24,9 @@ def _excel_available() -> bool:
 
 
 EXCEL = _excel_available()
-requires_excel = pytest.mark.skipif(not EXCEL, reason="Excel and PredimRC workbook required")
+requires_excel = pytest.mark.skipif(
+    not EXCEL, reason="Excel and PredimRC workbook required"
+)
 
 
 @pytest.fixture(scope="session")

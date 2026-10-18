@@ -12,6 +12,7 @@ deviation σ_r, 95 % interval P·exp(±1.96 σ_r).
 from __future__ import annotations
 
 import hashlib
+import operator
 import warnings
 from dataclasses import dataclass
 from dataclasses import field
@@ -63,21 +64,51 @@ class Pair:
     pitch_m: float
 
     @classmethod
-    def of(cls, motor_id: str, propeller_id: str, motors: MotorDatabase | None = None,
-           propellers: PropellerDatabase | None = None) -> Pair:
+    def of(
+        cls,
+        motor_id: str,
+        propeller_id: str,
+        motors: MotorDatabase | None = None,
+        propellers: PropellerDatabase | None = None,
+    ) -> Pair:
         m = (motors or default_database()).motor(motor_id)
         p = (propellers or default_propellers()).propeller(propeller_id)
-        return cls(motor_id, propeller_id, m.kv, m.r_m, m.i0, m.p_max, p.diameter_in * INCH, p.pitch_in * INCH)
+        return cls(
+            motor_id,
+            propeller_id,
+            m.kv,
+            m.r_m,
+            m.i0,
+            m.p_max,
+            p.diameter_in * INCH,
+            p.pitch_in * INCH,
+        )
 
     @classmethod
-    def custom(cls, motor_id: str, diameter_in: float, pitch_in: float, motors: MotorDatabase | None = None) -> Pair:
+    def custom(
+        cls,
+        motor_id: str,
+        diameter_in: float,
+        pitch_in: float,
+        motors: MotorDatabase | None = None,
+    ) -> Pair:
         """A pair whose propeller is not in the database (given by diameter and pitch)."""
         m = (motors or default_database()).motor(motor_id)
-        return cls(motor_id, f"{diameter_in:g}x{pitch_in:g}", m.kv, m.r_m, m.i0, m.p_max, diameter_in * INCH,
-                   pitch_in * INCH)
+        return cls(
+            motor_id,
+            f"{diameter_in:g}x{pitch_in:g}",
+            m.kv,
+            m.r_m,
+            m.i0,
+            m.p_max,
+            diameter_in * INCH,
+            pitch_in * INCH,
+        )
 
 
-def physics_mean(pair: Pair, thrust_n, voltage_v, rho: float = TEST_RHO, esc_input: bool = False) -> dict[str, np.ndarray]:
+def physics_mean(
+    pair: Pair, thrust_n, voltage_v, rho: float = TEST_RHO, esc_input: bool = False
+) -> dict[str, np.ndarray]:
     """Static electric power (W), supply current (A) and rpm of a pair at a thrust (physics only).
 
     The current is the DC current drawn at the supply voltage, I = P / U, as in the
@@ -88,21 +119,35 @@ def physics_mean(pair: Pair, thrust_n, voltage_v, rho: float = TEST_RHO, esc_inp
     n = bem.n_for_thrust(t, 0.0, rho, n_max=1500.0)
     y = bem.evaluate({"n_rev_s": np.nan_to_num(n, nan=1.0), "v_m_s": 0.0, "rho": rho})
     omega = 2.0 * np.pi * np.nan_to_num(n, nan=1.0)
-    motor = MotorModel(kv=pair.kv, r_m=pair.r_m, i0=pair.i0, i_max=1e9, p_max=1e9, mass_kg=0.0)
-    mot = motor.evaluate({"torque_nm": y["shaft_power_w"] / omega, "omega_rad_s": omega})
+    motor = MotorModel(
+        kv=pair.kv, r_m=pair.r_m, i0=pair.i0, i_max=1e9, p_max=1e9, mass_kg=0.0
+    )
+    mot = motor.evaluate({
+        "torque_nm": y["shaft_power_w"] / omega,
+        "omega_rad_s": omega,
+    })
     power = mot["power_elec_w"] / (ESC_EFFICIENCY if esc_input else 1.0)
     bad = ~np.isfinite(n)
-    return {"power_w": np.where(bad, np.nan, power),
-            "current_a": np.where(bad, np.nan, power / np.asarray(voltage_v, dtype=float)),
-            "rpm": np.where(bad, np.nan, 60.0 * n)}
+    return {
+        "power_w": np.where(bad, np.nan, power),
+        "current_a": np.where(bad, np.nan, power / np.asarray(voltage_v, dtype=float)),
+        "rpm": np.where(bad, np.nan, 60.0 * n),
+    }
 
 
 def features(pair: Pair, thrust_n, voltage_v) -> np.ndarray:
     """GP inputs (ln T, D, P/D, ln Kv, ln U), one row per point."""
-    t, u = np.broadcast_arrays(np.asarray(thrust_n, dtype=float), np.asarray(voltage_v, dtype=float))
+    t, u = np.broadcast_arrays(
+        np.asarray(thrust_n, dtype=float), np.asarray(voltage_v, dtype=float)
+    )
     ones = np.ones_like(t)
-    return np.column_stack([np.log(t), pair.diameter_m * ones, pair.pitch_m / pair.diameter_m * ones,
-                            np.log(pair.kv) * ones, np.log(u)])
+    return np.column_stack([
+        np.log(t),
+        pair.diameter_m * ones,
+        pair.pitch_m / pair.diameter_m * ones,
+        np.log(pair.kv) * ones,
+        np.log(u),
+    ])
 
 
 @dataclass
@@ -125,7 +170,9 @@ class Prediction:
 
     def interval95(self) -> tuple[np.ndarray, np.ndarray]:
         """95 % interval of the power (W)."""
-        return self.power_w * np.exp(-1.96 * self.sd_rel), self.power_w * np.exp(1.96 * self.sd_rel)
+        return self.power_w * np.exp(-1.96 * self.sd_rel), self.power_w * np.exp(
+            1.96 * self.sd_rel
+        )
 
 
 @dataclass
@@ -150,25 +197,48 @@ class ValidationReport:
 
 
 def _kernel(n_features: int):
-    return (ConstantKernel(0.01, (1e-6, 10.0)) * Matern(np.ones(n_features), (1e-2, 1e3), nu=2.5)
-            + WhiteKernel(1e-4, (1e-8, 1e-1)))
+    return ConstantKernel(0.01, (1e-6, 10.0)) * Matern(
+        np.ones(n_features), (1e-2, 1e3), nu=2.5
+    ) + WhiteKernel(1e-4, (1e-8, 1e-1))
 
 
 class ThrustPowerFit:
     """The Gaussian processes fitted on a test database (one per output)."""
 
-    def __init__(self, tests: TestDatabase, motors: MotorDatabase | None = None,
-                 propellers: PropellerDatabase | None = None, seed: int = 0) -> None:
-        self.tests, self.motors, self.propellers, self.seed = tests, motors, propellers, seed
+    def __init__(
+        self,
+        tests: TestDatabase,
+        motors: MotorDatabase | None = None,
+        propellers: PropellerDatabase | None = None,
+        seed: int = 0,
+    ) -> None:
+        self.tests, self.motors, self.propellers, self.seed = (
+            tests,
+            motors,
+            propellers,
+            seed,
+        )
         rows, targets, groups, physics = [], {k: [] for k in OUTPUTS}, [], []
         self.pairs: dict[tuple[str, str], Pair] = {}
         self.max_thrust: dict[tuple[str, str], float] = {}
         for test in tests.records.values():
             pair = Pair.of(test.motor_id, test.propeller_id, motors, propellers)
             self.pairs[test.pair] = pair
-            self.max_thrust[test.pair] = max(self.max_thrust.get(test.pair, 0.0), test.max_thrust_n)
-            phys = physics_mean(pair, test.thrust_n, test.voltage, TEST_RHO, test.measured_at == "esc_input")
-            data = {"power_w": test.power_w, "current_a": test.current_a, "rpm": test.rpm}
+            self.max_thrust[test.pair] = max(
+                self.max_thrust.get(test.pair, 0.0), test.max_thrust_n
+            )
+            phys = physics_mean(
+                pair,
+                test.thrust_n,
+                test.voltage,
+                TEST_RHO,
+                test.measured_at == "esc_input",
+            )
+            data = {
+                "power_w": test.power_w,
+                "current_a": test.current_a,
+                "rpm": test.rpm,
+            }
             ok = np.isfinite(phys["power_w"])
             rows.append(features(pair, test.thrust_n, test.voltage)[ok])
             groups += [f"{test.motor_id}|{test.propeller_id}"] * int(ok.sum())
@@ -176,24 +246,34 @@ class ThrustPowerFit:
             for k in OUTPUTS:
                 targets[k].append(np.log(data[k][ok] / phys[k][ok]))
         self.x = np.vstack(rows) if rows else np.zeros((0, 5))
-        self.y = {k: np.concatenate(v) if v else np.zeros(0) for k, v in targets.items()}
+        self.y = {
+            k: np.concatenate(v) if v else np.zeros(0) for k, v in targets.items()
+        }
         self.groups = np.asarray(groups)
         self.physics_ratio = np.concatenate(physics) if physics else np.zeros(0)
-        self.x_min, self.x_max = (self.x.min(axis=0), self.x.max(axis=0)) if len(self.x) else (None, None)
+        self.x_min, self.x_max = (
+            (self.x.min(axis=0), self.x.max(axis=0)) if len(self.x) else (None, None)
+        )
         self.gps: dict[str, GaussianProcessRegressor] = {}
         for k in OUTPUTS:
             y = self.y[k]
             finite = np.isfinite(y)
             if finite.sum() < 3:
                 continue
-            gp = GaussianProcessRegressor(_kernel(self.x.shape[1]), normalize_y=True, n_restarts_optimizer=3,
-                                          random_state=seed)
+            gp = GaussianProcessRegressor(
+                _kernel(self.x.shape[1]),
+                normalize_y=True,
+                n_restarts_optimizer=3,
+                random_state=seed,
+            )
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore", ConvergenceWarning)
                 gp.fit(self.x[finite], y[finite])
             self.gps[k] = gp
         # Residual σ of the physics alone, used when no data covers a prediction.
-        self.physics_sd = float(np.std(self.y["power_w"])) if len(self.y["power_w"]) else 0.25
+        self.physics_sd = (
+            float(np.std(self.y["power_w"])) if len(self.y["power_w"]) else 0.25
+        )
 
     def correction(self, key: str, x: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
         """Mean and standard deviation of the log correction (zero mean, physics σ without GP)."""
@@ -223,7 +303,9 @@ class ThrustPowerFit:
         mean, sd = np.full(len(self.x), np.nan), np.full(len(self.x), np.nan)
         for g in np.unique(self.groups):
             out = self.groups == g
-            gp = GaussianProcessRegressor(self.gps[key].kernel_, normalize_y=True, optimizer=None)
+            gp = GaussianProcessRegressor(
+                self.gps[key].kernel_, normalize_y=True, optimizer=None
+            )
             gp.fit(self.x[~out], self.y[key][~out])
             mean[out], sd[out] = gp.predict(self.x[out], return_std=True)
         return mean, sd
@@ -237,17 +319,26 @@ class ThrustPowerFit:
         per_pair = {}
         for g in np.unique(self.groups):
             sel = self.groups == g
-            per_pair[g] = {"n": int(sel.sum()), "loo_mean_rel_err": float(loo_err[sel].mean()),
-                           "lopo_mean_rel_err": float(lopo_err[sel].mean()),
-                           "physics_mean_rel_err": float(np.abs(self.physics_ratio[sel] - 1).mean())}
+            per_pair[g] = {
+                "n": int(sel.sum()),
+                "loo_mean_rel_err": float(loo_err[sel].mean()),
+                "lopo_mean_rel_err": float(lopo_err[sel].mean()),
+                "physics_mean_rel_err": float(
+                    np.abs(self.physics_ratio[sel] - 1).mean()
+                ),
+            }
         return ValidationReport(
-            n_points=len(y), n_pairs=len(per_pair),
-            loo_mean_rel_err=float(loo_err.mean()), loo_max_rel_err=float(loo_err.max()),
+            n_points=len(y),
+            n_pairs=len(per_pair),
+            loo_mean_rel_err=float(loo_err.mean()),
+            loo_max_rel_err=float(loo_err.max()),
             loo_coverage_95=float(np.mean(np.abs(loo_m - y) <= 1.96 * loo_s)),
-            lopo_mean_rel_err=float(lopo_err.mean()), lopo_max_rel_err=float(lopo_err.max()),
+            lopo_mean_rel_err=float(lopo_err.mean()),
+            lopo_max_rel_err=float(lopo_err.max()),
             lopo_coverage_95=float(np.mean(np.abs(lopo_m - y) <= 1.96 * lopo_s)),
             physics_mean_rel_err=float(np.abs(self.physics_ratio - 1).mean()),
-            data_hash=self.tests.hash(), per_pair=per_pair,
+            data_hash=self.tests.hash(),
+            per_pair=per_pair,
         )
 
 
@@ -265,16 +356,25 @@ def _tested_point_within_band(model: ThrustPowerSurrogate) -> bool:
     fit = default_fit()
     test = fit.tests.tests(model.p.motor_id, model.p.propeller_id)[0]
     i = len(test.thrust_n) // 2
-    y = model.evaluate({"thrust_n": test.thrust_n[i], "battery_voltage_v": test.voltage[i], "rho": TEST_RHO})
-    return abs(np.log(test.power_w[i] / float(y["power_w"]))) <= 3.0 * float(y["power_sd_rel"])
+    y = model.evaluate({
+        "thrust_n": test.thrust_n[i],
+        "battery_voltage_v": test.voltage[i],
+        "rho": TEST_RHO,
+    })
+    return abs(np.log(test.power_w[i] / float(y["power_w"]))) <= 3.0 * float(
+        y["power_sd_rel"]
+    )
 
 
 def _uncertainty_grows_beyond_data(model: ThrustPowerSurrogate) -> bool:
     fit = default_fit()
-    t_max = fit.max_thrust[(model.p.motor_id, model.p.propeller_id)]
+    t_max = fit.max_thrust[model.p.motor_id, model.p.propeller_id]
     test = fit.tests.tests(model.p.motor_id, model.p.propeller_id)[0]
-    y = model.evaluate({"thrust_n": np.array([0.6 * t_max, 1.6 * t_max]), "battery_voltage_v": test.voltage_v,
-                        "rho": TEST_RHO})
+    y = model.evaluate({
+        "thrust_n": np.array([0.6 * t_max, 1.6 * t_max]),
+        "battery_voltage_v": test.voltage_v,
+        "rho": TEST_RHO,
+    })
     return bool(y["power_sd_rel"][1] > y["power_sd_rel"][0] and not y["trusted"][1])
 
 
@@ -291,29 +391,88 @@ class ThrustPowerSurrogate(Model):
     mic_id = "MIC-PROP-SUR"
     inputs = ports(
         Port("thrust_n", "T", "N", "static thrust of one rotor", (0, None)),
-        Port("battery_voltage_v", "U", "V", "voltage at the ESC / motor input", (0, None)),
+        Port(
+            "battery_voltage_v", "U", "V", "voltage at the ESC / motor input", (0, None)
+        ),
         Port("rho", "ρ", "kg/m³", "air density", (0, None)),
     )
     outputs = ports(
-        Port("power_w", "P", "W", "electric power at the measurement point of the data", (0, None)),
-        Port("power_sd_rel", "σ_rel", "—", "relative standard deviation of the power", (0, None)),
+        Port(
+            "power_w",
+            "P",
+            "W",
+            "electric power at the measurement point of the data",
+            (0, None),
+        ),
+        Port(
+            "power_sd_rel",
+            "σ_rel",
+            "—",
+            "relative standard deviation of the power",
+            (0, None),
+        ),
         Port("current_a", "I", "A", "current", (0, None)),
         Port("rpm", "N", "rpm", "rotation speed", (0, None)),
         Port("physics_power_w", "P_phys", "W", "physics mean of the power", (0, None)),
         Port("trusted", "—", "—", "inside the trusted domain"),
     )
     parameters = params(
-        Param("motor_id", "—", "—", "motor id", origin="project", source="motor database"),
-        Param("propeller_id", "—", "—", "propeller id, or 'DxP' for a propeller not in the database", origin="project", source="propeller database"),
-        Param("diameter_in", "D", "in", "propeller diameter when not in the database", default=None, source="project"),
-        Param("pitch_in", "P", "in", "propeller pitch when not in the database", default=None, source="project"),
-        Param("esc_input", "—", "—", "give the power at the ESC input (data measured there)", default=False, source="data"),
-        Param("max_sd_rel", "s_max", "—", "largest trusted relative standard deviation", default=0.05, bounds=(0, 1), source="designer, 2026-10-14"),
+        Param(
+            "motor_id", "—", "—", "motor id", origin="project", source="motor database"
+        ),
+        Param(
+            "propeller_id",
+            "—",
+            "—",
+            "propeller id, or 'DxP' for a propeller not in the database",
+            origin="project",
+            source="propeller database",
+        ),
+        Param(
+            "diameter_in",
+            "D",
+            "in",
+            "propeller diameter when not in the database",
+            default=None,
+            source="project",
+        ),
+        Param(
+            "pitch_in",
+            "P",
+            "in",
+            "propeller pitch when not in the database",
+            default=None,
+            source="project",
+        ),
+        Param(
+            "esc_input",
+            "—",
+            "—",
+            "give the power at the ESC input (data measured there)",
+            default=False,
+            source="data",
+        ),
+        Param(
+            "max_sd_rel",
+            "s_max",
+            "—",
+            "largest trusted relative standard deviation",
+            default=0.05,
+            bounds=(0, 1),
+            source="designer, 2026-10-14",
+        ),
     )
     expected_forms = [
-        Invariant("a tested point lies within 3σ of the prediction", _tested_point_within_band, params=_EXAMPLE),
-        Invariant("σ grows beyond the tested thrust, flagged untrusted", _uncertainty_grows_beyond_data,
-                  params=_EXAMPLE),
+        Invariant(
+            "a tested point lies within 3σ of the prediction",
+            _tested_point_within_band,
+            params=_EXAMPLE,
+        ),
+        Invariant(
+            "σ grows beyond the tested thrust, flagged untrusted",
+            _uncertainty_grows_beyond_data,
+            params=_EXAMPLE,
+        ),
     ]
 
     def __init__(self, fit: ThrustPowerFit | None = None, **values) -> None:
@@ -327,7 +486,11 @@ class ThrustPowerSurrogate(Model):
         if key in fit.pairs:
             return fit.pairs[key]
         if self.p.diameter_in is not None:
-            return Pair.custom(self.p.motor_id, self.p.diameter_in, self.p.pitch_in or self.p.diameter_in / 2)
+            return Pair.custom(
+                self.p.motor_id,
+                self.p.diameter_in,
+                self.p.pitch_in or self.p.diameter_in / 2,
+            )
         return Pair.of(self.p.motor_id, self.p.propeller_id)
 
     def predict(self, thrust_n, battery_voltage_v, rho: float = TEST_RHO) -> Prediction:
@@ -338,7 +501,11 @@ class ThrustPowerSurrogate(Model):
         phys = physics_mean(pair, t, u, rho, bool(self.p.esc_input))
         x = features(pair, np.maximum(t, 1e-6), u)
         key = (pair.motor_id, pair.propeller_id)
-        source = "tested_pair" if key in fit.max_thrust else ("untested_pair" if fit.gps else "physics_only")
+        source = (
+            "tested_pair"
+            if key in fit.max_thrust
+            else ("untested_pair" if fit.gps else "physics_only")
+        )
         out = {}
         for k in OUTPUTS:
             mu, sd = fit.correction(k, x)
@@ -346,24 +513,53 @@ class ThrustPowerSurrogate(Model):
             if k == "power_w":
                 sd_rel = sd
         reason = np.full(t.shape, "", dtype=object)
-        reason = np.where(sd_rel > self.p.max_sd_rel, "relative σ above the threshold", reason)
+        reason = np.where(
+            sd_rel > self.p.max_sd_rel, "relative σ above the threshold", reason
+        )
         if source == "tested_pair":
-            reason = np.where(t > fit.max_thrust[key] * (1 + 1e-9), "thrust beyond the tested range", reason)
+            reason = np.where(
+                t > fit.max_thrust[key] * (1 + 1e-9),
+                "thrust beyond the tested range",
+                reason,
+            )
         elif source == "untested_pair":
             inside = np.all((x >= fit.x_min - 1e-9) & (x <= fit.x_max + 1e-9), axis=1)
             reason = np.where(~inside, "outside the tested inputs", reason)
         else:
             reason = np.full(t.shape, "no test data", dtype=object)
-        reason = np.where(np.isfinite(phys["power_w"]), reason, "thrust not reachable by the physics model")
-        return Prediction(out["power_w"], out["power_w_sd"], out["current_a"], out["current_a_sd"], out["rpm"],
-                          out["rpm_sd"], sd_rel, reason == "", reason.astype(str), source, phys["power_w"])
+        reason = np.where(
+            np.isfinite(phys["power_w"]),
+            reason,
+            "thrust not reachable by the physics model",
+        )
+        return Prediction(
+            out["power_w"],
+            out["power_w_sd"],
+            out["current_a"],
+            out["current_a_sd"],
+            out["rpm"],
+            out["rpm_sd"],
+            sd_rel,
+            reason == "",
+            reason.astype(str),
+            source,
+            phys["power_w"],
+        )
 
     def evaluate(self, x):
-        p = self.predict(x["thrust_n"], x["battery_voltage_v"], float(x.get("rho", TEST_RHO)))
+        p = self.predict(
+            x["thrust_n"], x["battery_voltage_v"], float(x.get("rho", TEST_RHO))
+        )
         scalar = np.ndim(x["thrust_n"]) == 0
-        pick = (lambda a: a[0]) if scalar else (lambda a: a)
-        return {"power_w": pick(p.power_w), "power_sd_rel": pick(p.sd_rel), "current_a": pick(p.current_a),
-                "rpm": pick(p.rpm), "physics_power_w": pick(p.physics_power_w), "trusted": pick(p.trusted)}
+        pick = (operator.itemgetter(0)) if scalar else (lambda a: a)
+        return {
+            "power_w": pick(p.power_w),
+            "power_sd_rel": pick(p.sd_rel),
+            "current_a": pick(p.current_a),
+            "rpm": pick(p.rpm),
+            "physics_power_w": pick(p.physics_power_w),
+            "trusted": pick(p.trusted),
+        }
 
 
 def data_hash(tests: TestDatabase) -> str:

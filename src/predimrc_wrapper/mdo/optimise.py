@@ -6,7 +6,6 @@ from __future__ import annotations
 import itertools
 import logging
 import time
-from collections.abc import Callable
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -22,25 +21,45 @@ from predimrc_wrapper.mdo.discipline import PresizingDiscipline
 from predimrc_wrapper.mdo.parameters import build_design_space
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
+
     from predimrc_wrapper.aircraft import Project
     from predimrc_wrapper.mdo.parameters import Parameter
     from predimrc_wrapper.predimrc_wrapper import AeroBackend
 
-CONSTRAINTS = ("margin_motor_current", "margin_battery_c", "margin_thrust_to_weight", "margin_mass")
+CONSTRAINTS = (
+    "margin_motor_current",
+    "margin_battery_c",
+    "margin_thrust_to_weight",
+    "margin_mass",
+)
 """Default constraints (≥ 0) of the scenario mode."""
 
-CONSTRAINTS_TWO_PHASE = ("margin_motor_power", "margin_motor_current", "margin_battery_c", "margin_thrust_to_weight",
-                         "margin_mass")
+CONSTRAINTS_TWO_PHASE = (
+    "margin_motor_power",
+    "margin_motor_current",
+    "margin_battery_c",
+    "margin_thrust_to_weight",
+    "margin_mass",
+)
 """Default constraints (≥ 0) of the two-phase mode."""
 
-OBJECTIVES = {"flight_time": True, "range": True, "mass_total": False,
-              "flight_time_v1": True, "flight_time_v2": True, "range_v1": True, "range_v2": True}
+OBJECTIVES = {
+    "flight_time": True,
+    "range": True,
+    "mass_total": False,
+    "flight_time_v1": True,
+    "flight_time_v2": True,
+    "range_v1": True,
+    "range_v2": True,
+}
 """Objectives offered, with whether they are maximised (``*_v1``, ``*_v2``: two-phase mode)."""
 
 
 def mode_of(objective: str) -> str:
     """The discipline mode giving an objective."""
     return "two_phase" if objective.endswith(("_v1", "_v2")) else "scenario"
+
 
 ALGORITHMS = ("SLSQP", "NLOPT_COBYLA", "COBYQA", "NLOPT_SLSQP")
 """Algorithms offered, when installed (NLOPT_* need ``gemseo[all]``)."""
@@ -81,10 +100,16 @@ class OptimisationSummary:
 
     @property
     def best(self) -> OptimisationRun | None:
-        candidates = [r for r in self.runs if r.feasible and not r.error] or [r for r in self.runs if not r.error]
+        candidates = [r for r in self.runs if r.feasible and not r.error] or [
+            r for r in self.runs if not r.error
+        ]
         if not candidates:
             return None
-        key = (lambda r: r.outputs[self.objective]) if self.maximize else (lambda r: -r.outputs[self.objective])
+        key = (
+            (lambda r: r.outputs[self.objective])
+            if self.maximize
+            else (lambda r: -r.outputs[self.objective])
+        )
         return max(candidates, key=key)
 
     def best_overrides(self, continuous: list[Parameter]) -> dict[str, Any]:
@@ -93,19 +118,39 @@ class OptimisationSummary:
         if best is None:
             return {}
         by_name = {p.name: p for p in continuous}
-        return {**best.choice, **{by_name[k].path: by_name[k].to_project_value(v) for k, v in best.x.items()}}
+        return {
+            **best.choice,
+            **{
+                by_name[k].path: by_name[k].to_project_value(v)
+                for k, v in best.x.items()
+            },
+        }
 
     def to_dict(self) -> dict[str, Any]:
         best = self.best
-        return {"objective": self.objective, "maximize": self.maximize, "seconds": self.seconds, "mode": self.mode,
-                "best": asdict(best) if best else None, "all": [asdict(r) for r in self.runs]}
+        return {
+            "objective": self.objective,
+            "maximize": self.maximize,
+            "seconds": self.seconds,
+            "mode": self.mode,
+            "best": asdict(best) if best else None,
+            "all": [asdict(r) for r in self.runs],
+        }
 
 
-def optimise(project: Project, continuous: list[Parameter], discrete: dict[str, list] | None = None,
-             objective: str = "flight_time", constraints: tuple[str, ...] | None = None, algo: str = "SLSQP",
-             max_iter: int = 60, backend: AeroBackend | None = None,
-             progress: Callable[[int, int, dict], None] | None = None, max_sd_rel: float | None = None,
-             mode: str | None = None) -> OptimisationSummary:
+def optimise(
+    project: Project,
+    continuous: list[Parameter],
+    discrete: dict[str, list] | None = None,
+    objective: str = "flight_time",
+    constraints: tuple[str, ...] | None = None,
+    algo: str = "SLSQP",
+    max_iter: int = 60,
+    backend: AeroBackend | None = None,
+    progress: Callable[[int, int, dict], None] | None = None,
+    max_sd_rel: float | None = None,
+    mode: str | None = None,
+) -> OptimisationSummary:
     """Optimise the objective for every combination of the discrete choices.
 
     Args:
@@ -133,55 +178,103 @@ def optimise(project: Project, continuous: list[Parameter], discrete: dict[str, 
     runs = []
     start = time.perf_counter()
     for i, combo in enumerate(combos):
-        choice = dict(zip(discrete, combo))
+        choice = dict(zip(discrete, combo, strict=False))
         if progress is not None:
             progress(i, len(combos), choice)
         disc = None
         try:
-            disc = PresizingDiscipline(project.with_overrides(expand_overrides(choice)), continuous, backend=backend,
-                                       mode=mode)
-            runs.append(_run_one(disc, choice, continuous, objective, maximize, constraints, algo, max_iter,
-                                 max_sd_rel))
-        except Exception as error:  # noqa: BLE001  (an invalid combination must not stop the study)
+            disc = PresizingDiscipline(
+                project.with_overrides(expand_overrides(choice)),
+                continuous,
+                backend=backend,
+                mode=mode,
+            )
+            runs.append(
+                _run_one(
+                    disc,
+                    choice,
+                    continuous,
+                    objective,
+                    maximize,
+                    constraints,
+                    algo,
+                    max_iter,
+                    max_sd_rel,
+                )
+            )
+        except Exception as error:  # ruff: ignore[blind-except]  (an invalid combination must not stop the study)
             runs.append(OptimisationRun(choice, {}, {}, False, error=str(error)))
         finally:
             if disc is not None:
                 disc.close()
-    return OptimisationSummary(objective, maximize, runs, time.perf_counter() - start, mode)
+    return OptimisationSummary(
+        objective, maximize, runs, time.perf_counter() - start, mode
+    )
 
 
-def _run_one(disc: PresizingDiscipline, choice: dict, continuous: list[Parameter], objective: str, maximize: bool,
-             constraints: tuple[str, ...], algo: str, max_iter: int, max_sd_rel: float | None = None
-             ) -> OptimisationRun:
+def _run_one(
+    disc: PresizingDiscipline,
+    choice: dict,
+    continuous: list[Parameter],
+    objective: str,
+    maximize: bool,
+    constraints: tuple[str, ...],
+    algo: str,
+    max_iter: int,
+    max_sd_rel: float | None = None,
+) -> OptimisationRun:
     initial = disc.execute()
     names = set(initial)
     ref = float(initial[objective][0])
     ref = abs(ref) if np.isfinite(ref) and ref != 0 else 1.0
     # A NaN margin is not applicable (e.g. no maximum take-off mass): it would stop the optimiser.
-    constraints = tuple(c for c in constraints if c in names and np.isfinite(initial[c][0]))
+    constraints = tuple(
+        c for c in constraints if c in names and np.isfinite(initial[c][0])
+    )
     if not continuous:
         out = {k: float(v[0]) for k, v in disc.execute().items()}
         feasible = all(out[c] >= 0 for c in constraints) and out["feasible"] > 0
-        return OptimisationRun(choice, {}, out, feasible, [out[objective]], constraints=list(constraints))
+        return OptimisationRun(
+            choice, {}, out, feasible, [out[objective]], constraints=list(constraints)
+        )
     space = build_design_space(continuous, disc.initial_values())
     # Objective of order 1, like the margins, so that the optimiser weighs the constraints.
     name = f"{objective}_ratio"
     ratio = LinearCombination([objective], name, {objective: 1.0 / ref})
     disciplines = [disc, ratio]
     if max_sd_rel is not None and "max_sd_rel" in names:
-        disciplines.append(LinearCombination(["max_sd_rel"], "margin_sd", {"max_sd_rel": -1.0}, offset=max_sd_rel))
+        disciplines.append(
+            LinearCombination(
+                ["max_sd_rel"], "margin_sd", {"max_sd_rel": -1.0}, offset=max_sd_rel
+            )
+        )
         constraints = (*constraints, "margin_sd")
-    scenario = create_scenario(disciplines, name, space, formulation_name="MDF", maximize_objective=maximize)
+    scenario = create_scenario(
+        disciplines, name, space, formulation_name="MDF", maximize_objective=maximize
+    )
     for c in constraints:
         scenario.add_constraint(c, constraint_type="ineq", positive=True)
     if algo not in GRADIENT_FREE:
-        scenario.set_differentiation_method("finite_differences", 1e-3)  # above the speed-sweep noise
+        scenario.set_differentiation_method(
+            "finite_differences", 1e-3
+        )  # above the speed-sweep noise
     scenario.execute(algo_name=algo, max_iter=max_iter)
     best = scenario.optimization_result
-    x = {p.name: float(v) for p, v in zip(continuous, best.x_opt)}
-    outputs = {k: float(v[0]) for k, v in disc.execute({k: np.array([v]) for k, v in x.items()}).items() if k not in x}
+    x = {p.name: float(v) for p, v in zip(continuous, best.x_opt, strict=False)}
+    outputs = {
+        k: float(v[0])
+        for k, v in disc.execute({k: np.array([v]) for k, v in x.items()}).items()
+        if k not in x
+    }
     history = _history(scenario, name, ref)
-    return OptimisationRun(choice, x, outputs, bool(best.is_feasible), history, constraints=list(constraints))
+    return OptimisationRun(
+        choice,
+        x,
+        outputs,
+        bool(best.is_feasible),
+        history,
+        constraints=list(constraints),
+    )
 
 
 def _history(scenario, name: str, ref: float) -> list[float]:
@@ -189,5 +282,8 @@ def _history(scenario, name: str, ref: float) -> list[float]:
     database = scenario.formulation.optimization_problem.database
     for key in (name, f"-{name}"):
         if key in database.get_function_names():
-            return [abs(float(np.ravel(v)[0])) * ref for v in database.get_function_history(key)]
+            return [
+                abs(float(np.ravel(v)[0])) * ref
+                for v in database.get_function_history(key)
+            ]
     return []

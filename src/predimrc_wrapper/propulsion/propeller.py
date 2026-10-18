@@ -20,14 +20,20 @@ def _ideal_power(model: MomentumPropeller) -> bool:
     t, rho = 10.0, 1.225
     area = np.pi * _EXAMPLE["diameter_m"] ** 2 / 4.0
     expected = t**1.5 / np.sqrt(2.0 * rho * area)
-    got = float(ideal.evaluate({"thrust_n": t, "v_m_s": 0.0, "rho": rho})["shaft_power_w"])
+    got = float(
+        ideal.evaluate({"thrust_n": t, "v_m_s": 0.0, "rho": rho})["shaft_power_w"]
+    )
     return abs(got - expected) <= 1e-9 * expected
 
 
 def _diameter_law(model: MomentumPropeller) -> bool:
     x = {"thrust_n": 10.0, "v_m_s": 0.0, "rho": 1.225}
-    p1 = float(MomentumPropeller(diameter_m=0.3, mass_kg=0.02).evaluate(x)["shaft_power_w"])
-    p2 = float(MomentumPropeller(diameter_m=0.6, mass_kg=0.02).evaluate(x)["shaft_power_w"])
+    p1 = float(
+        MomentumPropeller(diameter_m=0.3, mass_kg=0.02).evaluate(x)["shaft_power_w"]
+    )
+    p2 = float(
+        MomentumPropeller(diameter_m=0.6, mass_kg=0.02).evaluate(x)["shaft_power_w"]
+    )
     return abs(p1 / p2 - 2.0) <= 1e-9
 
 
@@ -50,15 +56,69 @@ class MomentumPropeller(Model):
         Port("torque_nm", "Q", "N·m", "P / (2πn)", (0, None)),
     )
     parameters = params(
-        Param("diameter_m", "D", "m", "propeller diameter", origin="project (inches)", bounds=(0, None), source="project"),
-        Param("mass_kg", "m_p", "kg", "propeller mass", origin="project", bounds=(0, None), source="project"),
-        Param("figure_of_merit", "FM", "—", "hover figure of merit", default=0.65, bounds=(0, 1), source="RC propeller literature"),
-        Param("static_ct", "CT₀", "—", "static thrust coefficient (speed estimate)", default=0.10, bounds=(0, None), source="generic"),
-        Param("cruise_efficiency", "η_c", "—", "propulsive efficiency in cruise", default=0.70, bounds=(0, 1), source="generic"),
+        Param(
+            "diameter_m",
+            "D",
+            "m",
+            "propeller diameter",
+            origin="project (inches)",
+            bounds=(0, None),
+            source="project",
+        ),
+        Param(
+            "mass_kg",
+            "m_p",
+            "kg",
+            "propeller mass",
+            origin="project",
+            bounds=(0, None),
+            source="project",
+        ),
+        Param(
+            "figure_of_merit",
+            "FM",
+            "—",
+            "hover figure of merit",
+            default=0.65,
+            bounds=(0, 1),
+            source="RC propeller literature",
+        ),
+        Param(
+            "static_ct",
+            "CT₀",
+            "—",
+            "static thrust coefficient (speed estimate)",
+            default=0.10,
+            bounds=(0, None),
+            source="generic",
+        ),
+        Param(
+            "cruise_efficiency",
+            "η_c",
+            "—",
+            "propulsive efficiency in cruise",
+            default=0.70,
+            bounds=(0, 1),
+            source="generic",
+        ),
     )
     expected_forms = [
-        ScalingLaw("shaft_power_w", "thrust_n", 1.5, fixed={"v_m_s": 0.0, "rho": 1.225}, params=_EXAMPLE),
-        ScalingLaw("shaft_power_w", "rho", -0.5, fixed={"v_m_s": 0.0, "thrust_n": 10.0}, lower=0.8, upper=1.3, params=_EXAMPLE),
+        ScalingLaw(
+            "shaft_power_w",
+            "thrust_n",
+            1.5,
+            fixed={"v_m_s": 0.0, "rho": 1.225},
+            params=_EXAMPLE,
+        ),
+        ScalingLaw(
+            "shaft_power_w",
+            "rho",
+            -0.5,
+            fixed={"v_m_s": 0.0, "thrust_n": 10.0},
+            lower=0.8,
+            upper=1.3,
+            params=_EXAMPLE,
+        ),
         Invariant("FM = 1 ⇒ ideal momentum power", _ideal_power, params=_EXAMPLE),
         Invariant("hover power ∝ 1/D at fixed thrust", _diameter_law, params=_EXAMPLE),
     ]
@@ -74,7 +134,9 @@ class MomentumPropeller(Model):
         rho = np.asarray(x["rho"], dtype=float)
         d = self.p.diameter_m
         n = np.sqrt(t / (self.p.static_ct * rho * d**4))
-        hover = t**1.5 / (self.p.figure_of_merit * np.sqrt(2.0 * rho * self.disc_area_m2))
+        hover = t**1.5 / (
+            self.p.figure_of_merit * np.sqrt(2.0 * rho * self.disc_area_m2)
+        )
         power = np.where(v > 0.0, t * v / self.p.cruise_efficiency, hover)
         with np.errstate(divide="ignore", invalid="ignore"):
             torque = np.where(n > 0.0, power / (2.0 * np.pi * n), 0.0)
@@ -122,26 +184,161 @@ class BladeElementPropeller(Model):
         Port("efficiency", "η", "—", "T·V / P (0 in hover)"),
     )
     parameters = params(
-        Param("diameter_m", "D", "m", "propeller diameter", origin="project (inches)", bounds=(0, None), source="project"),
-        Param("pitch_m", "P", "m", "geometric pitch (constant along the blade)", origin="project (inches)", bounds=(0, None), source="project"),
-        Param("n_blades", "B", "—", "number of blades", default=2, bounds=(1, 8), source="project"),
-        Param("chord_ratio_75", "c₇₅", "—", "chord / radius at 0.75 R", default=0.14, bounds=(0, 1), source="typical RC propellers"),
-        Param("chord_slope", "s", "—", "chord taper: c/R = c₇₅·(1 + s·(0.75 − r/R))", default=1.0, bounds=(0, None), source="typical RC propellers"),
-        Param("hub_ratio", "r_h/R", "—", "hub radius / radius", default=0.15, bounds=(0, 1), source="generic"),
-        Param("cl_alpha", "a", "1/rad", "section lift slope (low Reynolds)", default=5.7, bounds=(0, None), source="thin aerofoil, Reynolds-reduced"),
-        Param("alpha_zero_lift", "α₀", "rad", "zero-lift angle (cambered section)", default=-0.10, source="set to match UIUC APC 10x4.7SF static data"),
-        Param("cl_max", "c_l,max", "—", "section stall lift coefficient", default=1.1, source="low-Reynolds aerofoils"),
-        Param("cl_min", "c_l,min", "—", "section negative stall lift coefficient", default=-0.5, source="low-Reynolds aerofoils"),
-        Param("cd0", "c_d0", "—", "section profile drag at zero lift", default=0.025, bounds=(0, None), source="low-Reynolds aerofoils"),
-        Param("cd_k", "k", "—", "section drag rise with c_l²", default=0.02, bounds=(0, None), source="low-Reynolds aerofoils"),
-        Param("cd_stall", "c_d,s", "1/rad", "drag rise per radian beyond stall", default=0.5, bounds=(0, None), source="fitted on the 8 shipped manufacturer thrust tables (2026-10-14)"),
-        Param("n_stations", "N_r", "—", "number of radial stations", default=24, bounds=(4, None), source="numerical"),
+        Param(
+            "diameter_m",
+            "D",
+            "m",
+            "propeller diameter",
+            origin="project (inches)",
+            bounds=(0, None),
+            source="project",
+        ),
+        Param(
+            "pitch_m",
+            "P",
+            "m",
+            "geometric pitch (constant along the blade)",
+            origin="project (inches)",
+            bounds=(0, None),
+            source="project",
+        ),
+        Param(
+            "n_blades",
+            "B",
+            "—",
+            "number of blades",
+            default=2,
+            bounds=(1, 8),
+            source="project",
+        ),
+        Param(
+            "chord_ratio_75",
+            "c₇₅",
+            "—",
+            "chord / radius at 0.75 R",
+            default=0.14,
+            bounds=(0, 1),
+            source="typical RC propellers",
+        ),
+        Param(
+            "chord_slope",
+            "s",
+            "—",
+            "chord taper: c/R = c₇₅·(1 + s·(0.75 − r/R))",
+            default=1.0,
+            bounds=(0, None),
+            source="typical RC propellers",
+        ),
+        Param(
+            "hub_ratio",
+            "r_h/R",
+            "—",
+            "hub radius / radius",
+            default=0.15,
+            bounds=(0, 1),
+            source="generic",
+        ),
+        Param(
+            "cl_alpha",
+            "a",
+            "1/rad",
+            "section lift slope (low Reynolds)",
+            default=5.7,
+            bounds=(0, None),
+            source="thin aerofoil, Reynolds-reduced",
+        ),
+        Param(
+            "alpha_zero_lift",
+            "α₀",
+            "rad",
+            "zero-lift angle (cambered section)",
+            default=-0.10,
+            source="set to match UIUC APC 10x4.7SF static data",
+        ),
+        Param(
+            "cl_max",
+            "c_l,max",
+            "—",
+            "section stall lift coefficient",
+            default=1.1,
+            source="low-Reynolds aerofoils",
+        ),
+        Param(
+            "cl_min",
+            "c_l,min",
+            "—",
+            "section negative stall lift coefficient",
+            default=-0.5,
+            source="low-Reynolds aerofoils",
+        ),
+        Param(
+            "cd0",
+            "c_d0",
+            "—",
+            "section profile drag at zero lift",
+            default=0.025,
+            bounds=(0, None),
+            source="low-Reynolds aerofoils",
+        ),
+        Param(
+            "cd_k",
+            "k",
+            "—",
+            "section drag rise with c_l²",
+            default=0.02,
+            bounds=(0, None),
+            source="low-Reynolds aerofoils",
+        ),
+        Param(
+            "cd_stall",
+            "c_d,s",
+            "1/rad",
+            "drag rise per radian beyond stall",
+            default=0.5,
+            bounds=(0, None),
+            source="fitted on the 8 shipped manufacturer thrust tables (2026-10-14)",
+        ),
+        Param(
+            "n_stations",
+            "N_r",
+            "—",
+            "number of radial stations",
+            default=24,
+            bounds=(4, None),
+            source="numerical",
+        ),
     )
     expected_forms = [
-        ScalingLaw("thrust_n", "n_rev_s", 2.0, fixed={"v_m_s": 0.0, "rho": 1.225}, lower=30.0, upper=200.0, tol=1e-6, params=_BEM_EXAMPLE),
-        ScalingLaw("shaft_power_w", "rho", 1.0, fixed={"v_m_s": 0.0, "n_rev_s": 100.0}, lower=0.8, upper=1.3, tol=1e-6, params=_BEM_EXAMPLE),
-        Invariant("static C_T and C_P of a 10x4.5 in the RC range", _static_coefficients, params=_BEM_EXAMPLE),
-        Invariant("zero thrust near the pitch speed n·P", _zero_thrust_near_pitch_speed, params=_BEM_EXAMPLE),
+        ScalingLaw(
+            "thrust_n",
+            "n_rev_s",
+            2.0,
+            fixed={"v_m_s": 0.0, "rho": 1.225},
+            lower=30.0,
+            upper=200.0,
+            tol=1e-6,
+            params=_BEM_EXAMPLE,
+        ),
+        ScalingLaw(
+            "shaft_power_w",
+            "rho",
+            1.0,
+            fixed={"v_m_s": 0.0, "n_rev_s": 100.0},
+            lower=0.8,
+            upper=1.3,
+            tol=1e-6,
+            params=_BEM_EXAMPLE,
+        ),
+        Invariant(
+            "static C_T and C_P of a 10x4.5 in the RC range",
+            _static_coefficients,
+            params=_BEM_EXAMPLE,
+        ),
+        Invariant(
+            "zero thrust near the pitch speed n·P",
+            _zero_thrust_near_pitch_speed,
+            params=_BEM_EXAMPLE,
+        ),
     ]
 
     def _sections(self) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -180,7 +377,10 @@ class BladeElementPropeller(Model):
 
         zero = np.zeros(omega.shape[:-1] + r.shape)
         t0, _, _ = loads(zero)
-        lo, hi = zero, np.broadcast_to(omega * radius + np.abs(vv) + 1.0, zero.shape).copy()
+        lo, hi = (
+            zero,
+            np.broadcast_to(omega * radius + np.abs(vv) + 1.0, zero.shape).copy(),
+        )
         for _ in range(48):
             mid = 0.5 * (lo + hi)
             dt, _, dm = loads(mid)
@@ -196,16 +396,30 @@ class BladeElementPropeller(Model):
             ct = np.where(n > 0, thrust / (rho * n**2 * d**4), 0.0)
             cp = np.where(n > 0, power / (rho * n**3 * d**5), 0.0)
             eta = np.where((v > 0) & (power > 0), thrust * v / power, 0.0)
-        return {"thrust_n": thrust, "shaft_power_w": power, "torque_nm": torque, "ct": ct, "cp": cp,
-                "efficiency": eta}
+        return {
+            "thrust_n": thrust,
+            "shaft_power_w": power,
+            "torque_nm": torque,
+            "ct": ct,
+            "cp": cp,
+            "efficiency": eta,
+        }
 
-    def n_for_thrust(self, thrust_n, v_m_s, rho: float, n_max: float = 600.0) -> np.ndarray:
+    def n_for_thrust(
+        self, thrust_n, v_m_s, rho: float, n_max: float = 600.0
+    ) -> np.ndarray:
         """Rotation speed (rev/s) giving a thrust at a speed (NaN above ``n_max``), by bisection."""
-        t, v = np.broadcast_arrays(np.asarray(thrust_n, dtype=float), np.asarray(v_m_s, dtype=float))
+        t, v = np.broadcast_arrays(
+            np.asarray(thrust_n, dtype=float), np.asarray(v_m_s, dtype=float)
+        )
         lo, hi = np.zeros(t.shape), np.full(t.shape, n_max)
-        reachable = self.evaluate({"n_rev_s": hi, "v_m_s": v, "rho": rho})["thrust_n"] >= t
+        reachable = (
+            self.evaluate({"n_rev_s": hi, "v_m_s": v, "rho": rho})["thrust_n"] >= t
+        )
         for _ in range(50):
             mid = 0.5 * (lo + hi)
-            above = self.evaluate({"n_rev_s": mid, "v_m_s": v, "rho": rho})["thrust_n"] >= t
+            above = (
+                self.evaluate({"n_rev_s": mid, "v_m_s": v, "rho": rho})["thrust_n"] >= t
+            )
             lo, hi = np.where(above, lo, mid), np.where(above, mid, hi)
         return np.where(reachable, hi, np.nan)

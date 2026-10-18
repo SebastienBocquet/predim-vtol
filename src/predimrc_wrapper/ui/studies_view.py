@@ -12,18 +12,27 @@ if TYPE_CHECKING:
     from predimrc_wrapper.mdo.studies import Study
 
 OUTPUT_LABELS = {
-    "flight_time_v1": ("Flight time V1", "min", 1 / 60), "flight_time_v2": ("Flight time V2", "min", 1 / 60),
-    "range_v1": ("Range V1", "km", 1e-3), "range_v2": ("Range V2", "km", 1e-3), "mass_total": ("Total mass", "kg", 1.0),
-    "hover_power": ("Hover power (battery)", "W", 1.0), "cruise_power_v1": ("Cruise power V1 (battery)", "W", 1.0),
-    "cruise_power_v2": ("Cruise power V2 (battery)", "W", 1.0), "flight_time": ("Flight time (scenario)", "min", 1 / 60),
+    "flight_time_v1": ("Flight time V1", "min", 1 / 60),
+    "flight_time_v2": ("Flight time V2", "min", 1 / 60),
+    "range_v1": ("Range V1", "km", 1e-3),
+    "range_v2": ("Range V2", "km", 1e-3),
+    "mass_total": ("Total mass", "kg", 1.0),
+    "hover_power": ("Hover power (battery)", "W", 1.0),
+    "cruise_power_v1": ("Cruise power V1 (battery)", "W", 1.0),
+    "cruise_power_v2": ("Cruise power V2 (battery)", "W", 1.0),
+    "flight_time": ("Flight time (scenario)", "min", 1 / 60),
     "range": ("Range (scenario)", "km", 1e-3),
 }
 
 
 def numeric_columns(points: list[dict[str, Any]]) -> list[str]:
     cols = list(dict.fromkeys(k for p in points for k in p))
-    return [c for c in cols if c not in ("error", "history", "constraints_applied")
-            and all(isinstance(p.get(c), (int, float)) or p.get(c) is None for p in points)]
+    return [
+        c
+        for c in cols
+        if c not in ("error", "history", "constraints_applied")
+        and all(isinstance(p.get(c), (int, float)) or p.get(c) is None for p in points)
+    ]
 
 
 def label(column: str) -> str:
@@ -33,14 +42,18 @@ def label(column: str) -> str:
 
 def _scaled(points: list[dict], column: str) -> np.ndarray:
     scale = OUTPUT_LABELS.get(column, ("", "", 1.0))[2]
-    return np.array([np.nan if p.get(column) is None else float(p[column]) * scale for p in points])
+    return np.array([
+        np.nan if p.get(column) is None else float(p[column]) * scale for p in points
+    ])
 
 
 def choice_label(point: dict, choices: dict) -> str:
     return ", ".join(str(point.get(k)) for k in choices) or "design"
 
 
-def scatter_figure(studies: list[Study], x: str, y: str, pareto: list[np.ndarray] | None = None) -> go.Figure:
+def scatter_figure(
+    studies: list[Study], x: str, y: str, pareto: list[np.ndarray] | None = None
+) -> go.Figure:
     """Any output against any input, coloured by study and choice; infeasible points hollow; Pareto ringed."""
     fig = go.Figure()
     for s_i, study in enumerate(studies):
@@ -51,18 +64,41 @@ def scatter_figure(studies: list[Study], x: str, y: str, pareto: list[np.ndarray
             pts = [study.points[i] for i in idx]
             ok = np.array([bool(p.get("feasible")) for p in pts])
             prefix = f"{study.name}: " if len(studies) > 1 else ""
-            fig.add_trace(go.Scatter(x=_scaled(pts, x), y=_scaled(pts, y), mode="markers", name=prefix + name,
-                                     marker={"symbol": np.where(ok, ["circle"] * len(ok), ["circle-open"] * len(ok)),
-                                             "size": 9}))
+            fig.add_trace(
+                go.Scatter(
+                    x=_scaled(pts, x),
+                    y=_scaled(pts, y),
+                    mode="markers",
+                    name=prefix + name,
+                    marker={
+                        "symbol": np.where(
+                            ok, ["circle"] * len(ok), ["circle-open"] * len(ok)
+                        ),
+                        "size": 9,
+                    },
+                )
+            )
         if pareto is not None and s_i < len(pareto) and pareto[s_i].any():
-            front = [p for p, m in zip(study.points, pareto[s_i]) if m]
+            front = [p for p, m in zip(study.points, pareto[s_i], strict=False) if m]
             order = np.argsort(_scaled(front, x))
-            fig.add_trace(go.Scatter(x=_scaled(front, x)[order], y=_scaled(front, y)[order], mode="lines+markers",
-                                     name="Pareto front" + (f" {study.name}" if len(studies) > 1 else ""),
-                                     line={"color": "black", "dash": "dot"},
-                                     marker={"size": 14, "symbol": "circle-open", "color": "black"}))
-    fig.update_layout(xaxis_title=label(x), yaxis_title=label(y), height=460, margin={"l": 10, "r": 10, "t": 30, "b": 10},
-                      title="Hollow markers: infeasible points")
+            fig.add_trace(
+                go.Scatter(
+                    x=_scaled(front, x)[order],
+                    y=_scaled(front, y)[order],
+                    mode="lines+markers",
+                    name="Pareto front"
+                    + (f" {study.name}" if len(studies) > 1 else ""),
+                    line={"color": "black", "dash": "dot"},
+                    marker={"size": 14, "symbol": "circle-open", "color": "black"},
+                )
+            )
+    fig.update_layout(
+        xaxis_title=label(x),
+        yaxis_title=label(y),
+        height=460,
+        margin={"l": 10, "r": 10, "t": 30, "b": 10},
+        title="Hollow markers: infeasible points",
+    )
     return fig
 
 
@@ -86,5 +122,9 @@ def overrides_of(study: Study, index: int) -> dict[str, Any]:
     """Project overrides reproducing one point of a study (choices and variables)."""
     p = study.points[index]
     out = {k: p[k] for k in study.definition.choices}
-    out.update({v["path"]: p[v["name"]] for v in study.definition.variables if p.get(v["name"]) is not None})
+    out.update({
+        v["path"]: p[v["name"]]
+        for v in study.definition.variables
+        if p.get(v["name"]) is not None
+    })
     return out

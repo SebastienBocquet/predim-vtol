@@ -6,6 +6,7 @@ specification) and cover REQ-NFR-006 for the MVP.
 
 from __future__ import annotations
 
+import contextlib
 import importlib
 from pathlib import Path
 
@@ -18,11 +19,15 @@ from predimrc_wrapper.core.mic import END
 from predimrc_wrapper.core.mic import START
 
 # Import every package declaring models so that they are registered.
-for _module in ("propulsion", "aircraft", "mission.solver", "mission.two_phase", "sizing"):
-    try:
+for _module in (
+    "propulsion",
+    "aircraft",
+    "mission.solver",
+    "mission.two_phase",
+    "sizing",
+):
+    with contextlib.suppress(ModuleNotFoundError):
         importlib.import_module(f"predimrc_wrapper.{_module}")
-    except ModuleNotFoundError:
-        pass
 
 CARDS = Path(__file__).resolve().parents[2] / "mvp" / "docs" / "models"
 MODELS = {k: v for k, v in REGISTRY.items() if not k.startswith("MIC-TEST")}

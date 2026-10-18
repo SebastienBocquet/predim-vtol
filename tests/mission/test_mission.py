@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import numpy as np
 import pytest
 from pydantic import ValidationError
 
@@ -24,12 +23,22 @@ def test_segment_validation():
     with pytest.raises(ValidationError, match="positive altitude"):
         Segment(kind="vertical_climb", altitude_change_m=-5)
     with pytest.raises(ValidationError, match="At most one"):
-        Scenario(segments=[Segment(kind="cruise", until_reserve=True), Segment(kind="loiter", until_reserve=True)])
+        Scenario(
+            segments=[
+                Segment(kind="cruise", until_reserve=True),
+                Segment(kind="loiter", until_reserve=True),
+            ]
+        )
 
 
 def test_hover_time_builder():
     s = Scenario.hover_time(60, wing_borne=False)
-    assert [seg.kind for seg in s.segments] == ["vertical_climb", "hover", "cruise", "vertical_descent"]
+    assert [seg.kind for seg in s.segments] == [
+        "vertical_climb",
+        "hover",
+        "cruise",
+        "vertical_descent",
+    ]
     assert [seg.kind for seg in Scenario.hover_time(0).segments].count("hover") == 0
 
 
@@ -46,20 +55,24 @@ def test_multicopter_energy_and_reserve():
 def test_multicopter_zero_speed_equals_hover():
     seg = SegmentPower(AircraftModel(Project.template("multicopter")))
     hover = float(seg.evaluate({"kind": "hover"})["battery_power_w"])
-    assert float(seg.evaluate({"kind": "cruise", "v_m_s": 0.0})["battery_power_w"]) == pytest.approx(hover, rel=1e-9)
+    assert float(
+        seg.evaluate({"kind": "cruise", "v_m_s": 0.0})["battery_power_w"]
+    ) == pytest.approx(hover, rel=1e-9)
 
 
 def test_zero_hover_gives_longer_flight():
     p = Project.template("multicopter")
     base = evaluate(p)
-    no_hover = p.with_overrides({"scenarios": {"s": Scenario.hover_time(0, wing_borne=False).model_dump()}})
+    no_hover = p.with_overrides({
+        "scenarios": {"s": Scenario.hover_time(0, wing_borne=False).model_dump()}
+    })
     assert evaluate(no_hover, "s").flight_time_s > base.flight_time_s
 
 
 def test_quadplane_with_fake_aero():
     r = evaluate(Project.template("quadplane"), backend=ParabolicAero())
     assert r.feasible, r.limiting
-    cruise = [s for s in r.segments if s.kind == "cruise"][0]
+    cruise = next(s for s in r.segments if s.kind == "cruise")
     assert cruise.speed_m_s == pytest.approx(r.v_range)
     assert r.energy_used_j == pytest.approx(r.energy_available_j, rel=1e-9)
 
@@ -67,7 +80,9 @@ def test_quadplane_with_fake_aero():
 def test_optimal_speed_ratio_parabolic_polar():
     """Constant efficiencies and parabolic polar: V_r / V_e = 3^0.25."""
     project = Project.template("quadplane").with_overrides({
-        "drag_sources": [], "mission.avionics_power_w": 0.0, "mission.stall_margin": 1.0,
+        "drag_sources": [],
+        "mission.avionics_power_w": 0.0,
+        "mission.stall_margin": 1.0,
         "mission.speed_step": 0.02,
     })
     aircraft = AircraftModel(project, aero_backend=ParabolicAero())
@@ -77,7 +92,10 @@ def test_optimal_speed_ratio_parabolic_polar():
 
 
 def test_undersized_lift_motor_is_infeasible():
-    p = Project.template("multicopter").with_overrides({"battery.mass_g": 2500, "max_takeoff_mass_kg": 6})
+    p = Project.template("multicopter").with_overrides({
+        "battery.mass_g": 2500,
+        "max_takeoff_mass_kg": 6,
+    })
     r = evaluate(p)
     assert not r.feasible
     assert r.limiting
@@ -98,4 +116,5 @@ def test_physics_time_budget():
 def test_quadplane_through_predimrc(predimrc):
     r = evaluate(Project.template("quadplane"), backend=predimrc)
     assert r.feasible, r.limiting
-    assert r.flight_time_s > 0 and r.range_m > 0
+    assert r.flight_time_s > 0
+    assert r.range_m > 0

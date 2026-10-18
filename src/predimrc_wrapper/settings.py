@@ -16,7 +16,11 @@ import yaml
 
 
 def settings_path() -> Path:
-    return Path(os.environ.get("PREDIMRC_SETTINGS", Path.home() / ".predimrc_wrapper" / "settings.yaml"))
+    return Path(
+        os.environ.get(
+            "PREDIMRC_SETTINGS", Path.home() / ".predimrc_wrapper" / "settings.yaml"
+        )
+    )
 
 
 @dataclass
@@ -31,7 +35,9 @@ class Settings:
     @classmethod
     def load(cls) -> Settings:
         path = settings_path()
-        data = yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        data = (
+            yaml.safe_load(path.read_text(encoding="utf-8")) if path.is_file() else {}
+        )
         known = {k: v for k, v in (data or {}).items() if k in cls.__dataclass_fields__}
         settings = cls(**known)
         if "PREDIMRC_PROFILES" in os.environ:

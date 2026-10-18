@@ -21,8 +21,27 @@ from predimrc_wrapper.core.units import GRAVITY
 from predimrc_wrapper.data.database import DatabaseError
 from predimrc_wrapper.data.user import user_data_dir
 
-REQUIRED = ("id", "motor_id", "propeller_id", "voltage_v", "bench", "source", "retrieved", "status", "columns", "rows")
-COLUMNS = ("throttle_pct", "voltage_v", "current_a", "power_w", "thrust_g", "rpm", "torque_nm")
+REQUIRED = (
+    "id",
+    "motor_id",
+    "propeller_id",
+    "voltage_v",
+    "bench",
+    "source",
+    "retrieved",
+    "status",
+    "columns",
+    "rows",
+)
+COLUMNS = (
+    "throttle_pct",
+    "voltage_v",
+    "current_a",
+    "power_w",
+    "thrust_g",
+    "rpm",
+    "torque_nm",
+)
 MANDATORY_COLUMNS = ("current_a", "power_w", "thrust_g")
 
 
@@ -84,15 +103,26 @@ def parse_test(raw: dict, origin: str) -> ThrustTest:
     if unknown or missing:
         msg = f"{origin}: {raw['id']}: unknown columns {sorted(unknown)}, missing {missing}"
         raise DatabaseError(msg)
-    table = np.array([[np.nan if v is None else float(v) for v in row] for row in raw["rows"]], dtype=float)
+    table = np.array(
+        [[np.nan if v is None else float(v) for v in row] for row in raw["rows"]],
+        dtype=float,
+    )
     if table.ndim != 2 or table.shape[1] != len(columns):
         msg = f"{origin}: {raw['id']}: every row needs {len(columns)} values"
         raise DatabaseError(msg)
 
     def col(name: str) -> np.ndarray:
-        return table[:, columns.index(name)] if name in columns else np.full(len(table), np.nan)
+        return (
+            table[:, columns.index(name)]
+            if name in columns
+            else np.full(len(table), np.nan)
+        )
 
-    thrust, power, current = col("thrust_g") * GRAVITY / 1000.0, col("power_w"), col("current_a")
+    thrust, power, current = (
+        col("thrust_g") * GRAVITY / 1000.0,
+        col("power_w"),
+        col("current_a"),
+    )
     if np.any(~(thrust > 0)) or np.any(~(power > 0)) or np.any(~(current > 0)):
         msg = f"{origin}: {raw['id']}: thrust, power and current must be positive"
         raise DatabaseError(msg)
@@ -100,13 +130,30 @@ def parse_test(raw: dict, origin: str) -> ThrustTest:
     voltage = np.where(np.isfinite(voltage), voltage, float(raw["voltage_v"]))
     retrieved = raw["retrieved"]
     return ThrustTest(
-        id=raw["id"], motor_id=raw["motor_id"], propeller_id=raw["propeller_id"], esc=esc,
-        measured_at=measured_at, voltage_v=float(raw["voltage_v"]), bench=raw["bench"], source=raw["source"],
-        retrieved=retrieved.isoformat() if isinstance(retrieved, date) else str(retrieved), status=raw["status"],
-        throttle=col("throttle_pct") / 100.0, voltage=voltage, current_a=current, power_w=power, thrust_n=thrust,
-        rpm=col("rpm"), torque_nm=col("torque_nm"),
-        temperature_c=None if raw.get("temperature_c") is None else float(raw["temperature_c"]),
-        notes=raw.get("notes", ""), origin=origin,
+        id=raw["id"],
+        motor_id=raw["motor_id"],
+        propeller_id=raw["propeller_id"],
+        esc=esc,
+        measured_at=measured_at,
+        voltage_v=float(raw["voltage_v"]),
+        bench=raw["bench"],
+        source=raw["source"],
+        retrieved=retrieved.isoformat()
+        if isinstance(retrieved, date)
+        else str(retrieved),
+        status=raw["status"],
+        throttle=col("throttle_pct") / 100.0,
+        voltage=voltage,
+        current_a=current,
+        power_w=power,
+        thrust_n=thrust,
+        rpm=col("rpm"),
+        torque_nm=col("torque_nm"),
+        temperature_c=None
+        if raw.get("temperature_c") is None
+        else float(raw["temperature_c"]),
+        notes=raw.get("notes", ""),
+        origin=origin,
     )
 
 
@@ -115,7 +162,12 @@ class TestDatabase:
 
     __test__ = False  # not a pytest class
 
-    def __init__(self, tests: dict[str, ThrustTest], warnings: list[str] | None = None, digest: str = "") -> None:
+    def __init__(
+        self,
+        tests: dict[str, ThrustTest],
+        warnings: list[str] | None = None,
+        digest: str = "",
+    ) -> None:
         self.records = tests
         self.warnings = warnings or []
         self._digest = digest
@@ -125,27 +177,45 @@ class TestDatabase:
         """Load the YAML files of the folders (default: shipped, then ``<user data>/thrust_tests``)."""
         if folders is None:
             shipped = files("predimrc_wrapper.data").joinpath("thrust_tests")
-            sources = [(f.name, f.read_text(encoding="utf-8")) for f in sorted(shipped.iterdir(), key=lambda f: f.name)
-                       if f.name.endswith(".yaml")]
+            sources = [
+                (f.name, f.read_text(encoding="utf-8"))
+                for f in sorted(shipped.iterdir(), key=lambda f: f.name)
+                if f.name.endswith(".yaml")
+            ]
             user = user_data_dir() / "thrust_tests"
             if user.is_dir():
-                sources += [(str(p), p.read_text(encoding="utf-8")) for p in sorted(user.glob("*.yaml"))]
+                sources += [
+                    (str(p), p.read_text(encoding="utf-8"))
+                    for p in sorted(user.glob("*.yaml"))
+                ]
         else:
-            sources = [(str(p), p.read_text(encoding="utf-8")) for d in folders for p in sorted(Path(d).glob("*.yaml"))]
+            sources = [
+                (str(p), p.read_text(encoding="utf-8"))
+                for d in folders
+                for p in sorted(Path(d).glob("*.yaml"))
+            ]
         tests, warnings = {}, []
         digest = hashlib.sha256()
         for origin, text in sources:
             test = parse_test(yaml.safe_load(text), origin)
             if test.id in tests:
-                warnings.append(f"{origin} overrides the test {test.id} of {tests[test.id].origin}")
+                warnings.append(
+                    f"{origin} overrides the test {test.id} of {tests[test.id].origin}"
+                )
             tests[test.id] = test
             digest.update(text.encode("utf-8"))
         return cls(tests, warnings, digest.hexdigest()[:16])
 
-    def tests(self, motor_id: str | None = None, propeller_id: str | None = None) -> list[ThrustTest]:
+    def tests(
+        self, motor_id: str | None = None, propeller_id: str | None = None
+    ) -> list[ThrustTest]:
         """Tests of a motor, a propeller or a pair (all when both are None)."""
-        return [t for t in self.records.values()
-                if (motor_id is None or t.motor_id == motor_id) and (propeller_id is None or t.propeller_id == propeller_id)]
+        return [
+            t
+            for t in self.records.values()
+            if (motor_id is None or t.motor_id == motor_id)
+            and (propeller_id is None or t.propeller_id == propeller_id)
+        ]
 
     def pairs(self) -> list[tuple[str, str]]:
         """Tested (motor, propeller) pairs, sorted."""

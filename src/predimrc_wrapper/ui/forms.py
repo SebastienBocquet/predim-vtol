@@ -6,8 +6,10 @@ Streamlit; ``render_model`` draws the widgets and returns the edited values.
 
 from __future__ import annotations
 
+import contextlib
 import math
 import types
+from typing import TYPE_CHECKING
 from typing import Any
 from typing import Literal
 from typing import Union
@@ -16,7 +18,9 @@ from typing import get_origin
 
 import annotated_types
 from pydantic import BaseModel
-from pydantic.fields import FieldInfo
+
+if TYPE_CHECKING:
+    from pydantic.fields import FieldInfo
 
 _UNSET = object()
 
@@ -33,7 +37,9 @@ def _help(path: str, fallback: str | None = None) -> str | None:
 
 def field_level(info: FieldInfo) -> str:
     """``required``, ``default`` or ``advanced`` (fields without a level count as default)."""
-    return (info.json_schema_extra or {}).get("level", "required" if info.is_required() else "default")
+    return (info.json_schema_extra or {}).get(
+        "level", "required" if info.is_required() else "default"
+    )
 
 
 def field_badge(info: FieldInfo, value: Any = _UNSET) -> str:
@@ -59,7 +65,7 @@ def unwrap_optional(annotation: Any) -> tuple[Any, bool]:
     if get_origin(annotation) in (Union, types.UnionType):
         args = [a for a in get_args(annotation) if a is not type(None)]
         if len(args) < len(get_args(annotation)):
-            return (args[0] if len(args) == 1 else Union[tuple(args)]), True  # noqa: UP007
+            return (args[0] if len(args) == 1 else Union[tuple(args)]), True  # ruff: ignore[non-pep604-annotation-union]
     return annotation, False
 
 
@@ -83,7 +89,9 @@ def panel_fields(model_cls: type[BaseModel]) -> list[str]:
     return [n for n, f in model_cls.model_fields.items() if f.annotation == list[float]]
 
 
-def panels_to_rows(values: dict[str, Any], names: list[str], n_panels: int) -> dict[str, list[float]]:
+def panels_to_rows(
+    values: dict[str, Any], names: list[str], n_panels: int
+) -> dict[str, list[float]]:
     """Rows of the panel table, truncated or padded with the last value to ``n_panels``."""
     rows = {}
     for name in names:
@@ -93,10 +101,14 @@ def panels_to_rows(values: dict[str, Any], names: list[str], n_panels: int) -> d
 
 
 def _empty(value: Any) -> bool:
-    return value is None or value == "" or (isinstance(value, float) and math.isnan(value))
+    return (
+        value is None or value == "" or (isinstance(value, float) and math.isnan(value))
+    )
 
 
-def rows_to_items(rows: list[dict[str, Any]], item_cls: type[BaseModel]) -> list[dict[str, Any]]:
+def rows_to_items(
+    rows: list[dict[str, Any]], item_cls: type[BaseModel]
+) -> list[dict[str, Any]]:
     """Table rows to item dicts: empty cells removed, numbers restored in text columns."""
     items = []
     for row in rows:
@@ -105,10 +117,8 @@ def rows_to_items(rows: list[dict[str, Any]], item_cls: type[BaseModel]) -> list
             if _empty(value) or name not in item_cls.model_fields:
                 continue
             if isinstance(value, str):
-                try:
+                with contextlib.suppress(ValueError):
                     value = float(value)
-                except ValueError:
-                    pass
             if hasattr(value, "item"):  # numpy scalar
                 value = value.item()
             item[name] = value
@@ -130,61 +140,108 @@ def _show_errors(st, path: str, errors: dict[str, str], prefix: bool = False) ->
             st.error(f"{p}: {msg}" if prefix else msg)
 
 
-def _column_config(st, item_cls: type[BaseModel], options: dict[str, list[str]] | None = None,
-                   path: str = "") -> dict[str, Any]:
+def _column_config(
+    st,
+    item_cls: type[BaseModel],
+    options: dict[str, list[str]] | None = None,
+    path: str = "",
+) -> dict[str, Any]:
     config = {}
     for name, info in item_cls.model_fields.items():
         ann, _ = unwrap_optional(info.annotation)
         label = info.description or name
         tip = _help(f"{path}.0.{name}", info.description)
         if options and name in options:
-            config[name] = st.column_config.SelectboxColumn(label, options=list(options[name]), help=tip)
+            config[name] = st.column_config.SelectboxColumn(
+                label, options=list(options[name]), help=tip
+            )
         elif get_origin(ann) is Literal:
-            config[name] = st.column_config.SelectboxColumn(label, options=list(get_args(ann)), help=tip)
+            config[name] = st.column_config.SelectboxColumn(
+                label, options=list(get_args(ann)), help=tip
+            )
         elif ann is bool:
             config[name] = st.column_config.CheckboxColumn(label, help=tip)
         elif ann in (int, float):
-            config[name] = st.column_config.NumberColumn(label, step=1 if ann is int else None, help=tip)
+            config[name] = st.column_config.NumberColumn(
+                label, step=1 if ann is int else None, help=tip
+            )
         else:
             config[name] = st.column_config.TextColumn(label, help=tip)
     return config
 
 
-def render_items(st, item_cls: type[BaseModel], values: list[dict], path: str, errors: dict[str, str],
-                 generation: int, options: dict[str, list[str]] | None = None, key_suffix: str = "") -> list[dict]:
+def render_items(
+    st,
+    item_cls: type[BaseModel],
+    values: list[dict],
+    path: str,
+    errors: dict[str, str],
+    generation: int,
+    options: dict[str, list[str]] | None = None,
+    key_suffix: str = "",
+) -> list[dict]:
     """A list of models edited as one table; ``options`` gives the choices of text columns."""
     import pandas as pd  # noqa: PLC0415
 
     columns = list(item_cls.model_fields)
-    frame = pd.DataFrame([{c: v.get(c) for c in columns} for v in values], columns=columns)
+    frame = pd.DataFrame(
+        [{c: v.get(c) for c in columns} for v in values], columns=columns
+    )
     for name, info in item_cls.model_fields.items():
         ann, _ = unwrap_optional(info.annotation)
         if not (ann in (int, float, bool) or get_origin(ann) is Literal):
             frame[name] = frame[name].map(lambda v: None if _empty(v) else str(v))
-    st.caption("Add a row with ＋ at the bottom; delete rows by ticking them in the left column, then the bin icon "
-               "at the top right of the table.")
-    edited = st.data_editor(frame, key=_key(path, generation) + key_suffix, num_rows="dynamic", hide_index=False,
-                            column_config=_column_config(st, item_cls, options, path), width="stretch")
+    st.caption(
+        "Add a row with ＋ at the bottom; delete rows by ticking them in the left column, then the bin icon "
+        "at the top right of the table."
+    )
+    edited = st.data_editor(
+        frame,
+        key=_key(path, generation) + key_suffix,
+        num_rows="dynamic",
+        hide_index=False,
+        column_config=_column_config(st, item_cls, options, path),
+        width="stretch",
+    )
     _show_errors(st, path, errors, prefix=True)
     return rows_to_items(edited.to_dict("records"), item_cls)
 
 
-def _render_panels(st, model_cls, values, names, path, errors, generation) -> dict[str, list[float]]:
+def _render_panels(
+    st, model_cls, values, names, path, errors, generation
+) -> dict[str, list[float]]:
     import pandas as pd  # noqa: PLC0415
 
     n0 = len(values.get(names[0]) or [1])
-    n = int(st.number_input("Panels", 1, 5, n0, key=_key(f"{path}.n_panels", generation)))
+    n = int(
+        st.number_input("Panels", 1, 5, n0, key=_key(f"{path}.n_panels", generation))
+    )
     rows = panels_to_rows(values, names, n)
-    frame = pd.DataFrame.from_dict(rows, orient="index", columns=[f"P{i + 1}" for i in range(n)])
+    frame = pd.DataFrame.from_dict(
+        rows, orient="index", columns=[f"P{i + 1}" for i in range(n)]
+    )
     frame.index = [model_cls.model_fields[k].description or k for k in names]
-    edited = st.data_editor(frame, key=_key(f"{path}.panels.{n}", generation), width="stretch")
+    edited = st.data_editor(
+        frame, key=_key(f"{path}.panels.{n}", generation), width="stretch"
+    )
     for name in names:
         _show_errors(st, f"{path}.{name}", errors, prefix=True)
-    return {name: [float(v) for v in edited.iloc[i].tolist()] for i, name in enumerate(names)}
+    return {
+        name: [float(v) for v in edited.iloc[i].tolist()]
+        for i, name in enumerate(names)
+    }
 
 
-def render_field(st, name: str, info: FieldInfo, value: Any, path: str, errors: dict[str, str],
-                 choices: dict[str, list[str]], generation: int) -> Any:
+def render_field(
+    st,
+    name: str,
+    info: FieldInfo,
+    value: Any,
+    path: str,
+    errors: dict[str, str],
+    choices: dict[str, list[str]],
+    generation: int,
+) -> Any:
     ann, optional = unwrap_optional(info.annotation)
     label = field_label(name, info, value)
     key = _key(path, generation)
@@ -193,37 +250,61 @@ def render_field(st, name: str, info: FieldInfo, value: Any, path: str, errors: 
         options = list(choices[path])
         if value not in options:
             options.insert(0, value)
-        out = st.selectbox(label, options, index=options.index(value), key=key, help=tip)
+        out = st.selectbox(
+            label, options, index=options.index(value), key=key, help=tip
+        )
     elif get_origin(ann) is Literal:
         options = list(get_args(ann))
-        out = st.selectbox(label, options, index=options.index(value) if value in options else 0, key=key, help=tip)
+        out = st.selectbox(
+            label,
+            options,
+            index=options.index(value) if value in options else 0,
+            key=key,
+            help=tip,
+        )
     elif ann is bool:
         out = st.checkbox(label, value=bool(value), key=key, help=tip)
     elif ann in (int, float):
         low, high = bounds(info)
         cast = int if ann is int else float
         out = st.number_input(
-            label, value=None if value is None else cast(value),
-            min_value=None if low is None else cast(low), max_value=None if high is None else cast(high),
-            step=1 if ann is int else None, key=key, placeholder="not set" if optional else "required", help=tip,
+            label,
+            value=None if value is None else cast(value),
+            min_value=None if low is None else cast(low),
+            max_value=None if high is None else cast(high),
+            step=1 if ann is int else None,
+            key=key,
+            placeholder="not set" if optional else "required",
+            help=tip,
         )
     else:
-        out = st.text_input(label, value="" if value is None else str(value), key=key, help=tip)
+        out = st.text_input(
+            label, value="" if value is None else str(value), key=key, help=tip
+        )
         out = None if optional and out == "" else out
     _show_errors(st, path, errors)
     return out
 
 
-def render_model(st, model_cls: type[BaseModel], values: dict[str, Any] | None, path: str = "",
-                 errors: dict[str, str] | None = None, choices: dict[str, list[str]] | None = None,
-                 generation: int = 0, skip: tuple[str, ...] = ()) -> dict[str, Any]:
+def render_model(
+    st,
+    model_cls: type[BaseModel],
+    values: dict[str, Any] | None,
+    path: str = "",
+    errors: dict[str, str] | None = None,
+    choices: dict[str, list[str]] | None = None,
+    generation: int = 0,
+    skip: tuple[str, ...] = (),
+) -> dict[str, Any]:
     """Draw the widgets of a model and return the edited values (plain data)."""
     values, errors, choices = dict(values or {}), errors or {}, choices or {}
     out: dict[str, Any] = {}
     prefix = f"{path}." if path else ""
     panels = [p for p in panel_fields(model_cls) if p not in skip]
     if panels:
-        out.update(_render_panels(st, model_cls, values, panels, path, errors, generation))
+        out.update(
+            _render_panels(st, model_cls, values, panels, path, errors, generation)
+        )
     advanced = []
     for name, info in model_cls.model_fields.items():
         if name in skip or name in panels:
@@ -235,13 +316,20 @@ def render_model(st, model_cls: type[BaseModel], values: dict[str, Any] | None, 
     if advanced:
         with st.expander("Advanced"):
             for name, info in advanced:
-                _render_one(st, name, info, values, prefix, errors, choices, generation, out)
+                _render_one(
+                    st, name, info, values, prefix, errors, choices, generation, out
+                )
     return {k: v for k, v in out.items() if v is not None}
 
 
-def _render_one(st, name, info, values, prefix, errors, choices, generation, out) -> None:
+def _render_one(
+    st, name, info, values, prefix, errors, choices, generation, out
+) -> None:
     ann, _ = unwrap_optional(info.annotation)
-    value = values.get(name, None if info.is_required() else info.get_default(call_default_factory=True))
+    value = values.get(
+        name,
+        None if info.is_required() else info.get_default(call_default_factory=True),
+    )
     if isinstance(value, BaseModel):
         value = value.model_dump(mode="json")
     path = f"{prefix}{name}"
@@ -252,6 +340,10 @@ def _render_one(st, name, info, values, prefix, errors, choices, generation, out
         out[name] = render_model(st, ann, value, path, errors, choices, generation)
     elif get_origin(ann) is list and is_model(get_args(ann)[0]):
         st.markdown(f"**{info.description or name.replace('_', ' ')}**")
-        out[name] = render_items(st, get_args(ann)[0], value or [], path, errors, generation)
+        out[name] = render_items(
+            st, get_args(ann)[0], value or [], path, errors, generation
+        )
     else:
-        out[name] = render_field(st, name, info, value, path, errors, choices, generation)
+        out[name] = render_field(
+            st, name, info, value, path, errors, choices, generation
+        )

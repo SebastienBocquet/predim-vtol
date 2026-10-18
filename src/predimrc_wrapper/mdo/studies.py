@@ -69,7 +69,9 @@ class Study:
         return self.definition.name
 
 
-def reproducibility_metadata(project: Any, seconds: float = float("nan")) -> dict[str, Any]:
+def reproducibility_metadata(
+    project: Any, seconds: float = float("nan")
+) -> dict[str, Any]:
     """Tool version, data hashes, PredimRC profile and workbook hash, date."""
     from importlib.resources import files  # noqa: PLC0415
 
@@ -77,9 +79,13 @@ def reproducibility_metadata(project: Any, seconds: float = float("nan")) -> dic
     from predimrc_wrapper.data import default_tests  # noqa: PLC0415
 
     motors = files("predimrc_wrapper.data").joinpath("motors_mvp.yaml").read_bytes()
-    meta = {"tool_version": __version__, "date": datetime.now().isoformat(timespec="seconds"),
-            "seconds": seconds, "test_data_hash": default_tests().hash(),
-            "motor_database_hash": hashlib.sha256(motors).hexdigest()[:16]}
+    meta = {
+        "tool_version": __version__,
+        "date": datetime.now().isoformat(timespec="seconds"),
+        "seconds": seconds,
+        "test_data_hash": default_tests().hash(),
+        "motor_database_hash": hashlib.sha256(motors).hexdigest()[:16],
+    }
     if getattr(project, "aero", None) is not None:
         from predimrc_wrapper.api import profiles_dir  # noqa: PLC0415
         from predimrc_wrapper.predimrc_wrapper import workbook_path  # noqa: PLC0415
@@ -87,7 +93,8 @@ def reproducibility_metadata(project: Any, seconds: float = float("nan")) -> dic
         meta["predimrc_profile"] = project.aero.profile
         try:
             meta["predimrc_workbook_hash"] = hashlib.sha256(
-                workbook_path(profiles_dir(), project.aero.profile).read_bytes()).hexdigest()[:16]
+                workbook_path(profiles_dir(), project.aero.profile).read_bytes()
+            ).hexdigest()[:16]
         except FileNotFoundError:
             meta["predimrc_workbook_hash"] = None
     return meta
@@ -103,7 +110,10 @@ def _write_points(path: Path, points: list[dict[str, Any]]) -> None:
         writer = csv.DictWriter(stream, fieldnames=columns)
         writer.writeheader()
         for p in points:
-            writer.writerow({k: json.dumps(v) if isinstance(v, (dict, list)) else v for k, v in p.items()})
+            writer.writerow({
+                k: json.dumps(v) if isinstance(v, (dict, list)) else v
+                for k, v in p.items()
+            })
 
 
 def _parse(value: str) -> Any:
@@ -126,7 +136,9 @@ def _parse(value: str) -> Any:
 
 def _read_points(path: Path) -> list[dict[str, Any]]:
     with path.open(encoding="utf-8", newline="") as stream:
-        return [{k: _parse(v) for k, v in row.items()} for row in csv.DictReader(stream)]
+        return [
+            {k: _parse(v) for k, v in row.items()} for row in csv.DictReader(stream)
+        ]
 
 
 class StudyStore:
@@ -148,12 +160,24 @@ class StudyStore:
             target, k = self.root / f"{base}-{k}", k + 1
         tmp = self.root / f".{target.name}.tmp"
         tmp.mkdir()
-        (tmp / STUDY_FILE).write_text(yaml.safe_dump(
-            {"definition": asdict(study.definition), "base_project": study.base_project}, sort_keys=False,
-            allow_unicode=True), encoding="utf-8")
+        (tmp / STUDY_FILE).write_text(
+            yaml.safe_dump(
+                {
+                    "definition": asdict(study.definition),
+                    "base_project": study.base_project,
+                },
+                sort_keys=False,
+                allow_unicode=True,
+            ),
+            encoding="utf-8",
+        )
         _write_points(tmp / "points.csv", study.points)
-        (tmp / "summary.json").write_text(json.dumps(study.summary, indent=2, default=str), encoding="utf-8")
-        (tmp / "metadata.json").write_text(json.dumps(study.metadata, indent=2, default=str), encoding="utf-8")
+        (tmp / "summary.json").write_text(
+            json.dumps(study.summary, indent=2, default=str), encoding="utf-8"
+        )
+        (tmp / "metadata.json").write_text(
+            json.dumps(study.metadata, indent=2, default=str), encoding="utf-8"
+        )
         tmp.rename(target)
         study.path = target
         return target
@@ -171,23 +195,36 @@ class StudyStore:
             meta = json.loads((folder / "metadata.json").read_text(encoding="utf-8"))
             with (folder / "points.csv").open(encoding="utf-8") as stream:
                 n = max(0, sum(1 for _ in stream) - 1)
-            out.append({"id": folder.name, "name": data["definition"]["name"], "kind": data["definition"]["kind"],
-                        "mode": data["definition"].get("mode"), "date": meta.get("date"), "points": n,
-                        "path": str(folder)})
+            out.append({
+                "id": folder.name,
+                "name": data["definition"]["name"],
+                "kind": data["definition"]["kind"],
+                "mode": data["definition"].get("mode"),
+                "date": meta.get("date"),
+                "points": n,
+                "path": str(folder),
+            })
         return out
 
     def load(self, study_id: str) -> Study:
         folder = self.root / study_id
         data = yaml.safe_load((folder / STUDY_FILE).read_text(encoding="utf-8"))
-        return Study(StudyDefinition(**data["definition"]), data["base_project"], _read_points(folder / "points.csv"),
-                     json.loads((folder / "summary.json").read_text(encoding="utf-8")),
-                     json.loads((folder / "metadata.json").read_text(encoding="utf-8")), folder)
+        return Study(
+            StudyDefinition(**data["definition"]),
+            data["base_project"],
+            _read_points(folder / "points.csv"),
+            json.loads((folder / "summary.json").read_text(encoding="utf-8")),
+            json.loads((folder / "metadata.json").read_text(encoding="utf-8")),
+            folder,
+        )
 
     def rename(self, study_id: str, name: str) -> None:
         file = self.root / study_id / STUDY_FILE
         data = yaml.safe_load(file.read_text(encoding="utf-8"))
         data["definition"]["name"] = name
-        file.write_text(yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8")
+        file.write_text(
+            yaml.safe_dump(data, sort_keys=False, allow_unicode=True), encoding="utf-8"
+        )
 
     def delete(self, study_id: str) -> None:
         folder = self.root / study_id
@@ -198,4 +235,7 @@ class StudyStore:
     def data_changed(study: Study) -> bool:
         """The test data or the motor database changed since the study."""
         now = reproducibility_metadata(None)
-        return any(study.metadata.get(k) not in (None, now[k]) for k in ("test_data_hash", "motor_database_hash"))
+        return any(
+            study.metadata.get(k) not in (None, now[k])
+            for k in ("test_data_hash", "motor_database_hash")
+        )

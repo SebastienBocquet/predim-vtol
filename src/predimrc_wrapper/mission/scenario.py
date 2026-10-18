@@ -13,7 +13,9 @@ from pydantic import ConfigDict
 from pydantic import Field
 from pydantic import model_validator
 
-SegmentKind = Literal["hover", "vertical_climb", "vertical_descent", "transition", "cruise", "loiter"]
+SegmentKind = Literal[
+    "hover", "vertical_climb", "vertical_descent", "transition", "cruise", "loiter"
+]
 Speed = float | Literal["optimal_endurance", "optimal_range"]
 
 
@@ -27,17 +29,32 @@ class Segment(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    kind: SegmentKind = Field(description="Segment kind: hover, vertical climb or descent, transition, cruise, loiter")
+    kind: SegmentKind = Field(
+        description="Segment kind: hover, vertical climb or descent, transition, cruise, loiter"
+    )
     duration_s: float | None = Field(default=None, gt=0, description="Duration (s)")
     distance_m: float | None = Field(default=None, gt=0, description="Distance (m)")
-    altitude_change_m: float | None = Field(default=None, description="Altitude change (m); negative for a descent")
-    vertical_speed_m_s: float = Field(default=1.5, gt=0, description="Vertical speed (m/s)")
-    speed: Speed = Field(default="optimal_range", description="Speed (m/s) or optimal_endurance / optimal_range")
-    until_reserve: bool = Field(default=False, description="Fly until only the reserve is left")
+    altitude_change_m: float | None = Field(
+        default=None, description="Altitude change (m); negative for a descent"
+    )
+    vertical_speed_m_s: float = Field(
+        default=1.5, gt=0, description="Vertical speed (m/s)"
+    )
+    speed: Speed = Field(
+        default="optimal_range",
+        description="Speed (m/s) or optimal_endurance / optimal_range",
+    )
+    until_reserve: bool = Field(
+        default=False, description="Fly until only the reserve is left"
+    )
 
     @model_validator(mode="after")
     def _one_extent(self) -> Segment:
-        given = [k for k in ("duration_s", "distance_m", "altitude_change_m") if getattr(self, k) is not None]
+        given = [
+            k
+            for k in ("duration_s", "distance_m", "altitude_change_m")
+            if getattr(self, k) is not None
+        ]
         if self.until_reserve:
             given.append("until_reserve")
         expected = {
@@ -75,7 +92,9 @@ class Scenario(BaseModel):
         return self
 
     @classmethod
-    def hover_time(cls, hover_s: float, wing_borne: bool = True, altitude_m: float = 30.0) -> Scenario:
+    def hover_time(
+        cls, hover_s: float, wing_borne: bool = True, altitude_m: float = 30.0
+    ) -> Scenario:
         """Vertical climb, hover, (transition), cruise until reserve, (transition), descent.
 
         Args:
@@ -83,13 +102,27 @@ class Scenario(BaseModel):
             wing_borne: Whether the aircraft has a wing (adds the transitions).
             altitude_m: The vertical climb and descent height (m).
         """
-        segments = [Segment(kind="vertical_climb", altitude_change_m=altitude_m, vertical_speed_m_s=2.0)]
+        segments = [
+            Segment(
+                kind="vertical_climb",
+                altitude_change_m=altitude_m,
+                vertical_speed_m_s=2.0,
+            )
+        ]
         if hover_s > 0:
             segments.append(Segment(kind="hover", duration_s=hover_s))
         if wing_borne:
             segments.append(Segment(kind="transition", duration_s=15.0))
-        segments.append(Segment(kind="cruise", until_reserve=True, speed="optimal_range"))
+        segments.append(
+            Segment(kind="cruise", until_reserve=True, speed="optimal_range")
+        )
         if wing_borne:
             segments.append(Segment(kind="transition", duration_s=15.0))
-        segments.append(Segment(kind="vertical_descent", altitude_change_m=-altitude_m, vertical_speed_m_s=1.5))
+        segments.append(
+            Segment(
+                kind="vertical_descent",
+                altitude_change_m=-altitude_m,
+                vertical_speed_m_s=1.5,
+            )
+        )
         return cls(segments=segments)

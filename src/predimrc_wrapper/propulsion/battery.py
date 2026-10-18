@@ -47,42 +47,173 @@ class BatteryModel(Model):
     outputs = ports(
         Port("current_a", "I", "A", "pack current", (0, None)),
         Port("voltage_v", "U", "V", "terminal voltage under load", (0, None)),
-        Port("chemical_power_w", "P_c", "W", "power drawn from the cells, losses included", (0, None)),
+        Port(
+            "chemical_power_w",
+            "P_c",
+            "W",
+            "power drawn from the cells, losses included",
+            (0, None),
+        ),
         Port("c_rate_margin", "—", "—", "1 − I / I_max"),
         Port("feasible", "—", "—", "false when P > V₀² / 4R"),
     )
     parameters = params(
-        Param("chemistry", "—", "—", "cell chemistry: lipo or li-ion", origin="project", source="project"),
-        Param("n_series", "n_s", "—", "cells in series", origin="project", bounds=(1, 14), source="project"),
-        Param("n_parallel", "n_p", "—", "cells in parallel", default=1, bounds=(1, 10), source="project"),
-        Param("capacity_ah", "C", "Ah", "pack capacity (given or derived from mass)", origin="project", bounds=(0, None), source="project"),
-        Param("mass_kg", "m_b", "kg", "pack mass (given or derived from capacity)", origin="project", bounds=(0, None), source="project"),
-        Param("specific_energy_wh_kg", "e", "Wh/kg", "pack-level specific energy", origin="chemistry table (150 LiPo / 200 Li-ion)", bounds=(0, None), source="generic data sheets, to confirm"),
-        Param("v_full", "V_f", "V", "full cell voltage", origin="chemistry table (4.2 / 4.2)", bounds=(0, None), source="cell data sheets"),
-        Param("v_nominal", "V_n", "V", "nominal cell voltage", origin="chemistry table (3.7 / 3.6)", bounds=(0, None), source="cell data sheets"),
-        Param("v_cutoff", "V_c", "V", "cut-off cell voltage", origin="chemistry table (3.3 / 2.8)", bounds=(0, None), source="cell data sheets"),
-        Param("r_cell_ohm_ah", "r", "Ω·Ah", "cell resistance × capacity", origin="chemistry table (0.010 / 0.040)", bounds=(0, None), source="generic, to confirm"),
-        Param("c_max", "c_max", "C", "maximum continuous discharge rate", origin="chemistry table (30 / 8)", bounds=(0, None), source="generic data sheets"),
-        Param("usable_fraction", "f_u", "—", "usable fraction of the capacity", origin="chemistry table (0.85 / 0.90)", bounds=(0, 1), source="engineering practice"),
+        Param(
+            "chemistry",
+            "—",
+            "—",
+            "cell chemistry: lipo or li-ion",
+            origin="project",
+            source="project",
+        ),
+        Param(
+            "n_series",
+            "n_s",
+            "—",
+            "cells in series",
+            origin="project",
+            bounds=(1, 14),
+            source="project",
+        ),
+        Param(
+            "n_parallel",
+            "n_p",
+            "—",
+            "cells in parallel",
+            default=1,
+            bounds=(1, 10),
+            source="project",
+        ),
+        Param(
+            "capacity_ah",
+            "C",
+            "Ah",
+            "pack capacity (given or derived from mass)",
+            origin="project",
+            bounds=(0, None),
+            source="project",
+        ),
+        Param(
+            "mass_kg",
+            "m_b",
+            "kg",
+            "pack mass (given or derived from capacity)",
+            origin="project",
+            bounds=(0, None),
+            source="project",
+        ),
+        Param(
+            "specific_energy_wh_kg",
+            "e",
+            "Wh/kg",
+            "pack-level specific energy",
+            origin="chemistry table (150 LiPo / 200 Li-ion)",
+            bounds=(0, None),
+            source="generic data sheets, to confirm",
+        ),
+        Param(
+            "v_full",
+            "V_f",
+            "V",
+            "full cell voltage",
+            origin="chemistry table (4.2 / 4.2)",
+            bounds=(0, None),
+            source="cell data sheets",
+        ),
+        Param(
+            "v_nominal",
+            "V_n",
+            "V",
+            "nominal cell voltage",
+            origin="chemistry table (3.7 / 3.6)",
+            bounds=(0, None),
+            source="cell data sheets",
+        ),
+        Param(
+            "v_cutoff",
+            "V_c",
+            "V",
+            "cut-off cell voltage",
+            origin="chemistry table (3.3 / 2.8)",
+            bounds=(0, None),
+            source="cell data sheets",
+        ),
+        Param(
+            "r_cell_ohm_ah",
+            "r",
+            "Ω·Ah",
+            "cell resistance × capacity",
+            origin="chemistry table (0.010 / 0.040)",
+            bounds=(0, None),
+            source="generic, to confirm",
+        ),
+        Param(
+            "c_max",
+            "c_max",
+            "C",
+            "maximum continuous discharge rate",
+            origin="chemistry table (30 / 8)",
+            bounds=(0, None),
+            source="generic data sheets",
+        ),
+        Param(
+            "usable_fraction",
+            "f_u",
+            "—",
+            "usable fraction of the capacity",
+            origin="chemistry table (0.85 / 0.90)",
+            bounds=(0, 1),
+            source="engineering practice",
+        ),
     )
     expected_forms: list = []  # set after the class (needs the factories)
 
     @classmethod
-    def from_capacity(cls, chemistry: str, n_series: int, capacity_mah: float, n_parallel: int = 1, **overrides: float) -> BatteryModel:
+    def from_capacity(
+        cls,
+        chemistry: str,
+        n_series: int,
+        capacity_mah: float,
+        n_parallel: int = 1,
+        **overrides: float,
+    ) -> BatteryModel:
         """Build a pack from its capacity (mAh); the mass is derived."""
         chem = cls._chemistry(chemistry, overrides)
         capacity_ah = capacity_mah / 1000.0
-        mass = n_series * chem["v_nominal"] * capacity_ah / chem["specific_energy_wh_kg"]
-        return cls(chemistry=chemistry, n_series=n_series, n_parallel=n_parallel,
-                   capacity_ah=capacity_ah, mass_kg=mass, **chem)
+        mass = (
+            n_series * chem["v_nominal"] * capacity_ah / chem["specific_energy_wh_kg"]
+        )
+        return cls(
+            chemistry=chemistry,
+            n_series=n_series,
+            n_parallel=n_parallel,
+            capacity_ah=capacity_ah,
+            mass_kg=mass,
+            **chem,
+        )
 
     @classmethod
-    def from_mass(cls, chemistry: str, n_series: int, mass_kg: float, n_parallel: int = 1, **overrides: float) -> BatteryModel:
+    def from_mass(
+        cls,
+        chemistry: str,
+        n_series: int,
+        mass_kg: float,
+        n_parallel: int = 1,
+        **overrides: float,
+    ) -> BatteryModel:
         """Build a pack from its mass (kg); the capacity is derived."""
         chem = cls._chemistry(chemistry, overrides)
-        capacity_ah = mass_kg * chem["specific_energy_wh_kg"] / (n_series * chem["v_nominal"])
-        return cls(chemistry=chemistry, n_series=n_series, n_parallel=n_parallel,
-                   capacity_ah=capacity_ah, mass_kg=mass_kg, **chem)
+        capacity_ah = (
+            mass_kg * chem["specific_energy_wh_kg"] / (n_series * chem["v_nominal"])
+        )
+        return cls(
+            chemistry=chemistry,
+            n_series=n_series,
+            n_parallel=n_parallel,
+            capacity_ah=capacity_ah,
+            mass_kg=mass_kg,
+            **chem,
+        )
 
     @staticmethod
     def _chemistry(chemistry: str, overrides: dict[str, float]) -> dict[str, float]:
@@ -123,13 +254,15 @@ class BatteryModel(Model):
         power = np.asarray(x["power_w"], dtype=float)
         v0 = self.open_circuit_voltage
         r = self.resistance_ohm
-        if r == 0.0:
+        if r == 0.0:  # noqa: RUF069 - exact zero is the ideal-battery sentinel
             current = power / v0
             feasible = np.ones_like(power, dtype=bool)
         else:
             disc = v0**2 - 4.0 * r * power
             feasible = disc >= 0.0
-            current = np.where(feasible, (v0 - np.sqrt(np.clip(disc, 0.0, None))) / (2.0 * r), np.nan)
+            current = np.where(
+                feasible, (v0 - np.sqrt(np.clip(disc, 0.0, None))) / (2.0 * r), np.nan
+            )
         return {
             "current_a": current,
             "voltage_v": v0 - r * current,
@@ -147,20 +280,38 @@ def _example(**overrides: float) -> dict:
 BatteryModel.expected_forms = [
     Invariant(
         "capacity → mass → capacity round trip",
-        lambda m: bool(np.isclose(
-            BatteryModel.from_capacity(m.p.chemistry, m.p.n_series, 1000.0 * m.p.capacity_ah).p.mass_kg,
-            m.p.mass_kg, rtol=1e-12)),
+        lambda m: bool(
+            np.isclose(
+                BatteryModel.from_capacity(
+                    m.p.chemistry, m.p.n_series, 1000.0 * m.p.capacity_ah
+                ).p.mass_kg,
+                m.p.mass_kg,
+                rtol=1e-12,
+            )
+        ),
         params=_example(),
     ),
     Invariant(
         "R = 0 ⇒ chemical power equals terminal power",
-        lambda m: bool(np.isclose(float(m.evaluate({"power_w": 100.0})["chemical_power_w"]), 100.0, rtol=1e-9)),
+        lambda m: bool(
+            np.isclose(
+                float(m.evaluate({"power_w": 100.0})["chemical_power_w"]),
+                100.0,
+                rtol=1e-9,
+            )
+        ),
         params=_example(r_cell_ohm_ah=0.0),
     ),
     Invariant(
         "energy proportional to mass",
-        lambda m: bool(np.isclose(2.0 * m.energy_wh(),
-                                  BatteryModel.from_mass(m.p.chemistry, m.p.n_series, 2.0 * m.p.mass_kg).energy_wh())),
+        lambda m: bool(
+            np.isclose(
+                2.0 * m.energy_wh(),
+                BatteryModel.from_mass(
+                    m.p.chemistry, m.p.n_series, 2.0 * m.p.mass_kg
+                ).energy_wh(),
+            )
+        ),
         params=_example(),
     ),
 ]

@@ -15,14 +15,27 @@ Example:
     ...     dihedral=[0.0, 1.0, 1.0, 20.0],
     ... )
     >>> stab = StabGeometry(
-    ...     root_chord=140.0, tip_chord=[100.0], length=[320.0], le_offset=[170.0],
-    ...     lever=360.0, stab_height=0.0, profile="Biconvexe fin",
-    ...     opening="120", lateral_gap=20.0,
+    ...     root_chord=140.0,
+    ...     tip_chord=[100.0],
+    ...     length=[320.0],
+    ...     le_offset=[170.0],
+    ...     lever=360.0,
+    ...     stab_height=0.0,
+    ...     profile="Biconvexe fin",
+    ...     opening="120",
+    ...     lateral_gap=20.0,
     ... )
     >>> fus = FuselageGeometry(
-    ...     length=760.0, width=85.0, height=115.0, nose_lever=270.0,
-    ...     shape="Profilée", beam="Normale", wing_pos="médiane", incidence="aile",
-    ...     accessory_surface=0.6, accessory_shape="Non profilé",
+    ...     length=760.0,
+    ...     width=85.0,
+    ...     height=115.0,
+    ...     nose_lever=270.0,
+    ...     shape="Profilée",
+    ...     beam="Normale",
+    ...     wing_pos="médiane",
+    ...     incidence="aile",
+    ...     accessory_surface=0.6,
+    ...     accessory_shape="Non profilé",
     ... )
     >>> settings = Settings(mass=1920.0, static_margin=5.0, cz_reg=0.30)
     >>> with PredimRCWrapper(profile="SD7003", template_dir="./profiles") as w:
@@ -36,9 +49,13 @@ import time
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
+from typing import TYPE_CHECKING
 from typing import Protocol
 
 import numpy as np
+
+if TYPE_CHECKING:
+    from typing_extensions import Self
 
 LOGGER = logging.getLogger(__name__)
 
@@ -60,9 +77,11 @@ def discover_profiles(folder: str | Path) -> dict[str, Path]:
     if not folder.is_dir():
         return found
     for path in sorted(folder.iterdir()):
-        if path.suffix.lower() not in PROFILE_SUFFIXES or not path.name.startswith(PROFILE_PREFIX):
+        if path.suffix.lower() not in PROFILE_SUFFIXES or not path.name.startswith(
+            PROFILE_PREFIX
+        ):
             continue
-        name = path.stem[len(PROFILE_PREFIX):]
+        name = path.stem[len(PROFILE_PREFIX) :]
         if not name or "." in name:
             continue
         if name in found:
@@ -80,10 +99,13 @@ def workbook_path(folder: str | Path, profile: str) -> Path:
     """
     profiles = discover_profiles(folder)
     if profile not in profiles:
-        msg = (f"No PredimRC workbook for the profile '{profile}' in {Path(folder).resolve()}. "
-               f"Available: {sorted(profiles)} (files named {PROFILE_PREFIX}<profile>.xls).")
+        msg = (
+            f"No PredimRC workbook for the profile '{profile}' in {Path(folder).resolve()}. "
+            f"Available: {sorted(profiles)} (files named {PROFILE_PREFIX}<profile>.xls)."
+        )
         raise FileNotFoundError(msg)
     return profiles[profile]
+
 
 _SHEET_GEOM = "3-Geometrie"
 _SHEET_CALC = "Calculs1"
@@ -294,8 +316,10 @@ class ImposedSpeed:
         """Drag (N) and power (W) interpolated at a wing Cz (NaN outside the block)."""
         order = np.argsort(self.cz_wing)
         x = self.cz_wing[order]
-        return (float(np.interp(cz, x, self.drag_n[order], left=np.nan, right=np.nan)),
-                float(np.interp(cz, x, self.power_w[order], left=np.nan, right=np.nan)))
+        return (
+            float(np.interp(cz, x, self.drag_n[order], left=np.nan, right=np.nan)),
+            float(np.interp(cz, x, self.power_w[order], left=np.nan, right=np.nan)),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +474,7 @@ class PredimRCWrapper:
 
     # --- session -------------------------------------------------------------
 
-    def __enter__(self) -> PredimRCWrapper:
+    def __enter__(self) -> Self:
         import xlwings as xw  # noqa: PLC0415  (Excel only needed here)
 
         self._app = xw.App(visible=self.visible, add_book=False)
@@ -482,14 +506,14 @@ class PredimRCWrapper:
         try:
             if self._wb is not None:
                 self._wb.close()
-        except Exception:  # noqa: BLE001
+        except Exception:  # ruff: ignore[blind-except]
             LOGGER.warning("Could not close the PredimRC workbook cleanly.")
         finally:
             self._wb = None
             if self._app is not None:
                 try:
                     self._app.quit()
-                except Exception:  # noqa: BLE001
+                except Exception:  # ruff: ignore[blind-except]
                     LOGGER.warning("Could not quit Excel cleanly; killing it.")
                     self._app.kill()
                 self._app = None
@@ -500,7 +524,7 @@ class PredimRCWrapper:
             return False
         try:
             _ = self._geom["C6"].value
-        except Exception:  # noqa: BLE001  (COM errors when Excel is gone)
+        except Exception:  # ruff: ignore[blind-except]  (COM errors when Excel is gone)
             return False
         return True
 
@@ -615,7 +639,9 @@ class PredimRCWrapper:
         vx, drag, power = derive_drag(vx_kmh[mask], sink[mask], mass_kg)
         order = np.argsort(vx)
         vx, drag, power = vx[order], drag[order], power[order]
-        cz, cx, sink, finesse, power_col = (a[mask][order] for a in (cz, cx, sink, finesse, power_col))
+        cz, cx, sink, finesse, power_col = (
+            a[mask][order] for a in (cz, cx, sink, finesse, power_col)
+        )
         geom = self._geom
         metrics = {k: float(geom[c].value) for k, c in _WING_OUTPUT_CELLS.items()}
         return AeroResults(
@@ -650,7 +676,9 @@ class PredimRCWrapper:
             power = _valid(calc[f"AQ{r0}:AQ{r1}"].value)
             ok = np.isfinite(cz) & np.isfinite(drag) & np.isfinite(power)
             if ok.any():
-                out[k] = ImposedSpeed(float(np.nanmedian(vx)), cz[ok], drag[ok], power[ok])
+                out[k] = ImposedSpeed(
+                    float(np.nanmedian(vx)), cz[ok], drag[ok], power[ok]
+                )
         return out
 
     # --- public API ----------------------------------------------------------

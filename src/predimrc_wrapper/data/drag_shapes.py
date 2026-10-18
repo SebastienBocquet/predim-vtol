@@ -21,8 +21,15 @@ class DragShape:
 @cache
 def drag_shapes() -> dict[str, DragShape]:
     """The shapes by PredimRC label: "Profilé", "Mixte", "Non profilé"."""
-    text = files("predimrc_wrapper.data").joinpath("drag_shapes.yaml").read_text(encoding="utf-8")
-    return {d["label"]: DragShape(d["label"], float(d["cd"]), d["source"]) for d in yaml.safe_load(text)}
+    text = (
+        files("predimrc_wrapper.data")
+        .joinpath("drag_shapes.yaml")
+        .read_text(encoding="utf-8")
+    )
+    return {
+        d["label"]: DragShape(d["label"], float(d["cd"]), d["source"])
+        for d in yaml.safe_load(text)
+    }
 
 
 def shape_cd(label: str) -> DragShape:

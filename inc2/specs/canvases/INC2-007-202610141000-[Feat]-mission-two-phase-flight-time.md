@@ -119,4 +119,3 @@ TwoPhaseEvaluation --> TwoPhaseResult
   `evaluate_two_phase` (the GEMSEO outputs and objectives are added in INC2-008).
 - Results on the templates (uncalibrated): tricopter hover 256 W at the battery (280 W
   measured), quadplane 4+1 with PredimRC 69–72 min, iso check passed.
-

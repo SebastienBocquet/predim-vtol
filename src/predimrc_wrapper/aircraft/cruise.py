@@ -54,7 +54,9 @@ class CruiseCurve:
         """(V minimum power, V maximum L/D) of the total curve, parabolic refinement (m/s)."""
         v = self.v_m_s
         i_p, i_d = int(np.argmin(self.power_total_w)), int(np.argmin(self.drag_total_n))
-        return _parabolic_min(v, self.power_total_w, i_p), _parabolic_min(v, self.drag_total_n, i_d)
+        return _parabolic_min(v, self.power_total_w, i_p), _parabolic_min(
+            v, self.drag_total_n, i_d
+        )
 
 
 @dataclass
@@ -101,28 +103,45 @@ class IsoCheck:
     @property
     def available(self) -> bool:
         """Both checks could be made (PredimRC blocks read)."""
-        return bool(np.isfinite(self.curve_max_rel_dev) and np.isfinite(self.imposed_max_rel_dev))
+        return bool(
+            np.isfinite(self.curve_max_rel_dev)
+            and np.isfinite(self.imposed_max_rel_dev)
+        )
 
     @property
     def passed(self) -> bool:
-        return self.curve_max_rel_dev <= ISO_TOLERANCE and self.imposed_max_rel_dev <= ISO_TOLERANCE
+        return (
+            self.curve_max_rel_dev <= ISO_TOLERANCE
+            and self.imposed_max_rel_dev <= ISO_TOLERANCE
+        )
 
 
-def cruise_curve(aircraft: AircraftModel, vx_kmh: tuple[float, float] | None = None) -> CruiseCurve:
+def cruise_curve(
+    aircraft: AircraftModel, vx_kmh: tuple[float, float] | None = None
+) -> CruiseCurve:
     """The cruise curve of a wing-borne aircraft at its total mass."""
     r = aircraft.aero.results(aircraft.total_mass_kg, vx_kmh)
     cds = sum(aircraft.drag_model.cds(s) for s in aircraft.drag_sources())
     v = np.asarray(r.vx, dtype=float)
     return CruiseCurve(
-        v_m_s=v, drag_predimrc_n=np.asarray(r.drag_n, dtype=float),
-        power_predimrc_w=np.asarray(r.power_predimrc_w if len(r.power_predimrc_w) else r.power_required_w, dtype=float),
-        drag_sources_n=0.5 * r.rho * v**2 * cds, drag_factor=aircraft.project.mission.drag_factor, rho=r.rho,
-        mass_kg=aircraft.total_mass_kg, cds_sources_m2=cds, wing_area_m2=r.total_surface / 100.0,
+        v_m_s=v,
+        drag_predimrc_n=np.asarray(r.drag_n, dtype=float),
+        power_predimrc_w=np.asarray(
+            r.power_predimrc_w if len(r.power_predimrc_w) else r.power_required_w,
+            dtype=float,
+        ),
+        drag_sources_n=0.5 * r.rho * v**2 * cds,
+        drag_factor=aircraft.project.mission.drag_factor,
+        rho=r.rho,
+        mass_kg=aircraft.total_mass_kg,
+        cds_sources_m2=cds,
+        wing_area_m2=r.total_surface / 100.0,
     )
 
 
-def target_points(aircraft: AircraftModel, speeds_m_s: tuple[float, float] | None = None
-                  ) -> tuple[CruiseCurve, list[TargetPoint], IsoCheck]:
+def target_points(
+    aircraft: AircraftModel, speeds_m_s: tuple[float, float] | None = None
+) -> tuple[CruiseCurve, list[TargetPoint], IsoCheck]:
     """Curve, target points and iso checks; default speeds: minimum power and maximum L/D.
 
     Two PredimRC evaluations when the speeds are not given (the second writes Vx 1, Vx 2).
@@ -144,16 +163,32 @@ def target_points(aircraft: AircraftModel, speeds_m_s: tuple[float, float] | Non
         else:
             drag_p, power_p = block.at_cz(cz)
             read_back_v = 3.6 * block.vx_m_s
-        point = TargetPoint(k, v, cz, drag_p, power_p, 0.5 * curve.rho * v**2 * curve.cds_sources_m2,
-                            curve.drag_factor, float(np.interp(v, curve.v_m_s, curve.power_total_w)))
+        point = TargetPoint(
+            k,
+            v,
+            cz,
+            drag_p,
+            power_p,
+            0.5 * curve.rho * v**2 * curve.cds_sources_m2,
+            curve.drag_factor,
+            float(np.interp(v, curve.v_m_s, curve.power_total_w)),
+        )
         points.append(point)
         if block is not None:
-            devs.append(abs(point.drag_predimrc_n * v / power_p - 1.0) if power_p > 0 else np.inf)
-            devs.append(abs(read_back_v / (3.6 * v) - 1.0))
+            devs.extend((
+                abs(point.drag_predimrc_n * v / power_p - 1.0)
+                if power_p > 0
+                else np.inf,
+                abs(read_back_v / (3.6 * v) - 1.0),
+            ))
         gaps.append(point.curve_gap)
         read_back.append(read_back_v)
     m_g_vz = np.asarray(results.power_required_w, dtype=float)
     col = np.asarray(results.power_predimrc_w, dtype=float)
-    curve_dev = float(np.nanmax(np.abs(m_g_vz / col - 1.0))) if len(col) else float("nan")
-    iso = IsoCheck(curve_dev, float(max(devs)) if devs else float("nan"), gaps, read_back)
+    curve_dev = (
+        float(np.nanmax(np.abs(m_g_vz / col - 1.0))) if len(col) else float("nan")
+    )
+    iso = IsoCheck(
+        curve_dev, float(max(devs)) if devs else float("nan"), gaps, read_back
+    )
     return curve, points, iso

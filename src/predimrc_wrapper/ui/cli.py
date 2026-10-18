@@ -13,7 +13,11 @@ def streamlit_argv(args: list[str]) -> list[str]:
     while i < len(args):
         if args[i].startswith("--"):
             options.append(args[i])
-            if "=" not in args[i] and i + 1 < len(args) and not args[i + 1].startswith("--"):
+            if (
+                "=" not in args[i]
+                and i + 1 < len(args)
+                and not args[i + 1].startswith("--")
+            ):
                 options.append(args[i + 1])
                 i += 1
         else:

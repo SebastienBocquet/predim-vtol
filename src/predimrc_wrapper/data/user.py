@@ -8,4 +8,6 @@ from pathlib import Path
 
 def user_data_dir() -> Path:
     """Folder of the user data files merged with the shipped ones (may not exist)."""
-    return Path(os.environ.get("PREDIMRC_USER_DATA", Path.home() / ".predimrc_wrapper" / "data"))
+    return Path(
+        os.environ.get("PREDIMRC_USER_DATA", Path.home() / ".predimrc_wrapper" / "data")
+    )

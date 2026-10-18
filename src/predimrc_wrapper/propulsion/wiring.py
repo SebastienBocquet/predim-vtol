@@ -96,15 +96,27 @@ def default_layout(project: Project) -> WiringLayout:
         return x_nose + pct / 100.0 * length if wing_borne else 0.0
 
     four_in_one = spec.lift_esc == "four_in_one"
-    distribution = at_fuselage(spec.lift_esc_position_pct) if four_in_one else (spar if wing_borne else 0.0)
+    distribution = (
+        at_fuselage(spec.lift_esc_position_pct)
+        if four_in_one
+        else (spar if wing_borne else 0.0)
+    )
     branches = []
     for i, m in enumerate(project.motors):
         if m.role == "cruise":
-            ex, ey, origin = at_fuselage(spec.cruise_esc_position_pct), 0.0, "cruise ESC at % of the fuselage"
+            ex, ey, origin = (
+                at_fuselage(spec.cruise_esc_position_pct),
+                0.0,
+                "cruise ESC at % of the fuselage",
+            )
         elif four_in_one:
             ex, ey, origin = distribution, 0.0, "4-in-1 ESC at % of the fuselage"
         elif wing_borne:
-            ex, ey, origin = at_fuselage(spec.lift_esc_position_pct), 0.0, "separate ESC at % of the fuselage"
+            ex, ey, origin = (
+                at_fuselage(spec.lift_esc_position_pct),
+                0.0,
+                "separate ESC at % of the fuselage",
+            )
         else:
             f = spec.lift_esc_position_pct / 100.0
             ex, ey, origin = f * m.x_mm, f * m.y_mm, "separate ESC at % of the arm"
@@ -120,4 +132,6 @@ def default_layout(project: Project) -> WiringLayout:
         else:
             dc = float(np.hypot(ex - distribution, ey))  # along the arm from the centre
         branches.append(BranchLengths(i, dc, phase, ex, ey, origin))
-    return WiringLayout(battery_rear, distribution, abs(distribution - battery_rear), branches)
+    return WiringLayout(
+        battery_rear, distribution, abs(distribution - battery_rear), branches
+    )

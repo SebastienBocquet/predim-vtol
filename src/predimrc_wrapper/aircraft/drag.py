@@ -28,9 +28,20 @@ class SpeedPolar:
 
 
 def _sum_of_sources(model: DragModel) -> bool:
-    sources = [{"kind": "cds", "cds_m2": 0.01, "count": 2}, {"kind": "cds", "cds_m2": 0.005, "count": 1}]
-    y = model.evaluate({"sources": sources, "v_m_s": 10.0, "rho": 1.2, "body_cds_m2": 0.0})
-    return abs(y["cds_dedicated_m2"] - 0.025) < 1e-15 and abs(float(y["drag_n"]) - 0.5 * 1.2 * 100 * 0.025) < 1e-12
+    sources = [
+        {"kind": "cds", "cds_m2": 0.01, "count": 2},
+        {"kind": "cds", "cds_m2": 0.005, "count": 1},
+    ]
+    y = model.evaluate({
+        "sources": sources,
+        "v_m_s": 10.0,
+        "rho": 1.2,
+        "body_cds_m2": 0.0,
+    })
+    return (
+        abs(y["cds_dedicated_m2"] - 0.025) < 1e-15
+        and abs(float(y["drag_n"]) - 0.5 * 1.2 * 100 * 0.025) < 1e-12
+    )
 
 
 class DragModel(Model):
@@ -43,24 +54,68 @@ class DragModel(Model):
 
     mic_id = "MIC-CFG-DRAG"
     inputs = ports(
-        Port("sources", "—", "—", "list of {kind: boom | stopped_rotor | cds, count, ...}"),
+        Port(
+            "sources",
+            "—",
+            "—",
+            "list of {kind: boom | stopped_rotor | cds, count, ...}",
+        ),
         Port("v_m_s", "V", "m/s", "true airspeed", (0, None)),
         Port("rho", "ρ", "kg/m³", "air density", (0, None)),
         Port("polar", "—", "—", "PredimRC speed polar at the total mass (quadplane)"),
         Port("body_cds_m2", "CdS_b", "m²", "body drag area (multicopter)", (0, None)),
     )
     outputs = ports(
-        Port("cds_dedicated_m2", "ΣCdS", "m²", "sum of dedicated drag areas", (0, None)),
+        Port(
+            "cds_dedicated_m2", "ΣCdS", "m²", "sum of dedicated drag areas", (0, None)
+        ),
         Port("drag_n", "D", "N", "total drag at V (NaN outside the polar)", (0, None)),
-        Port("v_min_m_s", "V_min", "m/s", "lowest valid polar speed at ρ (quadplane)", (0, None)),
+        Port(
+            "v_min_m_s",
+            "V_min",
+            "m/s",
+            "lowest valid polar speed at ρ (quadplane)",
+            (0, None),
+        ),
     )
     parameters = params(
-        Param("boom_cf", "C_f", "—", "boom skin friction coefficient", default=0.005, bounds=(0, None), source="generic turbulent flat plate"),
-        Param("boom_cd_end", "C_d,end", "—", "boom base drag coefficient", default=0.15, bounds=(0, None), source="generic"),
-        Param("blade_cd", "C_d,b", "—", "stopped blade drag (blade planform)", default=0.05, bounds=(0, None), source="generic, blades aligned"),
+        Param(
+            "boom_cf",
+            "C_f",
+            "—",
+            "boom skin friction coefficient",
+            default=0.005,
+            bounds=(0, None),
+            source="generic turbulent flat plate",
+        ),
+        Param(
+            "boom_cd_end",
+            "C_d,end",
+            "—",
+            "boom base drag coefficient",
+            default=0.15,
+            bounds=(0, None),
+            source="generic",
+        ),
+        Param(
+            "blade_cd",
+            "C_d,b",
+            "—",
+            "stopped blade drag (blade planform)",
+            default=0.05,
+            bounds=(0, None),
+            source="generic, blades aligned",
+        ),
     )
     expected_forms = [
-        ScalingLaw("drag_n", "v_m_s", 2.0, fixed={"sources": [], "rho": 1.2, "body_cds_m2": 0.03}, lower=2.0, upper=30.0),
+        ScalingLaw(
+            "drag_n",
+            "v_m_s",
+            2.0,
+            fixed={"sources": [], "rho": 1.2, "body_cds_m2": 0.03},
+            lower=2.0,
+            upper=30.0,
+        ),
         Invariant("ΣCdS is the sum of the sources", _sum_of_sources),
     ]
 
@@ -69,9 +124,17 @@ class DragModel(Model):
         kind, count = source["kind"], source.get("count", 1)
         if kind == "boom":
             d, length = source["diameter_m"], source["length_m"]
-            one = self.p.boom_cf * np.pi * d * length + self.p.boom_cd_end * np.pi * d**2 / 4.0
+            one = (
+                self.p.boom_cf * np.pi * d * length
+                + self.p.boom_cd_end * np.pi * d**2 / 4.0
+            )
         elif kind == "stopped_rotor":
-            one = source.get("n_blades", 2) * source["blade_chord_m"] * source["radius_m"] * self.p.blade_cd
+            one = (
+                source.get("n_blades", 2)
+                * source["blade_chord_m"]
+                * source["radius_m"]
+                * self.p.blade_cd
+            )
         elif kind == "cds":
             one = source["cds_m2"]
         else:

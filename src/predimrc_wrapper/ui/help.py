@@ -24,11 +24,23 @@ from pydantic import BaseModel
 UNIT_IN_TEXT = re.compile(r"\(([^()]*)\)\s*$")
 
 CARDS = {
-    "propulsion_units": "MIC-PROP-UNIT", "motors": "MIC-MIS-TWO", "cg_x_mm": "MIC-MIS-TWO", "cg_y_mm": "MIC-MIS-TWO",
-    "battery": "MIC-PROP-BAT", "mass_items": "MIC-CFG-MASS", "max_takeoff_mass_kg": "MIC-CFG-MASS",
-    "drag_sources": "MIC-CFG-DRAG", "body_cds_m2": "MIC-CFG-DRAG", "wiring": "MIC-PROP-CHAIN",
-    "mission": "MIC-MIS-TWO", "sizing": "MIC-CFG-SIZ", "calibration": "MIC-CAL-REF", "test_data": "MIC-CAL-REF",
-    "environment": "MIC-ATM-ISA", "scenarios": "MIC-MIS-SOL", "aero": "PredimRC (external model)",
+    "propulsion_units": "MIC-PROP-UNIT",
+    "motors": "MIC-MIS-TWO",
+    "cg_x_mm": "MIC-MIS-TWO",
+    "cg_y_mm": "MIC-MIS-TWO",
+    "battery": "MIC-PROP-BAT",
+    "mass_items": "MIC-CFG-MASS",
+    "max_takeoff_mass_kg": "MIC-CFG-MASS",
+    "drag_sources": "MIC-CFG-DRAG",
+    "body_cds_m2": "MIC-CFG-DRAG",
+    "wiring": "MIC-PROP-CHAIN",
+    "mission": "MIC-MIS-TWO",
+    "sizing": "MIC-CFG-SIZ",
+    "calibration": "MIC-CAL-REF",
+    "test_data": "MIC-CAL-REF",
+    "environment": "MIC-ATM-ISA",
+    "scenarios": "MIC-MIS-SOL",
+    "aero": "PredimRC (external model)",
 }
 """MIC card of the model using each top-level project block."""
 
@@ -48,11 +60,17 @@ class HelpEntry:
 
     def text(self) -> str:
         """Markdown tooltip."""
-        parts = [f"**{self.name}**" + (f" ({self.symbol})" if self.symbol else ""), self.definition]
+        parts = [
+            f"**{self.name}**" + (f" ({self.symbol})" if self.symbol else ""),
+            self.definition,
+        ]
         if self.unit:
             parts.append(f"Unit: {self.unit}")
         if self.default:
-            parts.append(f"Default: {self.default}" + (f" — source: {self.default_source}" if self.default_source else ""))
+            parts.append(
+                f"Default: {self.default}"
+                + (f" — source: {self.default_source}" if self.default_source else "")
+            )
         if self.model:
             parts.append(f"Model card: {self.model}")
         return "  \n".join(parts)
@@ -90,7 +108,9 @@ def _container(annotation: Any) -> str:
     return ""
 
 
-def schema_entries(model_cls: type[BaseModel], prefix: str = "", card: str = "") -> dict[str, HelpEntry]:
+def schema_entries(
+    model_cls: type[BaseModel], prefix: str = "", card: str = ""
+) -> dict[str, HelpEntry]:
     """Entries of every field of a pydantic model, recursively."""
     entries = {}
     for name, info in model_cls.model_fields.items():
@@ -99,13 +119,31 @@ def schema_entries(model_cls: type[BaseModel], prefix: str = "", card: str = "")
         subs = _models_of(info.annotation)
         description = info.description or ""
         unit_match = UNIT_IN_TEXT.search(description)
-        default = "" if info.is_required() or info.default in (None, [], {}) else repr(info.default)
+        default = (
+            ""
+            if info.is_required() or info.default in (None, [], {})
+            else repr(info.default)
+        )
         extra = info.json_schema_extra or {}
         entries[key] = HelpEntry(
-            key, name.replace("_", " "), description, unit_match.group(1) if unit_match else "", extra.get("symbol", ""),
-            default, extra.get("source", "tool default" if default else ""), model)
+            key,
+            name.replace("_", " "),
+            description,
+            unit_match.group(1) if unit_match else "",
+            extra.get("symbol", ""),
+            default,
+            extra.get("source", "tool default" if default else ""),
+            model,
+        )
         for sub in subs:
-            sub_prefix = f"{key}.*." if (_container(info.annotation) or name in ("propulsion_units", "scenarios")) else f"{key}."
+            sub_prefix = (
+                f"{key}.*."
+                if (
+                    _container(info.annotation)
+                    or name in ("propulsion_units", "scenarios")
+                )
+                else f"{key}."
+            )
             entries.update(schema_entries(sub, sub_prefix, model))
     return entries
 
@@ -116,27 +154,62 @@ def model_entries() -> dict[str, HelpEntry]:
 
     from predimrc_wrapper.core import REGISTRY  # noqa: PLC0415
 
-    for module in ("propulsion", "aircraft", "mission.solver", "mission.two_phase", "sizing"):
+    for module in (
+        "propulsion",
+        "aircraft",
+        "mission.solver",
+        "mission.two_phase",
+        "sizing",
+    ):
         importlib.import_module(f"predimrc_wrapper.{module}")
     entries = {}
     for mic, cls in REGISTRY.items():
         if mic.startswith("MIC-TEST"):
             continue
         for port in (*cls.inputs.values(), *cls.outputs.values()):
-            entries[f"{mic}.{port.name}"] = HelpEntry(f"{mic}.{port.name}", port.name, port.description,
-                                                      "" if port.unit == "—" else port.unit, port.symbol, model=mic)
+            entries[f"{mic}.{port.name}"] = HelpEntry(
+                f"{mic}.{port.name}",
+                port.name,
+                port.description,
+                "" if port.unit == "—" else port.unit,
+                port.symbol,
+                model=mic,
+            )
         for p in cls.parameters.values():
             entries[f"{mic}.{p.name}"] = HelpEntry(
-                f"{mic}.{p.name}", p.name, p.description, "" if p.unit == "—" else p.unit, p.symbol,
-                repr(p.default) if p.has_default else p.origin, p.source, mic)
+                f"{mic}.{p.name}",
+                p.name,
+                p.description,
+                "" if p.unit == "—" else p.unit,
+                p.symbol,
+                repr(p.default) if p.has_default else p.origin,
+                p.source,
+                mic,
+            )
     return entries
 
 
 def glossary_entries() -> dict[str, HelpEntry]:
     """Displayed quantities of ``glossary.yaml``, keyed by their label."""
-    data = yaml.safe_load(files("predimrc_wrapper.ui").joinpath("glossary.yaml").read_text(encoding="utf-8")) or {}
-    return {label: HelpEntry(label, label, d["definition"], d.get("unit", ""), d.get("symbol", ""),
-                             model=d.get("model", "")) for label, d in data.items()}
+    data = (
+        yaml.safe_load(
+            files("predimrc_wrapper.ui")
+            .joinpath("glossary.yaml")
+            .read_text(encoding="utf-8")
+        )
+        or {}
+    )
+    return {
+        label: HelpEntry(
+            label,
+            label,
+            d["definition"],
+            d.get("unit", ""),
+            d.get("symbol", ""),
+            model=d.get("model", ""),
+        )
+        for label, d in data.items()
+    }
 
 
 class HelpRegistry:
@@ -161,7 +234,11 @@ class HelpRegistry:
 
     def search(self, text: str) -> list[HelpEntry]:
         t = text.lower()
-        return [e for e in self.entries.values() if t in e.key.lower() or t in e.name.lower() or t in e.definition.lower()]
+        return [
+            e
+            for e in self.entries.values()
+            if t in e.key.lower() or t in e.name.lower() or t in e.definition.lower()
+        ]
 
     def missing(self, keys: list[str]) -> list[str]:
         """Keys without an entry or without a definition."""

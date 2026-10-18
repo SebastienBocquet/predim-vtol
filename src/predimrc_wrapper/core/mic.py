@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from pathlib import Path
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from predimrc_wrapper.core.model import Model
 
 START = "<!-- interface:start -->"
@@ -39,7 +40,13 @@ class MicInterface:
 
         def port_rows(items) -> list[list[str]]:
             return [
-                [f"`{p.name}`", p.symbol, p.unit, p.description, _bounds(p.physical_bounds)]
+                [
+                    f"`{p.name}`",
+                    p.symbol,
+                    p.unit,
+                    p.description,
+                    _bounds(p.physical_bounds),
+                ]
                 for p in items.values()
             ]
 
@@ -47,8 +54,15 @@ class MicInterface:
             inputs=port_rows(model_cls.inputs),
             outputs=port_rows(model_cls.outputs),
             parameters=[
-                [f"`{p.name}`", p.symbol, p.unit, p.description, p.default_or_origin,
-                 _bounds(p.bounds), p.source or "—"]
+                [
+                    f"`{p.name}`",
+                    p.symbol,
+                    p.unit,
+                    p.description,
+                    p.default_or_origin,
+                    _bounds(p.bounds),
+                    p.source or "—",
+                ]
                 for p in model_cls.parameters.values()
             ],
         )
@@ -60,9 +74,10 @@ class MicInterface:
             lines = [f"### {title}", ""]
             if not rows:
                 return "\n".join([*lines, "None."])
-            lines.append("| " + " | ".join(header) + " |")
-            lines.append("|" + "---|" * len(header))
-            lines += ["| " + " | ".join(c.replace("|", r"\|") for c in r) + " |" for r in rows]
+            lines.extend(("| " + " | ".join(header) + " |", "|" + "---|" * len(header)))
+            lines += [
+                "| " + " | ".join(c.replace("|", r"\|") for c in r) + " |" for r in rows
+            ]
             return "\n".join(lines)
 
         port_header = ["Name", "Symbol", "Unit", "Description", "Physical bounds"]
@@ -71,8 +86,15 @@ class MicInterface:
             table("Outputs", port_header, self.outputs),
             table(
                 "Parameters",
-                ["Name", "Symbol", "Unit", "Description", "Default / origin",
-                 "Physical bounds", "Source"],
+                [
+                    "Name",
+                    "Symbol",
+                    "Unit",
+                    "Description",
+                    "Default / origin",
+                    "Physical bounds",
+                    "Source",
+                ],
                 self.parameters,
             ),
         ])
@@ -89,7 +111,7 @@ def write_interface(model_cls: type[Model], card: Path) -> bool:
         Whether the card changed.
     """
     text = card.read_text(encoding="utf-8")
-    pattern = re.compile(re.escape(START) + r".*?" + re.escape(END), re.S)
+    pattern = re.compile(re.escape(START) + r".*?" + re.escape(END), re.DOTALL)
     if not pattern.search(text):
         msg = f"{card}: interface markers not found."
         raise ValueError(msg)

@@ -66,9 +66,15 @@ class PowerRange:
 
 
 def _reference_point(model: MotorPowerLaw) -> bool:
-    y = model.evaluate({"mass_kg": model.p.reference_mass_kg, "power_share": 1.0, "thrust_to_weight": 1.0})
-    return bool(np.isclose(y["hover_power_w"], model.p.reference_hover_power_w, rtol=1e-12)
-                and np.isclose(y["motor_power_w"], model.p.reference_hover_power_w, rtol=1e-12))
+    y = model.evaluate({
+        "mass_kg": model.p.reference_mass_kg,
+        "power_share": 1.0,
+        "thrust_to_weight": 1.0,
+    })
+    return bool(
+        np.isclose(y["hover_power_w"], model.p.reference_hover_power_w, rtol=1e-12)
+        and np.isclose(y["motor_power_w"], model.p.reference_hover_power_w, rtol=1e-12)
+    )
 
 
 class MotorPowerLaw(Model):
@@ -80,32 +86,88 @@ class MotorPowerLaw(Model):
     mic_id = "MIC-CFG-SIZ"
     inputs = ports(
         Port("mass_kg", "m", "kg", "take-off mass", (0, None)),
-        Port("power_share", "s_i", "—", "share of the hover power taken by the motor", (0, 1)),
+        Port(
+            "power_share",
+            "s_i",
+            "—",
+            "share of the hover power taken by the motor",
+            (0, 1),
+        ),
         Port("thrust_to_weight", "T/W", "—", "thrust-to-weight to deliver", (1, None)),
     )
     outputs = ports(
-        Port("hover_power_w", "P_h", "W", "hover battery power of the aircraft", (0, None)),
+        Port(
+            "hover_power_w",
+            "P_h",
+            "W",
+            "hover battery power of the aircraft",
+            (0, None),
+        ),
         Port("motor_power_w", "P_i", "W", "power the motor must deliver", (0, None)),
     )
     parameters = params(
-        Param("reference_mass_kg", "m_ref", "kg", "mass of the reference aircraft", default=1.87, bounds=(0, None), source="user tricopter, 2026-10-13"),
-        Param("reference_hover_power_w", "P_ref", "W", "measured hover battery power of the reference", default=280.0, bounds=(0, None), source="user tricopter, 2026-10-13"),
-        Param("mass_exponent", "k", "—", "1: propellers grow with the aircraft; 1.5: same propellers", default=1.0, bounds=(0, 2), source="momentum theory"),
+        Param(
+            "reference_mass_kg",
+            "m_ref",
+            "kg",
+            "mass of the reference aircraft",
+            default=1.87,
+            bounds=(0, None),
+            source="user tricopter, 2026-10-13",
+        ),
+        Param(
+            "reference_hover_power_w",
+            "P_ref",
+            "W",
+            "measured hover battery power of the reference",
+            default=280.0,
+            bounds=(0, None),
+            source="user tricopter, 2026-10-13",
+        ),
+        Param(
+            "mass_exponent",
+            "k",
+            "—",
+            "1: propellers grow with the aircraft; 1.5: same propellers",
+            default=1.0,
+            bounds=(0, 2),
+            source="momentum theory",
+        ),
     )
     expected_forms = [
-        ScalingLaw("hover_power_w", "mass_kg", 1.0, fixed={"power_share": 1.0, "thrust_to_weight": 1.0}, lower=0.5, upper=5.0),
-        ScalingLaw("motor_power_w", "thrust_to_weight", 1.5, fixed={"mass_kg": 2.0, "power_share": 0.25}, lower=1.0, upper=3.0),
+        ScalingLaw(
+            "hover_power_w",
+            "mass_kg",
+            1.0,
+            fixed={"power_share": 1.0, "thrust_to_weight": 1.0},
+            lower=0.5,
+            upper=5.0,
+        ),
+        ScalingLaw(
+            "motor_power_w",
+            "thrust_to_weight",
+            1.5,
+            fixed={"mass_kg": 2.0, "power_share": 0.25},
+            lower=1.0,
+            upper=3.0,
+        ),
         Invariant("reference point reproduced", _reference_point),
     ]
 
     @classmethod
     def from_spec(cls, spec: SizingSpec) -> MotorPowerLaw:
-        return cls(reference_mass_kg=spec.reference_mass_kg, reference_hover_power_w=spec.reference_hover_power_w,
-                   mass_exponent=spec.mass_exponent)
+        return cls(
+            reference_mass_kg=spec.reference_mass_kg,
+            reference_hover_power_w=spec.reference_hover_power_w,
+            mass_exponent=spec.mass_exponent,
+        )
 
     def evaluate(self, x):
         m = np.asarray(x["mass_kg"], dtype=float)
-        hover = self.p.reference_hover_power_w * (m / self.p.reference_mass_kg) ** self.p.mass_exponent
+        hover = (
+            self.p.reference_hover_power_w
+            * (m / self.p.reference_mass_kg) ** self.p.mass_exponent
+        )
         share = np.asarray(x.get("power_share", 1.0), dtype=float)
         tw = np.asarray(x.get("thrust_to_weight", 1.0), dtype=float)
         return {"hover_power_w": hover, "motor_power_w": share * hover * tw**1.5}
@@ -120,28 +182,56 @@ def _per_motor_need(project: Project, spec: SizingSpec, mass_kg: float) -> list[
     """Power needed by each motor of the project at a mass (W), in the order of ``motors``."""
     units = project.propulsion_units
     lift = project.lift_motors()
-    area = np.array([np.pi * (units[m.unit].prop_diameter_in * INCH) ** 2 / 4.0 for m in lift])
+    area = np.array([
+        np.pi * (units[m.unit].prop_diameter_in * INCH) ** 2 / 4.0 for m in lift
+    ])
     try:
-        fractions = hover_thrust_split(np.array([m.x_mm * MM for m in lift]), np.array([m.y_mm * MM for m in lift]),
-                                       area, None if project.cg_x_mm is None else
-                                       (project.cg_x_mm * MM, project.cg_y_mm * MM))
+        fractions = hover_thrust_split(
+            np.array([m.x_mm * MM for m in lift]),
+            np.array([m.y_mm * MM for m in lift]),
+            area,
+            None
+            if project.cg_x_mm is None
+            else (project.cg_x_mm * MM, project.cg_y_mm * MM),
+        )
     except ProjectError:
         fractions = area / area.sum()
     momentum = fractions**1.5 / np.sqrt(area)
     lift_need = MotorPowerLaw.from_spec(spec).evaluate({
-        "mass_kg": mass_kg, "power_share": momentum / momentum.sum(),
-        "thrust_to_weight": project.mission.min_thrust_to_weight})["motor_power_w"]
-    lift_need_by_id = {id(m): float(p) for m, p in zip(lift, lift_need)}
-    cruise = [m for m in project.motors if m.role in CRUISE_ROLES] if project.architecture == "quadplane" else []
+        "mass_kg": mass_kg,
+        "power_share": momentum / momentum.sum(),
+        "thrust_to_weight": project.mission.min_thrust_to_weight,
+    })["motor_power_w"]
+    lift_need_by_id = {id(m): float(p) for m, p in zip(lift, lift_need, strict=False)}
+    cruise = (
+        [m for m in project.motors if m.role in CRUISE_ROLES]
+        if project.architecture == "quadplane"
+        else []
+    )
     cruise_need_by_id = {}
     if cruise:
-        c_area = np.array([np.pi * (units[m.unit].prop_diameter_in * INCH) ** 2 / 4.0 for m in cruise])
-        total = mass_kg * GRAVITY * spec.cruise_max_speed_m_s / (spec.cruise_lift_to_drag * spec.cruise_overall_efficiency)
-        cruise_need_by_id = {id(m): float(total * a / c_area.sum()) for m, a in zip(cruise, c_area)}
-    return [max(lift_need_by_id.get(id(m), 0.0), cruise_need_by_id.get(id(m), 0.0)) for m in project.motors]
+        c_area = np.array([
+            np.pi * (units[m.unit].prop_diameter_in * INCH) ** 2 / 4.0 for m in cruise
+        ])
+        total = (
+            mass_kg
+            * GRAVITY
+            * spec.cruise_max_speed_m_s
+            / (spec.cruise_lift_to_drag * spec.cruise_overall_efficiency)
+        )
+        cruise_need_by_id = {
+            id(m): float(total * a / c_area.sum())
+            for m, a in zip(cruise, c_area, strict=False)
+        }
+    return [
+        max(lift_need_by_id.get(id(m), 0.0), cruise_need_by_id.get(id(m), 0.0))
+        for m in project.motors
+    ]
 
 
-def motor_power_ranges(project: Project, db: MotorDatabase | None = None) -> list[PowerRange]:
+def motor_power_ranges(
+    project: Project, db: MotorDatabase | None = None
+) -> list[PowerRange]:
     """Power range and candidate motors of each propulsion unit type of a project with a ``sizing`` block.
 
     Raises:
@@ -153,7 +243,10 @@ def motor_power_ranges(project: Project, db: MotorDatabase | None = None) -> lis
         raise ValueError(msg)
     db = db or default_database()
     low_mass, high_mass = spec.target_mass_kg
-    low, high = _per_motor_need(project, spec, low_mass), _per_motor_need(project, spec, high_mass)
+    low, high = (
+        _per_motor_need(project, spec, low_mass),
+        _per_motor_need(project, spec, high_mass),
+    )
     out = []
     for name, unit in project.propulsion_units.items():
         idx = [i for i, m in enumerate(project.motors) if m.unit == name]
@@ -161,13 +254,23 @@ def motor_power_ranges(project: Project, db: MotorDatabase | None = None) -> lis
             continue
         need_low, need_high = min(low[i] for i in idx), max(high[i] for i in idx)
         accepted = spec.headroom * need_high
-        candidates = sorted((m for m in db.records.values() if need_low <= m.p_max <= accepted), key=lambda m: m.p_max)
-        out.append(PowerRange(
-            unit=name, roles=sorted({project.motors[i].role for i in idx}), n_motors=len(idx),
-            need_low_w=need_low, need_high_w=need_high, accepted_high_w=accepted,
-            candidates=[m.id for m in candidates], current_motor=unit.motor_id,
-            current_p_max_w=db.motor(unit.motor_id).p_max,
-        ))
+        candidates = sorted(
+            (m for m in db.records.values() if need_low <= m.p_max <= accepted),
+            key=lambda m: m.p_max,
+        )
+        out.append(
+            PowerRange(
+                unit=name,
+                roles=sorted({project.motors[i].role for i in idx}),
+                n_motors=len(idx),
+                need_low_w=need_low,
+                need_high_w=need_high,
+                accepted_high_w=accepted,
+                candidates=[m.id for m in candidates],
+                current_motor=unit.motor_id,
+                current_p_max_w=db.motor(unit.motor_id).p_max,
+            )
+        )
     return out
 
 

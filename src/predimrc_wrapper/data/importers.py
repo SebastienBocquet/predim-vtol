@@ -17,7 +17,9 @@ ALIASES = {"throttle": "throttle_pct", "thrust_n": "thrust_g"}
 """CSV header aliases; ``thrust_n`` is converted to grams."""
 
 
-def import_csv(path: str | Path, header: dict[str, Any]) -> tuple[ThrustTest, dict[str, Any]]:
+def import_csv(
+    path: str | Path, header: dict[str, Any]
+) -> tuple[ThrustTest, dict[str, Any]]:
     """Read a CSV of a test (columns among ``COLUMNS``, or ``thrust_n``) and its header form.
 
     Args:
@@ -37,7 +39,10 @@ def import_csv(path: str | Path, header: dict[str, Any]) -> tuple[ThrustTest, di
             rows.append(values)
     if "thrust_g" in names and "thrust_n" in [n.strip() for n in reader.fieldnames]:
         i = names.index("thrust_g")
-        rows = [[*r[:i], None if r[i] is None else r[i] / 9.81 * 1000.0, *r[i + 1:]] for r in rows]
+        rows = [
+            [*r[:i], None if r[i] is None else r[i] / 9.81 * 1000.0, *r[i + 1 :]]
+            for r in rows
+        ]
     columns = [n for n in names if n in COLUMNS]
     keep = [names.index(c) for c in columns]
     raw = {**header, "columns": columns, "rows": [[r[i] for i in keep] for r in rows]}
@@ -49,5 +54,7 @@ def write_user_test(raw: dict[str, Any], folder: str | Path | None = None) -> Pa
     target = Path(folder) if folder is not None else user_data_dir() / "thrust_tests"
     target.mkdir(parents=True, exist_ok=True)
     path = target / f"{raw['id']}.yaml"
-    path.write_text(yaml.safe_dump(raw, sort_keys=False, allow_unicode=True), encoding="utf-8")
+    path.write_text(
+        yaml.safe_dump(raw, sort_keys=False, allow_unicode=True), encoding="utf-8"
+    )
     return path

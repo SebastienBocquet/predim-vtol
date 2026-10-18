@@ -1,7 +1,7 @@
 """GEMSEO integration (MVP-006). Requires the ``[mdo]`` extra."""
 
 try:
-    import gemseo  # noqa: F401
+    import gemseo  # ruff: ignore[unused-import]
 except ModuleNotFoundError as error:  # pragma: no cover
     msg = "predimrc_wrapper.mdo needs GEMSEO: pip install 'predimrc_wrapper[mdo]'."
     raise ImportError(msg) from error

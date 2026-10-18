@@ -12,14 +12,18 @@ from predimrc_wrapper.core import ports
 _EXAMPLE_INPUT = {
     "mass_items": [("airframe", 0.9), ("payload", 0.15), ("avionics", 0.12)],
     "propulsion_items": [("lift propulsion", 0.15)] * 4 + [("cruise propulsion", 0.15)],
-    "battery_mass_kg": 0.6, "max_takeoff_mass_kg": 3.0,
+    "battery_mass_kg": 0.6,
+    "max_takeoff_mass_kg": 3.0,
 }
 
 
 def _exact_sum(model: MassBudget) -> bool:
     y = model.evaluate(_EXAMPLE_INPUT)
     expected = 0.9 + 0.15 + 0.12 + 4 * 0.15 + 0.15 + 0.6
-    return abs(y["total_kg"] - expected) < 1e-12 and abs(sum(y["breakdown"].values()) - expected) < 1e-12
+    return (
+        abs(y["total_kg"] - expected) < 1e-12
+        and abs(sum(y["breakdown"].values()) - expected) < 1e-12
+    )
 
 
 class MassBudget(Model):
@@ -31,9 +35,20 @@ class MassBudget(Model):
     mic_id = "MIC-CFG-MASS"
     inputs = ports(
         Port("mass_items", "m_i", "kg", "user items as (category, mass) pairs"),
-        Port("propulsion_items", "m_u,j", "kg", "motor + propeller + ESC mass of each motor, as (category, mass) pairs"),
+        Port(
+            "propulsion_items",
+            "m_u,j",
+            "kg",
+            "motor + propeller + ESC mass of each motor, as (category, mass) pairs",
+        ),
         Port("battery_mass_kg", "m_b", "kg", "battery mass (MIC-PROP-BAT)", (0, None)),
-        Port("max_takeoff_mass_kg", "m_max", "kg", "optional maximum take-off mass", (0, None)),
+        Port(
+            "max_takeoff_mass_kg",
+            "m_max",
+            "kg",
+            "optional maximum take-off mass",
+            (0, None),
+        ),
     )
     outputs = ports(
         Port("total_kg", "m", "kg", "total mass", (0, None)),

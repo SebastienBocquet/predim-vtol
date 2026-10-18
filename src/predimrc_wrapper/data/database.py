@@ -12,8 +12,19 @@ from pathlib import Path
 import yaml
 
 REQUIRED = (
-    "id", "manufacturer", "range", "role", "kv", "rm_mohm", "i0_a", "i_max_a",
-    "p_max_w", "mass_g", "source", "retrieved", "status",
+    "id",
+    "manufacturer",
+    "range",
+    "role",
+    "kv",
+    "rm_mohm",
+    "i0_a",
+    "i_max_a",
+    "p_max_w",
+    "mass_g",
+    "source",
+    "retrieved",
+    "status",
 )
 
 
@@ -49,8 +60,14 @@ class MotorRecord:
 
     def model_parameters(self) -> dict[str, float]:
         """Return the parameter values of ``MotorModel``."""
-        return {"kv": self.kv, "r_m": self.r_m, "i0": self.i0, "i_max": self.i_max,
-                "p_max": self.p_max, "mass_kg": self.mass_kg}
+        return {
+            "kv": self.kv,
+            "r_m": self.r_m,
+            "i0": self.i0,
+            "i_max": self.i_max,
+            "p_max": self.p_max,
+            "mass_kg": self.mass_kg,
+        }
 
 
 def _parse(raw: dict, origin: str) -> MotorRecord:
@@ -74,7 +91,9 @@ def _parse(raw: dict, origin: str) -> MotorRecord:
         p_max=float(raw["p_max_w"]),
         mass_kg=float(raw["mass_g"]) / 1000.0,
         source=raw["source"],
-        retrieved=retrieved.isoformat() if isinstance(retrieved, date) else str(retrieved),
+        retrieved=retrieved.isoformat()
+        if isinstance(retrieved, date)
+        else str(retrieved),
         status=raw["status"],
         notes=raw.get("notes", ""),
     )
@@ -94,8 +113,10 @@ class MotorDatabase:
     def load(cls, path: Path | None = None) -> MotorDatabase:
         """Load the shipped database, or another YAML file."""
         if path is None:
-            text = files("predimrc_wrapper.data").joinpath("motors_mvp.yaml").read_text(
-                encoding="utf-8"
+            text = (
+                files("predimrc_wrapper.data")
+                .joinpath("motors_mvp.yaml")
+                .read_text(encoding="utf-8")
             )
             origin = "motors_mvp.yaml"
         else:
@@ -125,7 +146,9 @@ class MotorDatabase:
 
     def ids(self, role: str | None = None) -> list[str]:
         """Return the sorted motor ids, optionally of one role."""
-        return sorted(k for k, r in self.records.items() if role is None or r.role == role)
+        return sorted(
+            k for k, r in self.records.items() if role is None or r.role == role
+        )
 
 
 @cache

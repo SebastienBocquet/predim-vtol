@@ -63,7 +63,7 @@ class Parameter:
         value = float(x[0]) if hasattr(x, "__len__") else float(x)
         if self.kind == "float":
             return value
-        index = int(round(value))
+        index = round(value)
         return index if self.kind == "integer" else self.mapping.label(index)
 
     def to_design_value(self, value: Any) -> float:
@@ -75,7 +75,9 @@ class Parameter:
 
 def categorical(name: str, path: str, labels: list[str]) -> Parameter:
     """A categorical parameter over explicit labels."""
-    return Parameter(name, path, "categorical", mapping=CategoricalMapping(tuple(labels)))
+    return Parameter(
+        name, path, "categorical", mapping=CategoricalMapping(tuple(labels))
+    )
 
 
 def from_database(name: str, path: str, role: str | None = None) -> Parameter:
@@ -96,8 +98,11 @@ def expand_overrides(overrides: dict[str, Any]) -> dict[str, Any]:
 
             base = path[: -len(PROPELLER_SUFFIX)]
             prop = default_propellers().propeller(value)
-            out.update({f"{base}.propeller_id": prop.id, f"{base}.prop_diameter_in": prop.diameter_in,
-                        f"{base}.prop_pitch_in": prop.pitch_in})
+            out.update({
+                f"{base}.propeller_id": prop.id,
+                f"{base}.prop_diameter_in": prop.diameter_in,
+                f"{base}.prop_pitch_in": prop.pitch_in,
+            })
         else:
             out[path] = value
     return out
@@ -112,7 +117,9 @@ def current_choice(project: Any, path: str) -> Any:
     return _get_path(project, path)
 
 
-def build_design_space(parameters: list[Parameter], values: dict[str, float] | None = None) -> DesignSpace:
+def build_design_space(
+    parameters: list[Parameter], values: dict[str, float] | None = None
+) -> DesignSpace:
     """Build the GEMSEO design space; categorical and integer parameters are integers."""
     space = DesignSpace()
     for p in parameters:
@@ -120,5 +127,7 @@ def build_design_space(parameters: list[Parameter], values: dict[str, float] | N
         kwargs = {"lower_bound": lower, "upper_bound": upper}
         if values and p.name in values:
             kwargs["value"] = values[p.name]
-        space.add_variable(p.name, type_="float" if p.kind == "float" else "integer", **kwargs)
+        space.add_variable(
+            p.name, type_="float" if p.kind == "float" else "integer", **kwargs
+        )
     return space

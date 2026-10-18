@@ -21,7 +21,13 @@ if __name__ == "__main__":
     project = Project.template("multicopter")
     continuous = [
         Parameter("battery_mass_g", "battery.mass_g", "float", 300.0, 1500.0),
-        Parameter("prop_diameter_in", "propulsion_units.lift.prop_diameter_in", "float", 10.0, 15.9),
+        Parameter(
+            "prop_diameter_in",
+            "propulsion_units.lift.prop_diameter_in",
+            "float",
+            10.0,
+            15.9,
+        ),
     ]
     discrete = {
         "propulsion_units.lift.motor_id": default_database().ids("lift"),

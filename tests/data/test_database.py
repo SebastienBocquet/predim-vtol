@@ -12,12 +12,15 @@ from predimrc_wrapper.data import default_database
 def test_shipped_database_complete():
     db = default_database()
     assert len(db.records) >= 5
-    assert db.ids("lift") and db.ids("cruise")
+    assert db.ids("lift")
+    assert db.ids("cruise")
     for record in db.records.values():
         assert record.source.startswith("http")
         assert record.retrieved
         assert record.status in ("verified", "estimated")
-        assert record.kv > 0 and record.r_m > 0 and record.mass_kg > 0
+        assert record.kv > 0
+        assert record.r_m > 0
+        assert record.mass_kg > 0
 
 
 def test_unknown_motor_suggests():
