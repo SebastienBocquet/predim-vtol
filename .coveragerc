@@ -1,0 +1,10 @@
+[run]
+plugins = covdefaults
+source = predimrc_wrapper
+omit =
+  # Streamlit pages are exercised by the app tests, not measured.
+  */predimrc_wrapper/ui/app.py
+
+[report]
+# Override covdefaults.
+fail_under = 1

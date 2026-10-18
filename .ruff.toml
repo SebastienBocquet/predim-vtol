@@ -1,0 +1,164 @@
+fix = true
+unsafe-fixes = true
+preview = true
+target-version = "py310"
+src = ["src"]
+
+[lint]
+future-annotations = true
+task-tags = ["TODO"]
+ignore = [
+    # Project specific: physics symbols (×, ·, ₁, ρ, η...) are intended in strings and docstrings.
+    "ambiguous-unicode-character-string", "ambiguous-unicode-character-docstring", "ambiguous-unicode-character-comment",
+    # Project specific: Model ports and params are class-level declarations, never mutated.
+    "mutable-class-default",
+    # Project specific: keep the portable noqa comments.
+    "noqa-comments",
+    # Shadowing a Python builtin module.
+    "stdlib-module-shadowing",
+    # Dynamically typed expressions (typing.Any) are disallowed.
+    "any-type",
+    # Checks for undocumented magic method definitions.
+    "undocumented-magic-method",
+    # Missing argument description in the docstring.
+    "undocumented-param",
+    # Conflicts with ruff format.
+    "whitespace-before-punctuation",
+    # Avoid unexpected behavior with the formatter.
+    "single-line-implicit-string-concatenation",
+    # Too many arguments in function definition.
+    "too-many-arguments",
+    # `subprocess.run` without explicit `check` argument.
+    "magic-value-comparison",
+    # Too many public methods.
+    "too-many-public-methods",
+    # Too many branches.
+    "too-many-branches",
+    # Too many statements.
+    "too-many-statements",
+    # Too many return statements.
+    "too-many-return-statements",
+    # `for` loop variable `name` overwritten by assignment target.
+    "subprocess-run-without-check",
+    # Magic value used in comparison.
+    "redefined-loop-name",
+    # Bad or misspelled dunder method name `_repr_html_`.
+    "bad-dunder-method-name",
+    # Object does not implement `__hash__` method.
+    "eq-without-hash",
+    # Checks for noqa directives that are no longer applicable.
+    "unused-noqa",
+    # Checks for long exception messages that are not defined in the exception class itself.
+    "raise-vanilla-args",
+    # project specific
+    "line-too-long",
+    "error-suffix-on-exception-name",
+    # print or pprint found
+    "print",
+    "p-print",
+    # login statement uses +
+    "logging-string-format",
+    "logging-string-concat",
+    "logging-f-string",
+    # class name should use CapWords convention
+    # because a naming rule is that component class name
+    # are of the form Model_LoadCase
+    "invalid-class-name",
+    # try-except in loop
+    "try-except-in-loop",
+    # Add / to signature for positional-only arguments
+    "pep484-style-positional-only-parameter",
+    # "module should only contain docstrings and re-exports"
+    "non-empty-init-module",
+    # "Avoid using `autouse=True` in `pytest.fixture` decorators"
+    "pytest-fixture-autouse",
+]
+
+select = [
+    "A",
+#    "ANN",
+    "ASYNC",
+    "B",
+    "BLE",
+#    "C",
+    "C4",
+    "D",
+#    "DOC",
+    "E",
+    "EM",
+    "F",
+#    "FA",
+#    "FBT",
+    "FLY",
+    "FURB",
+    "unused-import",
+    "G",
+    "I",
+    "ISC",
+    "INP",
+    "LOG",
+    "Q",
+    "N",
+    "NPY",
+#    "PL",
+#    "PD",
+    "PT",
+    "PIE",
+    "PGH",
+    "PTH",
+    "PYI",
+    "PERF",
+    "RET",
+    "RSE",
+    "RUF",
+#    "S",
+    "SIM",
+#    "SLF",
+    "SLOT",
+    "T",
+    "T10",
+    "T20",
+    "TCH",
+    "TRY",
+    "W",
+    "UP",
+    "YTT",
+
+]
+
+[lint.flake8-type-checking]
+runtime-evaluated-base-classes = [
+    "pydantic.BaseModel",
+    "predimrc_wrapper.aircraft.project._Strict",
+]
+
+[lint.isort]
+force-single-line = true
+#required-imports = ["from __future__ import annotations"]
+
+[lint.pydocstyle]
+convention = "google"
+
+[lint.per-file-ignores]
+"*.ipynb" = ["unnecessary-assign", "PTH"]
+"tests/*.py" = ["D", "float-equality-comparison", "pytest-unittest-assertion", "pytest-raises-too-broad", "pytest-unittest-raises-assertion", "PTH"]
+"docs/*.py" = [
+  "T",
+  "D",
+  "useless-expression",
+  "PTH",
+  "line-too-long",
+  "PERF",
+  "builtin-variable-shadowing",
+  "unnecessary-assign",
+  "implicit-namespace-package",
+]
+# ignore docstring that have not yet be converted to the google style
+"src/*.py" = ["D"]
+"sandbox/*.py" = ["ALL"]
+"tools/*.py" = ["T", "INP"]
+"examples/*.py" = ["T", "INP", "D"]
+
+[format]
+docstring-code-format = true
+docstring-code-line-length = 88

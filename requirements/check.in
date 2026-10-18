@@ -1,0 +1,3 @@
+# Dependencies of the check tox target
+
+pre-commit
