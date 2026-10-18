@@ -13,6 +13,9 @@ Outputs (arrays of size 1):
 | ``margin_mass`` | — | 1 − m / m_max (NaN without m_max) |
 | ``feasible`` | — | 1 if the scenario is feasible, else 0 |
 
+Two-phase mode: ``OUTPUTS_TWO_PHASE`` (flight times, ranges, powers, margins, and the cost and
+reliability outputs ``cost_purchase``, ``cost_per_hour``, ``motor_out_tw``).
+
 A failing evaluation gives NaN outputs and ``feasible = 0`` instead of stopping the study.
 Evaluations are sequential, with one PredimRC session per discipline.
 """
@@ -74,9 +77,37 @@ OUTPUTS_TWO_PHASE = (
     "margin_battery_c",
     "margin_mass",
     "max_sd_rel",
+    "cost_purchase",
+    "cost_per_hour",
+    "motor_out_tw",
     "feasible",
 )
-"""Outputs of the two-phase mode (INC2-007): times s, ranges m, speeds m/s, powers W."""
+"""Outputs of the two-phase mode (INC2-007): times s, ranges m, speeds m/s, powers W; costs in
+the currency of the prices (INC3-004); ``motor_out_tw``: worst remaining thrust-to-weight with
+one lift motor stopped (0 when a motor loss is not survivable)."""
+
+
+def _cost_and_reliability(project: Project, r: Any) -> dict[str, float]:
+    """Purchase cost, cost per flight hour and worst motor-out T/W (NaN when they fail)."""
+    from predimrc_wrapper.aircraft import AircraftModel  # noqa: PLC0415
+    from predimrc_wrapper.cost import cost  # noqa: PLC0415
+    from predimrc_wrapper.reliability import motor_out  # noqa: PLC0415
+
+    try:
+        aircraft = AircraftModel(project)
+        c = cost(
+            aircraft,
+            r.cruise[0].flight_time_s,
+            [m.motor_current_a for m in r.hover.motors],
+        )
+        return {
+            "cost_purchase": c.purchase,
+            "cost_per_hour": c.cost_per_hour,
+            "motor_out_tw": motor_out(aircraft).worst_thrust_to_weight,
+        }
+    except Exception as error:  # ruff: ignore[blind-except]
+        LOGGER.warning("Cost / reliability failed: %s", error)
+        return dict.fromkeys(("cost_purchase", "cost_per_hour", "motor_out_tw"), np.nan)
 
 
 def outputs_of(mode: str) -> tuple[str, ...]:
@@ -202,9 +233,8 @@ class PresizingDiscipline(Discipline):
         from predimrc_wrapper.api import evaluate_two_phase  # noqa: PLC0415
 
         try:
-            r = evaluate_two_phase(
-                self.project_for(input_data), backend=self._get_backend()
-            )
+            project = self.project_for(input_data)
+            r = evaluate_two_phase(project, backend=self._get_backend())
         except Exception as error:  # ruff: ignore[blind-except]  (a failed point must not stop a study)
             LOGGER.warning("Evaluation failed for %s: %s", dict(input_data), error)
             out = {k: np.array([np.nan]) for k in OUTPUTS_TWO_PHASE}
@@ -232,6 +262,7 @@ class PresizingDiscipline(Discipline):
             "margin_battery_c": m["battery_c"],
             "margin_mass": m["mass"],
             "max_sd_rel": max(m_.power_sd_w / m_.power_w for m_ in r.hover.motors),
+            **_cost_and_reliability(project, r),
             "feasible": float(r.feasible),
         }
         return {k: np.array([float(v)]) for k, v in values.items()}

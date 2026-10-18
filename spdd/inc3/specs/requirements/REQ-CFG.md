@@ -12,7 +12,7 @@
   motor numbers, their propeller diameters, the distance between centres, the minimum
   distance and how to fix it.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — the tricopter with wing and mask {3} has one tilting rear
   motor and two lift front motors and evaluates; the overlap message names both motors
   and the distances; app test — the drawing and the table agree after a mask change.
@@ -28,7 +28,7 @@
   D = ½ρV²·C_d,section·sin²θ·A_frontal, A_frontal = t·L·sin θ (t: thickness seen by
   the flow, L: boom length).
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — drag of each diagonal boom equals a hand calculation for the
   three sections.
 - **Satisfied by:** INC2-006, INC3-003
@@ -43,7 +43,7 @@
 - **Rationale:** No template per tilt mask or layout is needed, since these are inputs.
   The designer keeps their own starting points.
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — a saved template is listed and reloads into an identical
   project.
 - **Satisfied by:** INC3-003
@@ -58,7 +58,7 @@
   drawn in the geometry views, give their drag (REQ-CFG-004) and the cable paths of the
   power chain (REQ-PROP-009).
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — boom lengths and angles from the anchor equal a hand
   calculation; the phase cable length of a diagonal boom motor includes the boom length.
 - **Satisfied by:** INC3-003

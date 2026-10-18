@@ -9,7 +9,7 @@
   sinks sum to the chemical power. The Results tab shows them as a table and a stacked
   bar chart.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — the sum of the sinks equals the chemical power to 1e-9
   relative for the tricopter and the quadplane.
 - **Satisfied by:** INC3-002

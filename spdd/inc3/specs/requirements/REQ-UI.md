@@ -7,7 +7,7 @@
   y dimension lines with their values per motor, propeller discs, overlapping discs in
   red; booms drawn with their layout and section.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — one x and one y dimension per motor.
 - **Satisfied by:** INC2-001, INC2-006, INC3-003
 
@@ -19,7 +19,7 @@
   sizing, Test data, Results, Cost and reliability. Exploration, Optimisation and Studies
   move to their own sidebar page "Studies", next to Pre-sizing, MIC cards and Glossary.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** App test — tab list and sidebar pages.
 - **Satisfied by:** INC2-009, INC3-002, INC3-003, INC3-004
 
@@ -29,7 +29,7 @@
   they are added ("Add a propulsion unit type": one motor + propeller + ESC combination,
   referenced by each motor; removable when no motor uses it).
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — help coverage stays complete.
 - **Satisfied by:** INC2-009, INC3-003
 
@@ -42,6 +42,6 @@
   forward-flight rotor model (no PredimRC). The calibration section explains why one
   factor per point and when it applies (scenario mode).
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Inspection.
 - **Satisfied by:** INC3-002

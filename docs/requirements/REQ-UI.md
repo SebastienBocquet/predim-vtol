@@ -112,6 +112,6 @@
   forward-flight rotor model (no PredimRC). The calibration section explains why one
   factor per point and when it applies (scenario mode).
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Inspection.
 - **Satisfied by:** INC3-002

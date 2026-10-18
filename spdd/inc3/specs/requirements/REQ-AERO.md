@@ -9,7 +9,7 @@
   configuration tab, next to the profile selector (not only in the sidebar settings).
   The workbooks are not stored in the repository.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** App test — the folder input is in the first tab; changing it updates
   the profile list.
 - **Satisfied by:** INC2-005, INC3-002

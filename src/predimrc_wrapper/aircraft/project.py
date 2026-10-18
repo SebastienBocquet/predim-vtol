@@ -209,6 +209,10 @@ class MotorSlot(_Strict):
         description="Station, aft-positive from the reference: wing root LE or frame centre (mm)"
     )
     y_mm: float = req(description="Lateral position, right-positive (mm)")
+    spin: Literal["cw", "ccw"] | None = adv(
+        None,
+        description="Propeller rotation seen from above (yaw balance of the motor-out check); alternating around the frame when not set",
+    )
 
 
 class BoomSpec(_Strict):
@@ -248,6 +252,39 @@ class BoomSpec(_Strict):
         description="Diagonal booms: anchor height (mm, up-positive); under the fuselage (or 0 for a frame) when not set",
     )
     motor_z_mm: float = opt(0.0, description="Height of the motors on the booms (mm)")
+
+
+class CostSpec(_Strict):
+    """Prices entered and wear assumptions (REQ-COST-001, REQ-COST-002)."""
+
+    frame: float = opt(
+        0.0,
+        ge=0,
+        description="Frame price: airframe, booms, fuselage (currency of the prices)",
+    )
+    avionics: float = opt(
+        0.0, ge=0, description="Avionics price: flight controller, GPS, receiver"
+    )
+    overrides: dict[str, float] = opt(
+        {},
+        description=(
+            "Prices replacing the database: keys motor:<id>, propeller:<id>, esc, esc4in1, "
+            "battery_per_wh, cable:<awg>"
+        ),
+    )
+    battery_cycles: int | None = opt(
+        None,
+        gt=0,
+        description="Battery cycle life (cycles); 300 for LiPo, 500 for Li-ion when not set",
+    )
+    motor_life_h: float = opt(
+        1000.0, gt=0, description="Motor life before replacement (flight hours)"
+    )
+    propeller_flights: int = opt(
+        200,
+        gt=0,
+        description="Flights between propeller replacements (wear, small damage)",
+    )
 
 
 class BatterySpec(_Strict):
@@ -665,6 +702,9 @@ class Project(_Strict):
         None,
         description="Booms carrying the lift motors: layout and section (drag and cable paths)",
     )
+    cost: CostSpec | None = opt(
+        None, description="Prices entered and wear assumptions (defaults when not set)"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -981,6 +1021,7 @@ __all__ = [
     "BoomSpec",
     "BranchOverride",
     "CalibrationSpec",
+    "CostSpec",
     "CruiseReference",
     "DragSource",
     "EnvironmentSpec",

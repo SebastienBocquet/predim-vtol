@@ -1,0 +1,101 @@
+# Component prices (REQ-COST-001), copied from manufacturer or retailer pages on 2026-10-18.
+# Retail prices, taxes and shipping excluded, currency of the page (USD). No currency
+# conversion. status: verified = read on the product page; search = read in a search
+# result for that page (the page itself refused the robot), to check before relying on it.
+currency: USD
+retrieved: 2026-10-18
+
+motors:  # per motor, ids of the motor database
+  tmotor-mn2212-780kv:
+    price: 46.90
+    source: https://store.tmotor.com/product/mn2212-v2-motor-navigator-type.html
+    status: verified
+    notes: "One price for the KV780 / KV920 variants."
+  tmotor-mn2212-920kv:
+    price: 46.90
+    source: https://store.tmotor.com/product/mn2212-v2-motor-navigator-type.html
+    status: verified
+    notes: "One price for the KV780 / KV920 variants."
+  tmotor-mn2806-400kv:
+    price: 46.90
+    source: https://www.ligpower.com/product/mn2806-kv650-motor-antigravity-type.html
+    status: verified
+    notes: "One price for the KV400 / KV650 selector of the page."
+  tmotor-mn2806-650kv:
+    price: 46.90
+    source: https://www.ligpower.com/product/mn2806-kv650-motor-antigravity-type.html
+    status: verified
+  tmotor-at2308-1450kv:
+    price: 29.99
+    source: https://store.tmotor.com/product/at2308-long-shaft-fixed-wing-motor.html
+    status: verified
+
+propellers:  # per propeller (pair prices halved), ids of the propeller database
+  tmotor-p12x4:
+    price: 19.45
+    source: https://www.ligpower.com/product/12x4-polish-carbon-fiber-propeller.html
+    status: verified
+    notes: "$38.90 per pair (CW + CCW)."
+  tmotor-p13x4.4:
+    price: 25.51
+    source: https://rcdrone.top/products/t-motor-p13-4-4-prop
+    status: search
+    notes: "$51.01 per pair, listed sold out."
+  tmotor-9545b:
+    price: 5.21
+    source: https://rcdrone.top/products/t-motor-t9545-a-b-2pcs-pair-prop-self-tightening-ing-propeller
+    status: search
+    notes: "$10.42 per pair (T9545-A/B), listed sold out."
+  apc-9x6:
+    price: 3.22
+    source: https://www.apcprop.com/product/9x6e/
+    status: verified
+    notes: "9x6E, per propeller."
+  apc-8x6:
+    price: 2.92
+    source: https://www.apcprop.com/product/8x6e/
+    status: verified
+    notes: "8x6E, per propeller."
+
+escs:  # the cheapest rating ≥ the needed current is chosen
+  separate:
+    - rating_a: 20
+      price: 19.99
+      name: T-Motor AIR 20A 3-4S
+      source: https://www.ligpower.com/product/air-20a-4s-esc.html
+      status: verified
+    - rating_a: 40
+      price: 39.99
+      name: T-Motor AIR 40A 6S
+      source: https://www.ligpower.com/product/air-40a-6s-esc.html
+      status: verified
+  four_in_one:
+    - rating_a: 55
+      price: 110.62
+      name: LIGPOWER / T-Motor F55A Pro II 3-6S 4in1
+      source: https://www.robotshop.com/products/ligpower-f55a-pro-ii-55a-3-6s-4in1-esc-w-bec
+      status: search
+      notes: "RobotShop sale price; other retailers 93.89 to 118.38 USD."
+
+batteries:  # price per Wh of nominal energy, from one pack each
+  lipo:
+    price_per_wh: 1.067
+    source: https://www.buddyrc.com/collections/gens-ace-batteries/products/gens-ace-5000mah-14-8v-45c-4s1p-lipo-battery-pack-with-deans-plug-1
+    status: verified
+    notes: "Gens ace 5000 mAh 4S 45C, $78.96 for 74.0 Wh."
+  li-ion:
+    price_per_wh: 1.124
+    source: https://wrekd.com/products/5s2p-18v-molicel-p42a-8400mah-li-ion-battery-pack
+    status: verified
+    notes: "WREKD 5S2P Molicel P42A 8400 mAh, $170.00 for 151.2 Wh."
+
+cables:  # silicone wire, price per metre of one conductor (1 m red + 1 m black pack / 2)
+  source: https://pyrodrone.com/products/1ft-silicone-wire-choose-color-and-gauge
+  status: verified
+  price_per_m:
+    12: 5.00
+    14: 4.50
+    16: 3.50
+    18: 3.50
+    20: 3.00
+    22: 2.00

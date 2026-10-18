@@ -1,7 +1,7 @@
 ---
 id: INC3-004
 title: Cost and reliability — prices with provenance, purchase cost, cost of use, motor-out hover
-status: Proposed
+status: Implemented
 branch: feat/cost-reliability
 requirements: [REQ-COST-001, REQ-COST-002, REQ-COST-003, REQ-UI-008, REQ-MDO-007, REQ-MDO-008]
 depends_on: [INC3-003]
@@ -81,3 +81,24 @@ ReliabilityModel ..> MotorSlot
 
 1. Missing price ⇒ item flagged "no price" and excluded from the total, never zero.
 2. The reliability check never changes the nominal evaluation.
+
+## Implementation notes (2026-10-18)
+
+- Prices: `data/prices.yaml` (USD, retrieved 2026-10-18) and `data/prices.py`; every entry
+  has a URL and a status: `verified` (read on the product page) or `search` (read in a
+  search result for that page, the page refused the robot: P13x4.4, T9545, 4-in-1 F55A).
+  No 10 AWG wire price was found: the item stays "missing" until overridden.
+- Propellers given only by diameter × pitch (the templates) are priced as the cheapest
+  database propeller of the same diameter, status `estimate`.
+- Cost: `cost/model.py` (`cost(aircraft, flight_time_s, hover_currents)`), card
+  `docs/models/MIC-COST.md`; plain functions rather than a `Model` subclass (post-processing,
+  no physics). Defaults: 300 / 500 cycles, motor life 1000 h, 200 flights per propeller.
+- Reliability: `reliability.py` (`motor_out`), card `docs/models/MIC-REL.md`; linear
+  programme with HiGHS (scipy). `MotorSlot.spin` (advanced, optional) overrides the
+  alternating default.
+- GUI: tab "Cost and reliability" (prices entered, overrides, purchase table with sources,
+  cost of use after a Run, motor-out table, single points of failure); KPIs in Results.
+  The `cost` section is stored in the project only once it differs from the defaults, so a
+  Run stays up to date.
+- MDO: outputs `cost_purchase`, `cost_per_hour`, `motor_out_tw` (two-phase mode) and the
+  matching objectives.

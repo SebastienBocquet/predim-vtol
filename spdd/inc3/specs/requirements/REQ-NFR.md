@@ -7,7 +7,7 @@
   too, stored in m/s), propeller pitch and diameter in inches; other units are unchanged
   (mm, g, dm², mAh, W). Each field documents its unit.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — unit helpers; app test — KPI tiles and table headers.
 - **Satisfied by:** SPEC-001, SPEC-002, SPEC-004, INC3-002
 

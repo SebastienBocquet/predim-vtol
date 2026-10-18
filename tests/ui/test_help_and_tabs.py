@@ -11,11 +11,14 @@ from predimrc_wrapper.aircraft import AircraftModel  # noqa: E402
 from predimrc_wrapper.aircraft import Project  # noqa: E402
 from predimrc_wrapper.api import evaluate  # noqa: E402
 from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
+from predimrc_wrapper.cost import cost  # noqa: E402
 from predimrc_wrapper.data import default_database  # noqa: E402
 from predimrc_wrapper.mission.power_budget import budget_rows  # noqa: E402
 from predimrc_wrapper.mission.power_budget import power_budget  # noqa: E402
+from predimrc_wrapper.reliability import motor_out  # noqa: E402
 from predimrc_wrapper.sizing import motor_power_ranges  # noqa: E402
 from predimrc_wrapper.ui import charts  # noqa: E402
+from predimrc_wrapper.ui import cost_view as cov  # noqa: E402
 from predimrc_wrapper.ui import drag_view as dv  # noqa: E402
 from predimrc_wrapper.ui import hover_view as hv  # noqa: E402
 from predimrc_wrapper.ui import mic_page  # noqa: E402
@@ -56,6 +59,15 @@ def _displayed_labels() -> set[str]:
         labels.update(summary), rows(per_pair)
         rows(tdv.compare_points(p, backend))
         rows(budget_rows(power_budget(AircraftModel(p, aero_backend=backend), r)))
+        c_res = cost(AircraftModel(p), r.cruise[0].flight_time_s)
+        rel = motor_out(AircraftModel(p))
+        rows(cov.purchase_rows(c_res)), rows(cov.use_rows(c_res))
+        rows(cov.reliability_rows(rel, p))
+        labels.update({
+            "Purchase cost",
+            "Cost per flight hour",
+            "Motor-out T/W (worst)",
+        })
         rows(
             dv.boom_rows(
                 p.with_overrides({"booms": {"layout": "diagonal"}}),
@@ -126,6 +138,9 @@ def test_pages_and_run():
     )
     labels = {m.label for m in at.metric}
     assert {"Flight time", "Hover power (battery)", "Margin motor power"} <= labels
+    assert {"Purchase cost", "Cost per flight hour", "Motor-out T/W (worst)"} <= labels
+    assert any("Purchase cost:" in h.value for h in at.subheader)
+    assert any("one motor stopped" in h.value for h in at.subheader)
     assert any("Where the battery power goes" in h.value for h in at.subheader), (
         "power budget in Results"
     )

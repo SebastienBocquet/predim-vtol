@@ -21,6 +21,10 @@ versions from git tags (setuptools-scm).
   shown in the Drag tab; cables along the booms.
 - Motor positions drawing with the reference point and the dimensions of each motor.
 
+- Cost and reliability tab: purchase cost from a price list with sources (MIC-COST), cost of
+  use per flight and per flight hour, motor-out hover check and single points of failure
+  (MIC-REL); KPIs in Results; outputs and objectives for exploration and optimisation.
+
 ### Changed
 - Wing, stabiliser and fuselage entered in the first tab (the Cruise tab shows the results).
 - Propeller overlap error names the motors, their diameters and the distance missing.

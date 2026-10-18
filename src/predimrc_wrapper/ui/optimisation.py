@@ -26,6 +26,9 @@ UNITS = {
     "flight_time_v2": ("min", 1 / 60),
     "range_v1": ("km", 1e-3),
     "range_v2": ("km", 1e-3),
+    "cost_purchase": ("USD", 1.0),
+    "cost_per_hour": ("USD/h", 1.0),
+    "motor_out_tw": ("—", 1.0),
 }
 MARGINS = (
     "margin_motor_current",

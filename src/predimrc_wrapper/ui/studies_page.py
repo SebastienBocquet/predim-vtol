@@ -41,6 +41,9 @@ TWO_PHASE_OBJECTIVES = {
     "flight_time_v2": "Maximise the flight time at V2",
     "range_v2": "Maximise the range at V2",
     "mass_total": "Minimise the total mass",
+    "cost_purchase": "Minimise the purchase cost",
+    "cost_per_hour": "Minimise the cost per flight hour",
+    "motor_out_tw": "Maximise the motor-out thrust-to-weight",
 }
 
 

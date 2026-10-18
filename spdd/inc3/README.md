@@ -6,8 +6,8 @@ booms), costs and reliability metrics, and a project template like vimseo. Requi
 identifiers are those of the full specification (`docs/requirements/`); this folder holds
 the increment statements and the REASONS canvases.
 
-Status: **specification** (2026-10-18). INC3-001 (tooling) is implemented on `main`; the
-other packages are proposed, one git branch each, merged in order A → B → C.
+Status: **implemented** (2026-10-18), one git branch per package, merged in order A → B → C;
+INC3-001 (tooling) is on `main`.
 
 ## Feedback of 2026-10-17 and where it goes
 

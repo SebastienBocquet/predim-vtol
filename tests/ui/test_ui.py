@@ -225,6 +225,7 @@ def test_configuration_switch_updates_the_tabs():
         "Propeller sizing",
         "Test data",
         "Results",
+        "Cost and reliability",
     ]
     assert any("does not use PredimRC" in i.value for i in at.info)
     at.selectbox(key="configuration").set_value("quadplane").run()

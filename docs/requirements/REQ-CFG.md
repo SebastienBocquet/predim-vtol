@@ -136,7 +136,7 @@
 - **Rationale:** No template per tilt mask or layout is needed, since these are inputs.
   The designer keeps their own starting points.
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — a saved template is listed and reloads into an identical
   project.
 - **Satisfied by:** INC3-003
@@ -151,7 +151,7 @@
   drawn in the geometry views, give their drag (REQ-CFG-004) and the cable paths of the
   power chain (REQ-PROP-009).
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — boom lengths and angles from the anchor equal a hand
   calculation; the phase cable length of a diagonal boom motor includes the boom length.
 - **Satisfied by:** INC3-003
