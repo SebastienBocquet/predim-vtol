@@ -12,6 +12,8 @@ from predimrc_wrapper.aircraft import Project  # noqa: E402
 from predimrc_wrapper.api import evaluate  # noqa: E402
 from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
 from predimrc_wrapper.data import default_database  # noqa: E402
+from predimrc_wrapper.mission.power_budget import budget_rows  # noqa: E402
+from predimrc_wrapper.mission.power_budget import power_budget  # noqa: E402
 from predimrc_wrapper.sizing import motor_power_ranges  # noqa: E402
 from predimrc_wrapper.ui import charts  # noqa: E402
 from predimrc_wrapper.ui import hover_view as hv  # noqa: E402
@@ -52,6 +54,7 @@ def _displayed_labels() -> set[str]:
         summary, per_pair = hv.validation_rows()
         labels.update(summary), rows(per_pair)
         rows(tdv.compare_points(p, backend))
+        rows(budget_rows(power_budget(AircraftModel(p, aero_backend=backend), r)))
         aircraft = AircraftModel(p, aero_backend=backend)
         for unit in p.propulsion_units:
             table, rec = ps.cruise_pitch_rows(aircraft, r, unit)
@@ -116,8 +119,44 @@ def test_pages_and_run():
     )
     labels = {m.label for m in at.metric}
     assert {"Flight time", "Hover power (battery)", "Margin motor power"} <= labels
+    assert any("Where the battery power goes" in h.value for h in at.subheader), (
+        "power budget in Results"
+    )
+    at.radio(key="page").set_value("Studies").run()
+    assert not at.exception, at.exception
+    assert [t.label for t in at.tabs] == ["Exploration", "Optimisation", "Studies"]
     at.radio(key="page").set_value("Model cards (MIC)").run()
     assert not at.exception, at.exception
     at.radio(key="page").set_value("Glossary").run()
     assert not at.exception
     assert at.dataframe
+
+
+def test_power_chain_after_motors_removed():
+    """Regression (2026-10-17): IndexError in the Power chain tab once a Run result is outdated."""
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    at = AppTest.from_file(str(APP), default_timeout=300).run()
+    at.selectbox(key="configuration").set_value("multicopter").run()
+    next(b for b in at.button if b.label == "Run").click().run()
+    app = at.session_state["app"]
+    app.data["motors"] = app.data["motors"][:3]
+    app.data.setdefault("wiring", {})["lift_esc"] = "four_in_one"
+    app.generation += 1
+    at.run()
+    assert not at.exception, at.exception
+
+
+def test_mission_speeds_in_kmh():
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    at = AppTest.from_file(str(APP), default_timeout=300).run()
+    next(
+        c for c in at.checkbox if c.key.endswith("mission.speeds_auto")
+    ).uncheck().run()
+    v1 = next(n for n in at.number_input if n.key.endswith("mission.v1"))
+    assert v1.label == "V1 (km/h)"
+    v1.set_value(54.0).run()
+    assert not at.exception, at.exception
+    speeds = at.session_state["app"].data["mission"]["target_speeds_m_s"]
+    assert speeds[0] == pytest.approx(15.0)

@@ -154,11 +154,11 @@ def thrust_figure(aircraft: AircraftModel) -> go.Figure:
     for i, (name, unit) in enumerate(aircraft.units.items()):
         color = COLORS[i % len(COLORS)]
         c = unit_curves(unit, aircraft.rho, v0)
-        grams = c["thrust_n"] / GRAVITY * 1000.0
+        thrust = c["thrust_n"]
         fig.add_trace(
             go.Scatter(
                 x=c["battery_power_w"],
-                y=grams,
+                y=thrust,
                 name=name,
                 legendgroup=name,
                 line={"color": color},
@@ -168,7 +168,7 @@ def thrust_figure(aircraft: AircraftModel) -> go.Figure:
         )
         fig.add_trace(
             go.Scatter(
-                x=grams,
+                x=thrust,
                 y=c["current_a"],
                 name=name,
                 legendgroup=name,
@@ -183,7 +183,7 @@ def thrust_figure(aircraft: AircraftModel) -> go.Figure:
         )
         fig.add_trace(
             go.Scatter(
-                x=grams,
+                x=thrust,
                 y=c["g_per_w"],
                 name=name,
                 legendgroup=name,
@@ -203,7 +203,7 @@ def thrust_figure(aircraft: AircraftModel) -> go.Figure:
             fig.add_trace(
                 go.Scatter(
                     x=[float(y["battery_power_w"])],
-                    y=[t / GRAVITY * 1000.0],
+                    y=[t],
                     mode="markers",
                     name=f"{name} hover",
                     legendgroup=name,
@@ -213,10 +213,10 @@ def thrust_figure(aircraft: AircraftModel) -> go.Figure:
                 1,
             )
     fig.update_xaxes(title_text="battery power per motor (W)", row=1, col=1)
-    fig.update_yaxes(title_text="thrust (g)", row=1, col=1)
-    fig.update_xaxes(title_text="thrust (g)", row=1, col=2)
+    fig.update_yaxes(title_text="thrust (N)", row=1, col=1)
+    fig.update_xaxes(title_text="thrust (N)", row=1, col=2)
     fig.update_yaxes(title_text="current (A)", row=1, col=2)
-    fig.update_xaxes(title_text="thrust (g)", row=1, col=3)
+    fig.update_xaxes(title_text="thrust (N)", row=1, col=3)
     fig.update_yaxes(title_text="g/W", row=1, col=3)
     fig.update_layout(
         height=400,
@@ -337,7 +337,7 @@ def pitch_figure(
         color = COLORS[i % len(COLORS)] if i < len(COLORS) else None
         fig.add_trace(
             go.Scatter(
-                x=v_m_s,
+                x=3.6 * np.asarray(v_m_s),
                 y=np.where(ok, eta, np.nan),
                 name=f"{diameter_in:g}x{p:g}",
                 legendgroup=str(p),
@@ -348,7 +348,7 @@ def pitch_figure(
         )
         fig.add_trace(
             go.Scatter(
-                x=v_m_s,
+                x=3.6 * np.asarray(v_m_s),
                 y=np.where(~ok, eta, np.nan),
                 name=f"{diameter_in:g}x{p:g} over limits",
                 legendgroup=str(p),
@@ -360,7 +360,7 @@ def pitch_figure(
         )
     fig.add_trace(
         go.Scatter(
-            x=v_m_s,
+            x=3.6 * np.asarray(v_m_s),
             y=study["best_pitch_in"],
             name="best pitch",
             line={"color": "black"},
@@ -370,8 +370,8 @@ def pitch_figure(
     )
     if v_mark is not None and np.isfinite(v_mark):
         for col in (1, 2):
-            fig.add_vline(x=v_mark, line_dash="dash", row=1, col=col)
-    fig.update_xaxes(title_text="speed (m/s)")
+            fig.add_vline(x=3.6 * v_mark, line_dash="dash", row=1, col=col)
+    fig.update_xaxes(title_text="speed (km/h)")
     fig.update_yaxes(title_text="η propeller × motor", row=1, col=1)
     fig.update_yaxes(title_text="pitch (in)", row=1, col=2)
     fig.update_layout(

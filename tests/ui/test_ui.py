@@ -218,16 +218,13 @@ def test_configuration_switch_updates_the_tabs():
     assert labels[1:] == [
         "Masses and battery",
         "Mission",
-        "Hover",
         "Cruise",
         "Drag",
+        "Hover",
         "Power chain",
         "Propeller sizing",
         "Test data",
         "Results",
-        "Exploration",
-        "Optimisation",
-        "Studies",
     ]
     assert any("does not use PredimRC" in i.value for i in at.info)
     at.selectbox(key="configuration").set_value("quadplane").run()

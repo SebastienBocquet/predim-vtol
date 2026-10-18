@@ -36,12 +36,15 @@ from predimrc_wrapper.calibration import __doc__ as calibration_doc
 from predimrc_wrapper.data import default_database
 from predimrc_wrapper.data import default_propellers
 from predimrc_wrapper.data import default_tests
+from predimrc_wrapper.mission.power_budget import budget_rows
+from predimrc_wrapper.mission.power_budget import power_budget
 from predimrc_wrapper.mission.scenario import Segment
 from predimrc_wrapper.settings import Settings
 from predimrc_wrapper.settings import available_profiles
 from predimrc_wrapper.sizing import motor_power_ranges
 from predimrc_wrapper.ui import charts
 from predimrc_wrapper.ui import cruise_view as cv
+from predimrc_wrapper.ui import explanations
 from predimrc_wrapper.ui import forms
 from predimrc_wrapper.ui import geometry
 from predimrc_wrapper.ui import hover_view as hv
@@ -51,6 +54,7 @@ from predimrc_wrapper.ui import propulsion_charts as pc
 from predimrc_wrapper.ui import state as ui_state
 from predimrc_wrapper.ui import test_data_view as tdv
 from predimrc_wrapper.ui import two_phase_view as tpv
+from predimrc_wrapper.ui import units as un
 from predimrc_wrapper.ui.help import HelpRegistry
 
 st.set_page_config(page_title="PredimRC pre-sizing", layout="wide")
@@ -124,7 +128,7 @@ def _switch_configuration() -> None:
 with st.sidebar:
     page = st.radio(
         "Page",
-        ["Pre-sizing", "Model cards (MIC)", "Glossary"],
+        ["Pre-sizing", "Studies", "Model cards (MIC)", "Glossary"],
         key="page",
         horizontal=True,
     )
@@ -147,14 +151,8 @@ with st.sidebar:
     data = app.data
     gen = app.generation
     architecture = data.get("architecture", "multicopter")
-    with st.expander("Settings (folders)"):
+    with st.expander("Settings (studies folder)"):
         settings = Settings.load()
-        folder = st.text_input(
-            "PredimRC folder",
-            settings.predimrc_folder,
-            key="settings.predimrc",
-            help="Folder of the workbooks PredimRC_<profile>.xls (one per wing airfoil).",
-        )
         root = st.text_input(
             "Studies root folder",
             settings.studies_root,
@@ -162,9 +160,11 @@ with st.sidebar:
             help="Explorations and optimisations are stored in dated sub-folders of this folder.",
         )
         if st.button("Save the settings"):
-            settings.predimrc_folder, settings.studies_root = folder, root
+            settings.studies_root = root
             st.success(f"Saved {settings.save()}")
-        st.caption(f"Profiles found: {', '.join(available_profiles()) or 'none'}")
+        st.caption(
+            "The PredimRC folder is set in the first tab (winged configurations)."
+        )
 
 if page == "Model cards (MIC)":
     st.title("Model identity cards (MIC)")
@@ -211,22 +211,26 @@ if checked.project is not None and checked.project.sizing is not None:
     ranges = motor_power_ranges(checked.project, db)
 two = app.two_phase
 
+if page == "Studies":
+    from predimrc_wrapper.ui import studies_page  # noqa: E402
+
+    st.title("Studies: exploration, optimisation, stored studies")
+    studies_page.render(app, checked, ranges, backend_for, table)
+    st.stop()
+
 # --- tabs ------------------------------------------------------------------------------
 config_label = data.get("name") or "Aircraft configuration"
 labels = [
     config_label,
     "Masses and battery",
     "Mission",
-    "Hover",
     "Cruise",
     "Drag",
+    "Hover",
     "Power chain",
     "Propeller sizing",
     "Test data",
     "Results",
-    "Exploration",
-    "Optimisation",
-    "Studies",
 ]
 tabs = dict(zip(labels, st.tabs(labels), strict=False))
 errors = checked.errors
@@ -243,6 +247,36 @@ with tabs[config_label]:
         st.caption(
             f"Architecture **{architecture}** ({TEMPLATES.get(st.session_state.get('configuration'), 'project file')})."
         )
+        if architecture == "quadplane":
+            with st.container(border=True):
+                st.markdown("**PredimRC workbooks** (wing aerodynamics)")
+                settings = Settings.load()
+                c1, c2 = st.columns([4, 1])
+                folder = c1.text_input(
+                    "PredimRC folder",
+                    settings.predimrc_folder,
+                    key="settings.predimrc",
+                    help="Folder of the PredimRC workbooks, one per wing airfoil, named "
+                    "PredimRC_<profile>.xls (.xlsx, .xlsm accepted). Saved in your settings, "
+                    "not in the project file.",
+                )
+                if c2.button("Use this folder", key="settings.predimrc.save"):
+                    settings.predimrc_folder = folder
+                    settings.save()
+                    st.rerun()
+                profiles = available_profiles()
+                current = (data.get("aero") or {}).get("profile", "SD7003")
+                st.caption(
+                    f"Naming rule: `PredimRC_<profile>.xls` → profiles found in "
+                    f"`{profiles_dir().resolve()}`: **{', '.join(profiles) or 'none'}**. "
+                    f"Profile of this project: **{current}** (chosen with the wing geometry, "
+                    "Cruise tab)."
+                    + (
+                        ""
+                        if current in profiles
+                        else f" :red[No workbook PredimRC_{current}.xls in this folder.]"
+                    )
+                )
         units = dict(data.get("propulsion_units") or {})
         st.subheader("Propulsion unit types")
         only_in_range = bool(ranges) and st.checkbox(
@@ -571,19 +605,23 @@ with tabs["Mission"]:
             v1, v2 = (mission.get("target_speeds_m_s") or [12.0, 15.0])[:2]
             c1, c2 = st.columns(2)
             data["mission"]["target_speeds_m_s"] = [
-                c1.number_input(
-                    "V1 (m/s)",
-                    value=float(v1),
-                    min_value=1.0,
-                    key=f"{gen}:mission.v1",
-                    help=HELP.tooltip("V1"),
+                un.m_s(
+                    c1.number_input(
+                        "V1 (km/h)",
+                        value=round(un.kmh(float(v1)), 1),
+                        min_value=3.6,
+                        key=f"{gen}:mission.v1",
+                        help=HELP.tooltip("V1"),
+                    )
                 ),
-                c2.number_input(
-                    "V2 (m/s)",
-                    value=float(v2),
-                    min_value=1.0,
-                    key=f"{gen}:mission.v2",
-                    help=HELP.tooltip("V2"),
+                un.m_s(
+                    c2.number_input(
+                        "V2 (km/h)",
+                        value=round(un.kmh(float(v2)), 1),
+                        min_value=3.6,
+                        key=f"{gen}:mission.v2",
+                        help=HELP.tooltip("V2"),
+                    )
                 ),
             ]
     with right:
@@ -783,8 +821,15 @@ with tabs["Power chain"]:
                 wv.diagram(checked.project), width="stretch", key="chain.diagram"
             )
             currents = None
-            if two is not None:
-                currents = [10.0] * len(checked.project.motors)
+            n_motors = len(checked.project.motors)
+            if (
+                two is not None
+                and not app.outdated
+                and all(m.index < n_motors for m in two.hover.motors)
+            ):
+                # The gauges follow the hover currents of the last Run, only while that
+                # result still describes this project (motors may have been removed).
+                currents = [10.0] * n_motors
                 for m in two.hover.motors:
                     currents[m.index] = m.motor_current_a
             table(wv.cable_rows(checked.project, currents))
@@ -878,68 +923,121 @@ with tabs["Propeller sizing"]:
         )
     else:
         aircraft = AircraftModel(checked.project)
-        for name, spec in checked.project.propulsion_units.items():
+        roles = {}
+        for m in checked.project.motors:
+            roles.setdefault(m.unit, set()).add(m.role)
+        cruise_units = [u for u, r in roles.items() if r & {"cruise", "tilt"}]
+        lift_units = [u for u, r in roles.items() if not r & {"cruise", "tilt"}]
+        if architecture != "quadplane":
+            lift_units, cruise_units = list(roles), []
+        st.subheader("Cruise motors (sized at V1 and V2)")
+        if not cruise_units:
+            st.info(
+                "No cruise or tilting motor: a multicopter flies forward by tilting the frame, "
+                "its propellers are sized in hover (below)."
+            )
+        for name in cruise_units:
+            spec = checked.project.propulsion_units[name]
             with st.container(border=True):
+                numbers = [
+                    str(i + 1)
+                    for i, m in enumerate(checked.project.motors)
+                    if m.unit == name
+                ]
                 st.markdown(
-                    f"**{name}** — {spec.motor_id}, {spec.prop_diameter_in:g} x "
-                    f"{tpv.fmt(spec.prop_pitch_in, 'g')} in; database propellers of this diameter: "
+                    f"**{name}** (motor {', '.join(numbers)}) — {spec.motor_id}, "
+                    f"{spec.prop_diameter_in:g} x {tpv.fmt(spec.prop_pitch_in, 'g')} in; "
+                    "database propellers of this diameter: "
                     f"{', '.join(ps.database_propellers(spec.prop_diameter_in)) or 'none'}"
                 )
                 rows, rec = ps.cruise_pitch_rows(aircraft, two, name)
-                if rows:
-                    points = [
-                        (c.index, c.v_m_s, m.thrust_n)
-                        for c in two.cruise
-                        for m in c.motors
-                        if m.unit == name
-                    ][:2]
-                    st.markdown(
-                        "**Sizing point: cruise** — "
-                        + "; ".join(
-                            f"V{k} = {v:.1f} m/s ({3.6 * v:.0f} km/h), thrust {t:.2f} N per motor"
-                            for k, v, t in points
-                        )
-                        + " (thrust = cruise drag shared by the cruise motors, from the last Run)."
+                if not rows:
+                    st.info("No cruise operating point for this unit in the last Run.")
+                    continue
+                points = [
+                    (c.index, c.v_m_s, m.thrust_n)
+                    for c in two.cruise
+                    for m in c.motors
+                    if m.unit == name
+                ][:2]
+                st.markdown(
+                    "**Sizing point: cruise** — "
+                    + "; ".join(
+                        f"V{k} = {un.speed_text(v)}, thrust {un.thrust_text(t)} per motor"
+                        for k, v, t in points
                     )
-                    st.plotly_chart(
-                        ps.pitch_figure(
-                            rows,
-                            rec,
-                            f"{name}: efficiency versus pitch at the cruise points",
-                        ),
-                        width="stretch",
-                        key=f"pitch.{name}",
-                    )
-                    table(rec)
-                    with st.expander("Values per pitch"):
-                        table(rows)
-                    best = rec.get("best compromise V1 + V2 (in)")
-                    if best is not None and st.button(
-                        f"Use {best:g} in for '{name}'", key=f"{gen}:usepitch.{name}"
-                    ):
-                        app.data["propulsion_units"][name]["prop_pitch_in"] = best
-                        app.data["propulsion_units"][name].pop("propeller_id", None)
-                        st.rerun()
-                else:
+                    + " (thrust = cruise drag shared by the cruise motors, from the last Run)."
+                )
+                st.plotly_chart(
+                    ps.pitch_figure(
+                        rows,
+                        rec,
+                        f"{name}: efficiency versus pitch at the cruise points",
+                    ),
+                    width="stretch",
+                    key=f"pitch.{name}",
+                )
+                table(rec)
+                with st.expander("Values per pitch"):
+                    table(rows)
+                best = rec.get("best compromise V1 + V2 (in)")
+                if best is not None and st.button(
+                    f"Use {best:g} in for '{name}'", key=f"{gen}:usepitch.{name}"
+                ):
+                    app.data["propulsion_units"][name]["prop_pitch_in"] = best
+                    app.data["propulsion_units"][name].pop("propeller_id", None)
+                    st.rerun()
+        if lift_units:
+            with st.expander(
+                "Lift motors (sized in hover): " + ", ".join(lift_units),
+                expanded=not cruise_units,
+            ):
+                for name in lift_units:
+                    spec = checked.project.propulsion_units[name]
                     hover_motors = [m for m in two.hover.motors if m.unit == name]
-                    if hover_motors:
-                        st.caption(
-                            f"'{name}' only lifts: its pitch is sized in hover, at the hover thrust of "
-                            f"{hover_motors[0].thrust_n / 9.81 * 1000:.0f} g per motor (lowest electric power)."
+                    if not hover_motors:
+                        continue
+                    st.markdown(
+                        f"**{name}** — {spec.motor_id}, {spec.prop_diameter_in:g} x "
+                        f"{tpv.fmt(spec.prop_pitch_in, 'g')} in: only lifts, its pitch is sized in "
+                        f"hover at {un.thrust_text(hover_motors[0].thrust_n)} per motor "
+                        "(lowest electric power)."
+                    )
+                    table(
+                        pc.hover_pitch_rows(
+                            aircraft.units[name],
+                            spec.prop_diameter_in,
+                            pc.default_pitches(spec.prop_diameter_in),
+                            hover_motors[0].thrust_n,
+                            aircraft.rho,
+                            two.hover.chain.bus_voltage_v,
                         )
-                        unit = aircraft.units[name]
-                        table(
-                            pc.hover_pitch_rows(
-                                unit,
-                                spec.prop_diameter_in,
-                                pc.default_pitches(spec.prop_diameter_in),
-                                hover_motors[0].thrust_n,
-                                aircraft.rho,
-                                two.hover.chain.bus_voltage_v,
-                            )
-                        )
+                    )
 
 with tabs["Test data"]:
+    with st.expander("What is compared, and how the model computes it", expanded=True):
+        st.markdown(explanations.INTRO)
+        st.plotly_chart(
+            explanations.energy_chain_figure(architecture == "quadplane"),
+            width="stretch",
+            key="testdata.chain",
+        )
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("**Hover point**")
+            for text, formula in explanations.HOVER:
+                st.markdown(text)
+                st.latex(formula)
+        with c2:
+            if architecture == "quadplane":
+                st.markdown("**Cruise point** (winged aircraft)")
+                steps = explanations.CRUISE_WINGED
+            else:
+                st.markdown("**Cruise point** (multicopter, in-house drag model)")
+                steps = explanations.CRUISE_MULTICOPTER
+            for text, formula in steps:
+                st.markdown(text)
+                st.latex(formula)
     st.subheader("Measured flight points")
     data["test_data"] = forms.render_items(
         st, FlightPoint, data.get("test_data") or [], "test_data", errors, gen
@@ -999,7 +1097,9 @@ with tabs["Test data"]:
             if (calibration.get("hover") or calibration.get("cruise"))
             else None
         )
-        st.markdown(calibration_doc)
+        st.markdown(explanations.CALIBRATION)
+        with st.expander("Calibration procedure in detail (MIC-CAL-REF)"):
+            st.markdown(calibration_doc)
     data = {k: v for k, v in data.items() if v is not None and v != {}}
     app.data = data
 
@@ -1097,6 +1197,33 @@ with tabs["Results"]:
             table(tpv.hover_rows(two))
         with right:
             table(tpv.cruise_rows(two))
+        if checked.project is not None and not app.outdated:
+            st.subheader("Where the battery power goes (power budget)")
+            st.caption(
+                "Each phase splits the chemical power of the cells into its sinks, from the "
+                "air back to the battery; they add up to the total (MIC-MIS-BUDGET)."
+            )
+            budgets = power_budget(
+                AircraftModel(checked.project, aero_backend=None), two
+            )
+            fig = go.Figure([
+                go.Bar(
+                    name=sink,
+                    x=[b.phase for b in budgets],
+                    y=[b.sinks.get(sink, 0.0) for b in budgets],
+                )
+                for sink in dict.fromkeys(k for b in budgets for k in b.sinks)
+            ])
+            fig.update_layout(
+                barmode="stack",
+                yaxis_title="power (W)",
+                height=380,
+                margin={"l": 10, "r": 10, "t": 30, "b": 10},
+            )
+            c1, c2 = st.columns([2, 3])
+            c1.plotly_chart(fig, width="stretch", key="results.budget")
+            with c2:
+                table(budget_rows(budgets))
     result = app.result
     if result is not None:
         with st.expander("Scenario mode (MVP solver)"):
@@ -1116,381 +1243,3 @@ with tabs["Results"]:
             c1.plotly_chart(charts.power_figure(result), width="stretch")
             c2.plotly_chart(charts.mass_figure(result), width="stretch")
             table(charts.segment_rows(result))
-
-# --- exploration, optimisation, studies --------------------------------------------------
-try:
-    from predimrc_wrapper.mdo.explore import explore
-    from predimrc_wrapper.mdo.explore import pareto_mask
-    from predimrc_wrapper.mdo.explore import study_from_optimisation
-    from predimrc_wrapper.mdo.optimise import CONSTRAINTS_TWO_PHASE
-    from predimrc_wrapper.mdo.optimise import available_algorithms
-    from predimrc_wrapper.mdo.optimise import optimise
-    from predimrc_wrapper.mdo.parameters import expand_overrides
-    from predimrc_wrapper.mdo.studies import StudyStore
-    from predimrc_wrapper.ui import optimisation as opt
-    from predimrc_wrapper.ui import studies_view as sv
-
-    MDO = True
-except ImportError:
-    MDO = False
-
-TWO_PHASE_OBJECTIVES = {
-    "flight_time_v1": "Maximise the flight time at V1",
-    "flight_time_v2": "Maximise the flight time at V2",
-    "range_v2": "Maximise the range at V2",
-    "mass_total": "Minimise the total mass",
-}
-
-
-def _choices_ui(project: Project, prefix: str) -> dict[str, list]:
-    """Motors and propellers per unit type, cell count."""
-    out = {}
-    cols = st.columns(len(project.propulsion_units) + 1)
-    for col, (name, unit) in zip(cols, project.propulsion_units.items(), strict=False):
-        motor_options = list(
-            dict.fromkeys([
-                unit.motor_id,
-                *(
-                    next((r.candidates for r in ranges or [] if r.unit == name), None)
-                    or db.ids()
-                ),
-            ])
-        )
-        motors = col.multiselect(
-            f"Motors of '{name}'",
-            motor_options,
-            default=[unit.motor_id],
-            key=f"{gen}:{prefix}.motors.{name}",
-            help=HELP.tooltip("propulsion_units.*.motor_id"),
-        )
-        if motors and motors != [unit.motor_id]:
-            out[f"propulsion_units.{name}.motor_id"] = motors
-        props = col.multiselect(
-            f"Propellers of '{name}' (database)",
-            default_propellers().ids(),
-            key=f"{gen}:{prefix}.props.{name}",
-            help=HELP.tooltip("propulsion_units.*.propeller_id"),
-        )
-        if props:
-            out[f"propulsion_units.{name}.propeller"] = props
-    cells = cols[-1].multiselect(
-        "Cells in series",
-        list(range(2, 13)),
-        default=[project.battery.n_series],
-        key=f"{gen}:{prefix}.cells",
-        help=HELP.tooltip("battery.n_series"),
-    )
-    if cells and cells != [project.battery.n_series]:
-        out["battery.n_series"] = cells
-    return out
-
-
-def _variables_ui(project: Project, prefix: str):
-    rows = st.session_state.setdefault(
-        f"{gen}:{prefix}.rows", opt.default_variables(project)
-    )
-    edited = st.data_editor(
-        rows,
-        key=f"{gen}:{prefix}.table",
-        hide_index=True,
-        width="stretch",
-        disabled=["name", "path"],
-    )
-    return opt.to_parameters(list(edited))
-
-
-def _apply(project: Project, overrides: dict) -> None:
-    app.load(
-        project.with_overrides(expand_overrides(overrides)).to_dict(), app.source_path
-    )
-    st.rerun()
-
-
-with tabs["Exploration"]:
-    if not MDO:
-        st.info("The exploration needs GEMSEO: pip install 'predimrc_wrapper[mdo]'.")
-    elif checked.project is None:
-        st.info("The exploration is set up once the project is valid.")
-    else:
-        project = checked.project
-        st.markdown(
-            "Design of experiments on the continuous variables × every combination of the categorical "
-            "choices, two-phase flight time at each point. The study is stored in the studies folder."
-        )
-        variables = _variables_ui(project, "exp")
-        choices = _choices_ui(project, "exp")
-        c1, c2, c3, c4 = st.columns(4)
-        method = c1.selectbox(
-            "Design",
-            ["lhs", "full_factorial"],
-            key=f"{gen}:exp.method",
-            help="Latin hypercube (lhs) or full factorial grid.",
-        )
-        n = int(
-            c2.number_input("Points per combination", 2, 500, 10, key=f"{gen}:exp.n")
-        )
-        seed = int(c3.number_input("Seed", 0, 10_000, 0, key=f"{gen}:exp.seed"))
-        name = c4.text_input(
-            "Study name", f"exploration {project.name}", key=f"{gen}:exp.name"
-        )
-        n_combos = int(np.prod([len(v) for v in choices.values()])) if choices else 1
-        st.caption(f"{n_combos} combination(s) × {n} points")
-        if st.button("Run the exploration", type="primary"):
-            bar = st.progress(0.0, text="Starting…")
-            try:
-                study = explore(
-                    project,
-                    variables,
-                    choices,
-                    method,
-                    n,
-                    seed,
-                    backend=backend_for(project),
-                    name=name,
-                    progress=lambda i, t: bar.progress(
-                        i / max(t, 1), text=f"Point {i + 1}/{t}"
-                    ),
-                )
-                StudyStore(Settings.load().studies_root).save(study)
-                st.session_state["last_exploration"] = study
-                bar.progress(1.0, text=f"Done — saved in {study.path}")
-            except Exception as error:  # ruff: ignore[blind-except]
-                st.error(f"Exploration failed: {error}")
-                with st.expander("Details"):
-                    st.code(traceback.format_exc())
-        study = st.session_state.get("last_exploration")
-        if study is not None:
-            cols = sv.numeric_columns(study.points)
-            c1, c2 = st.columns(2)
-            x = c1.selectbox(
-                "x",
-                cols,
-                index=cols.index("mass_total") if "mass_total" in cols else 0,
-                key="exp.x",
-            )
-            y = c2.selectbox(
-                "y",
-                cols,
-                index=cols.index("flight_time_v2") if "flight_time_v2" in cols else 0,
-                key="exp.y",
-            )
-            mask = pareto_mask(
-                study.points, [("flight_time_v2", True), ("mass_total", False)]
-            )
-            st.plotly_chart(
-                sv.scatter_figure([study], x, y, [mask]),
-                width="stretch",
-                key="exp.scatter",
-            )
-            table(sv.point_rows(study))
-
-with tabs["Optimisation"]:
-    if not MDO:
-        st.info(
-            "The optimisation needs GEMSEO: pip install 'predimrc_wrapper[mdo]' (gemseo[all] for COBYLA)."
-        )
-    elif checked.project is None:
-        st.info("The optimisation is set up once the project is valid.")
-    else:
-        project = checked.project
-        st.markdown(
-            "Outer loop over the categorical choices (motors, propellers, cells), optimiser on the continuous "
-            "variables, margins ≥ 0. Two-phase flight time; the study is stored."
-        )
-        c1, c2, c3 = st.columns(3)
-        objective = c1.selectbox(
-            "Objective",
-            list(TWO_PHASE_OBJECTIVES),
-            format_func=TWO_PHASE_OBJECTIVES.get,
-            key=f"{gen}:opt.objective",
-        )
-        algo = c2.selectbox(
-            "Algorithm",
-            available_algorithms(),
-            key=f"{gen}:opt.algo",
-            help="SLSQP: gradient by finite differences; NLOPT_COBYLA, COBYQA: gradient-free.",
-        )
-        max_iter = int(
-            c3.number_input(
-                "Iterations per choice", 5, 500, 40, key=f"{gen}:opt.max_iter"
-            )
-        )
-        variables = _variables_ui(project, "opt")
-        choices = _choices_ui(project, "opt")
-        constraints = st.multiselect(
-            "Constraints (≥ 0)",
-            [
-                "margin_motor_power",
-                "margin_motor_current",
-                "margin_hover_thrust",
-                "margin_thrust_to_weight",
-                "margin_battery_c",
-                "margin_mass",
-            ],
-            default=list(CONSTRAINTS_TWO_PHASE),
-            key=f"{gen}:opt.constraints",
-        )
-        sd_on = st.checkbox(
-            "Constrain the surrogate uncertainty (σ_rel ≤ 5 %)",
-            value=True,
-            key=f"{gen}:opt.sd",
-            help=HELP.tooltip("max_sd_rel"),
-        )
-        if st.button("Run the optimisation", type="primary"):
-            bar = st.progress(0.0, text="Starting…")
-            try:
-                summary = optimise(
-                    project,
-                    variables,
-                    choices,
-                    objective=objective,
-                    constraints=tuple(constraints),
-                    algo=algo,
-                    max_iter=max_iter,
-                    backend=backend_for(project),
-                    progress=lambda i, n_, c: bar.progress(
-                        i / n_, text=f"Combination {i + 1}/{n_}: {c or 'base'}"
-                    ),
-                    max_sd_rel=0.05 if sd_on else None,
-                )
-                study = study_from_optimisation(
-                    summary,
-                    project,
-                    variables,
-                    choices,
-                    constraints,
-                    algo,
-                    max_iter,
-                    name=f"optimisation {project.name}",
-                    max_sd_rel=0.05 if sd_on else None,
-                )
-                StudyStore(Settings.load().studies_root).save(study)
-                st.session_state["optimisation"] = {
-                    "summary": summary,
-                    "continuous": variables,
-                    "study": study,
-                }
-                bar.progress(
-                    1.0, text=f"Done in {summary.seconds:.0f} s — saved in {study.path}"
-                )
-            except Exception as error:  # ruff: ignore[blind-except]
-                st.error(f"Optimisation failed: {error}")
-                with st.expander("Details"):
-                    st.code(traceback.format_exc())
-        stored = st.session_state.get("optimisation")
-        if stored:
-            summary = stored["summary"]
-            best = summary.best
-            if best is None:
-                st.error("No combination could be evaluated.")
-            else:
-                st.markdown(
-                    f"**Best:** {best.choice or 'base design'} — {summary.objective} = "
-                    f"{best.outputs[summary.objective]:.4g}, "
-                    + ("feasible" if best.feasible else ":red[infeasible]")
-                )
-                if st.button("Apply the best design to the project"):
-                    _apply(project, summary.best_overrides(stored["continuous"]))
-            c1, c2 = st.columns([3, 2])
-            with c1:
-                table(sv.point_rows(stored["study"]))
-            c2.plotly_chart(
-                opt.history_figure(summary), width="stretch", key="opt.history"
-            )
-
-with tabs["Studies"]:
-    if not MDO:
-        st.info("The studies need GEMSEO: pip install 'predimrc_wrapper[mdo]'.")
-    else:
-        store = StudyStore(Settings.load().studies_root)
-        listing = store.list()
-        st.caption(f"Studies root: `{store.root.resolve()}`")
-        if not listing:
-            st.info("No study yet: run an exploration or an optimisation.")
-        else:
-            table([
-                {k: s[k] for k in ("id", "name", "kind", "mode", "date", "points")}
-                for s in listing
-            ])
-            ids = [s["id"] for s in listing]
-            chosen = st.multiselect(
-                "Open (one, or two to compare)",
-                ids,
-                default=ids[:1],
-                max_selections=2,
-                key="studies.open",
-            )
-            studies = [store.load(i) for i in chosen]
-            if studies:
-                cols = sorted(
-                    set.intersection(*[
-                        set(sv.numeric_columns(s.points)) for s in studies
-                    ])
-                )
-                c1, c2 = st.columns(2)
-                x = c1.selectbox(
-                    "x",
-                    cols,
-                    index=cols.index("mass_total") if "mass_total" in cols else 0,
-                    key="studies.x",
-                )
-                y = c2.selectbox(
-                    "y",
-                    cols,
-                    index=cols.index("flight_time_v2")
-                    if "flight_time_v2" in cols
-                    else 0,
-                    key="studies.y",
-                )
-                masks = [
-                    pareto_mask(
-                        s.points, [("flight_time_v2", True), ("mass_total", False)]
-                    )
-                    for s in studies
-                ]
-                st.plotly_chart(
-                    sv.scatter_figure(studies, x, y, masks),
-                    width="stretch",
-                    key="studies.scatter",
-                )
-                for s in studies:
-                    with st.container(border=True):
-                        st.markdown(
-                            f"**{s.name}** ({s.definition.kind}, {s.definition.mode}) — {s.metadata.get('date')}"
-                            + (
-                                " — :orange[data changed since this study]"
-                                if StudyStore.data_changed(s)
-                                else ""
-                            )
-                        )
-                        table(sv.point_rows(s))
-                        c1, c2, c3 = st.columns(3)
-                        index = int(
-                            c1.number_input(
-                                "Point to apply (row)",
-                                0,
-                                max(0, len(s.points) - 1),
-                                0,
-                                key=f"studies.apply.{s.id}",
-                            )
-                        )
-                        if c1.button(
-                            "Apply this point to the project",
-                            key=f"studies.applybtn.{s.id}",
-                        ):
-                            _apply(
-                                Project.model_validate(s.base_project),
-                                sv.overrides_of(s, index),
-                            )
-                        new_name = c2.text_input(
-                            "Rename", s.name, key=f"studies.rename.{s.id}"
-                        )
-                        if (
-                            c2.button("Rename", key=f"studies.renamebtn.{s.id}")
-                            and new_name != s.name
-                        ):
-                            store.rename(s.id, new_name)
-                            st.rerun()
-                        if c3.button("Delete", key=f"studies.delete.{s.id}"):
-                            store.delete(s.id)
-                            st.rerun()

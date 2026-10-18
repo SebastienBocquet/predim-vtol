@@ -50,8 +50,20 @@ def field_badge(info: FieldInfo, value: Any = _UNSET) -> str:
     return "default" if value is _UNSET or value == info.default else "entered"
 
 
+KMH_PER_M_S = 3.6
+
+
+def is_airspeed(name: str) -> bool:
+    """Airspeeds (``*speed*_m_s`` fields, not vertical) are shown and entered in km/h (REQ-NFR-002)."""
+    return name.endswith("_m_s") and "speed" in name and "vertical" not in name
+
+
+def _display_label(label: str, name: str) -> str:
+    return label.replace("(m/s)", "(km/h)") if is_airspeed(name) else label
+
+
 def field_label(name: str, info: FieldInfo, value: Any = _UNSET) -> str:
-    label = info.description or name.replace("_", " ")
+    label = _display_label(info.description or name.replace("_", " "), name)
     badge = field_badge(info, value)
     if badge == "required":
         return f"{label} *"
@@ -149,7 +161,7 @@ def _column_config(
     config = {}
     for name, info in item_cls.model_fields.items():
         ann, _ = unwrap_optional(info.annotation)
-        label = info.description or name
+        label = _display_label(info.description or name, name)
         tip = _help(f"{path}.0.{name}", info.description)
         if options and name in options:
             config[name] = st.column_config.SelectboxColumn(
@@ -187,10 +199,13 @@ def render_items(
     frame = pd.DataFrame(
         [{c: v.get(c) for c in columns} for v in values], columns=columns
     )
+    scaled = {n: KMH_PER_M_S for n in columns if is_airspeed(n)}
     for name, info in item_cls.model_fields.items():
         ann, _ = unwrap_optional(info.annotation)
         if not (ann in (int, float, bool) or get_origin(ann) is Literal):
             frame[name] = frame[name].map(lambda v: None if _empty(v) else str(v))
+        elif name in scaled:
+            frame[name] = frame[name].astype(float) * scaled[name]
     st.caption(
         "Add a row with ＋ at the bottom; delete rows by ticking them in the left column, then the bin icon "
         "at the top right of the table."
@@ -204,7 +219,12 @@ def render_items(
         width="stretch",
     )
     _show_errors(st, path, errors, prefix=True)
-    return rows_to_items(edited.to_dict("records"), item_cls)
+    records = edited.to_dict("records")
+    for r in records:
+        for name, factor in scaled.items():
+            if not _empty(r.get(name)):
+                r[name] = float(r[name]) / factor
+    return rows_to_items(records, item_cls)
 
 
 def _render_panels(
@@ -267,16 +287,25 @@ def render_field(
     elif ann in (int, float):
         low, high = bounds(info)
         cast = int if ann is int else float
+        airspeed = ann is float and is_airspeed(name)
+
+        def shown(v):
+            if v is None:
+                return None
+            return cast(v) * KMH_PER_M_S if airspeed else cast(v)
+
         out = st.number_input(
             label,
-            value=None if value is None else cast(value),
-            min_value=None if low is None else cast(low),
-            max_value=None if high is None else cast(high),
+            value=shown(value),
+            min_value=shown(low),
+            max_value=shown(high),
             step=1 if ann is int else None,
             key=key,
             placeholder="not set" if optional else "required",
             help=tip,
         )
+        if out is not None and airspeed:
+            out /= KMH_PER_M_S
     else:
         out = st.text_input(
             label, value="" if value is None else str(value), key=key, help=tip

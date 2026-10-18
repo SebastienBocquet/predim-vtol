@@ -1,7 +1,7 @@
 ---
 id: INC3-002
 title: GUI feedback — 4-in-1 bug, pitch sections, units, test data explanation, power budget, navigation
-status: Proposed
+status: Implemented
 branch: fix/gui-feedback
 requirements: [REQ-PROP-007, REQ-PROP-009, REQ-NFR-002, REQ-UI-011, REQ-MIS-009, REQ-UI-008, REQ-AERO-009]
 depends_on: [INC3-001]
@@ -89,3 +89,28 @@ PowerBudget ..> ChainResult : reads
 
 1. An outdated result is never combined with a changed project.
 2. The power budget test fails if a sink is missing (closure).
+
+## Implementation notes (2026-10-18)
+
+- **4-in-1 bug, root cause:** not the ESC topology itself but a Run result whose motor
+  list no longer matches the project (motors removed or a layout regenerated after the Run,
+  often together with the ESC change). The Power chain tab now uses the hover currents only
+  when the result is up to date and its motor indexes fit; regression test
+  `test_power_chain_after_motors_removed`.
+- Units: `ui/units.py`; tables show thrust as text `12.30 N (1.25 kg)` (column `thrust`),
+  chart axes in N (kg in the hover text); speeds in km/h in tiles, tables, chart axes and
+  inputs. Airspeed fields of any form (`*speed*_m_s`, not vertical) are entered in km/h by
+  `forms.is_airspeed` and stored in m/s. The thrust efficiency stays in g/W (usual unit).
+- Power budget: `mission/power_budget.py`, card `docs/models/MIC-MIS-BUDGET.md`. The
+  multicopter cruise (forward-flight model) is split into rotors in forward flight
+  (shaft − D·V), motors + ESC + cables together, battery internal, avionics:
+  `CruiseResult` gains `shaft_power_w` and `terminal_power_w` for it. Closure is exact
+  (≤ 1e-9 relative) on every template.
+- Navigation: sidebar pages Pre-sizing / Studies / Model cards / Glossary; the Studies page
+  (`ui/studies_page.py`) holds Exploration, Optimisation and Studies.
+- PredimRC folder: editable in the first tab of a winged configuration, with the naming
+  rule, the profiles found and a warning when the project profile has no workbook; removed
+  from the sidebar settings (which keep the studies root). The profile itself stays in the
+  wing geometry form (moved to the first tab by INC3-003).
+- Test data tab: `ui/explanations.py` (intro, energy chain sketch, LaTeX formulas per phase,
+  calibration explained; the calibration docstring stays available in an expander).

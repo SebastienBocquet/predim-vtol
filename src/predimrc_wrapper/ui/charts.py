@@ -31,8 +31,8 @@ def kpis(result: MissionResult) -> list[Kpi]:
     tiles = [
         Kpi("Flight time", result.flight_time_min, "min"),
         Kpi("Range", result.range_km, "km"),
-        Kpi("Best-endurance speed", result.v_endurance, "m/s"),
-        Kpi("Best-range speed", result.v_range, "m/s"),
+        Kpi("Best-endurance speed", 3.6 * result.v_endurance, "km/h"),
+        Kpi("Best-range speed", 3.6 * result.v_range, "km/h"),
         Kpi("Total mass", result.mass_total_kg, "kg"),
     ]
     tiles += [
@@ -61,7 +61,7 @@ def power_figure(result: MissionResult) -> go.Figure:
     """Battery, shaft and aerodynamic (D·V) power versus cruise speed; V_e and V_r marked."""
     s = result.cruise_sweep
     v, p, ok = (
-        np.asarray(s.v_m_s),
+        3.6 * np.asarray(s.v_m_s),
         np.asarray(s.battery_power_w),
         np.asarray(s.feasible, dtype=bool),
     )
@@ -111,11 +111,13 @@ def power_figure(result: MissionResult) -> go.Figure:
     ):
         if speed is not None and np.isfinite(speed):
             fig.add_vline(
-                x=speed, line_dash=dash, annotation_text=f"{name} {speed:.1f} m/s"
+                x=3.6 * speed,
+                line_dash=dash,
+                annotation_text=f"{name} {3.6 * speed:.0f} km/h",
             )
     fig.update_layout(
         title="Power versus cruise speed",
-        xaxis_title="speed (m/s)",
+        xaxis_title="speed (km/h)",
         yaxis_title="power (W)",
         height=380,
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
@@ -129,7 +131,7 @@ def segment_rows(result: MissionResult) -> list[dict]:
             "segment": s.kind,
             "duration (s)": round(s.duration_s, 1),
             "distance (m)": round(s.distance_m),
-            "speed (m/s)": round(s.speed_m_s, 2),
+            "speed (km/h)": round(3.6 * s.speed_m_s, 1),
             "battery power (W)": round(s.battery_power_w, 1),
             "current (A)": round(s.battery_current_a, 2),
             "energy (Wh)": round(s.energy_j / 3600, 2),

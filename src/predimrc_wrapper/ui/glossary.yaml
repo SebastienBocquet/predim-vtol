@@ -4,8 +4,8 @@
 
 # --- two-phase flight time (MIC-MIS-TWO) -------------------------------------------------
 V: {definition: "Index of the target speed (1 = minimum aerodynamic power, 2 = maximum L/D by default).", model: MIC-MIS-TWO}
-V1: {definition: "Target speed 1: by default the speed of minimum aerodynamic power (best endurance), written into PredimRC Vx 1.", unit: m/s, symbol: V₁, model: MIC-MIS-TWO}
-V2: {definition: "Target speed 2: by default the speed of maximum lift-to-drag ratio (best range), written into PredimRC Vx 2.", unit: m/s, symbol: V₂, model: MIC-MIS-TWO}
+V1: {definition: "Target speed 1: by default the speed of minimum aerodynamic power (best endurance), written into PredimRC Vx 1.", unit: km/h, symbol: V₁, model: MIC-MIS-TWO}
+V2: {definition: "Target speed 2: by default the speed of maximum lift-to-drag ratio (best range), written into PredimRC Vx 2.", unit: km/h, symbol: V₂, model: MIC-MIS-TWO}
 Flight time: {definition: "Hover time plus cruise time at the target speed until the reserve: t_h + (E_avail − P_h·t_h) / P_c, ± its standard deviation from the surrogate.", unit: min, symbol: t, model: MIC-MIS-TWO}
 Range: {definition: "Distance flown in cruise at the target speed: V × cruise time.", unit: km, model: MIC-MIS-TWO}
 Hover power (battery): {definition: "Power drawn from the cells in hover: sum of the motor powers (surrogate) plus chain losses and avionics, ± its standard deviation.", unit: W, symbol: P_h, model: MIC-MIS-TWO}
@@ -19,8 +19,8 @@ Margin battery c: {definition: "1 − battery current / maximum continuous curre
 Margin mass: {definition: "1 − total mass / maximum take-off mass (NaN when no maximum is set).", model: MIC-CFG-MASS}
 Margin voltage: {definition: "1 − motor voltage / (maximum duty × battery voltage), scenario mode.", model: MIC-MIS-SEG}
 Total mass: {definition: "Sum of the mass items, propulsion units and battery.", unit: kg, symbol: m, model: MIC-CFG-MASS}
-Best-endurance speed: {definition: "Speed of minimum battery power, scenario mode.", unit: m/s, symbol: V_e, model: MIC-MIS-SOL}
-Best-range speed: {definition: "Speed of minimum battery energy per distance, scenario mode.", unit: m/s, symbol: V_r, model: MIC-MIS-SOL}
+Best-endurance speed: {definition: "Speed of minimum battery power, scenario mode.", unit: km/h, symbol: V_e, model: MIC-MIS-SOL}
+Best-range speed: {definition: "Speed of minimum battery energy per distance, scenario mode.", unit: km/h, symbol: V_r, model: MIC-MIS-SOL}
 max_sd_rel: {definition: "Largest relative standard deviation of the hover power of a motor (surrogate uncertainty); constrained ≤ 5 % when asked.", model: MIC-PROP-SUR}
 tilts: {definition: "The motor tilts: it lifts in hover and pushes in cruise (role tilt, ArduPilot Q_TILT_MASK); it counts once in the mass.", model: MIC-MIS-TWO}
 
@@ -29,8 +29,8 @@ motor: {definition: "Motor number: position in the motor list (ArduPilot output 
 unit: {definition: "Propulsion unit type of the motor (motor, propeller, ESC).", model: MIC-PROP-UNIT}
 pair (data): {definition: "Motor + propeller pair whose test data feed the surrogate; 'not in the database' for an untested propeller.", model: MIC-PROP-SUR}
 pair: {definition: "Motor + propeller pair of the test data.", model: MIC-PROP-SUR}
-thrust (g): {definition: "Thrust of one rotor (hover thrust from the moment balance, or test point).", unit: g, model: MIC-MIS-TWO}
-thrust (N): {definition: "Thrust of one motor.", unit: N, model: MIC-MIS-TWO}
+thrust: {definition: "Thrust of one motor (hover: from the balance of forces and moments; cruise: drag shared by the cruise motors; or test point), in N with the equivalent mass in kg (T / g) in parentheses.", unit: N (kg), model: MIC-MIS-TWO}
+thrust (N): {definition: "Thrust of one motor (chart axis); the hover text gives the equivalent mass in kg.", unit: N, model: MIC-MIS-TWO}
 share (%): {definition: "Share of the total hover thrust carried by the motor (force and moment balance about the CG).", unit: "%", model: MIC-MIS-TWO}
 power (W): {definition: "Electric power of the motor at its thrust, at the measurement point of the data (surrogate prediction or test point).", unit: W, model: MIC-PROP-SUR}
 ± σ (W): {definition: "Standard deviation of the surrogate power prediction (95 % interval ≈ ±1.96 σ).", unit: W, model: MIC-PROP-SUR}
@@ -44,7 +44,7 @@ trusted: {definition: "The prediction is inside the trusted domain: σ_rel ≤ 5
 why not: {definition: "Reason why a prediction is not trusted.", model: MIC-PROP-SUR}
 
 # --- cruise table ---------------------------------------------------------------------------
-speed (m/s): {definition: "Airspeed.", unit: m/s}
+speed (km/h): {definition: "Airspeed.", unit: km/h}
 prop efficiency: {definition: "Propeller efficiency T·V / P_shaft at the operating point (blade-element model).", model: MIC-PROP-BEM}
 motor input (W): {definition: "Electric power at the motor input.", unit: W, model: MIC-PROP-MOT}
 aero power (W): {definition: "Drag × speed at the target speed (PredimRC + drag sources).", unit: W, model: MIC-MIS-TWO}
@@ -187,3 +187,12 @@ length (mm): {definition: "Length of the cable, from the geometry or entered per
 gauge (AWG): {definition: "Wire gauge; when not entered, the smallest wire whose current rating is ≥ 1.25 × the hover current it carries.", unit: AWG, model: MIC-PROP-CHAIN}
 gauge from: {definition: "entered (in the wiring inputs) or current (chosen from the hover current).", model: MIC-PROP-CHAIN}
 efficiency: {definition: "Propeller × motor efficiency T·V / P_el (solid) and propeller efficiency T·V / P_shaft (dotted).", model: MIC-PROP-BEM}
+
+# --- power budget (MIC-MIS-BUDGET) ---------------------------------------------------------
+power sink: {definition: "Where the battery power goes: useful aerodynamic power (hover: ideal induced power Σ T^1.5/√(2ρA); cruise: D·V), propeller, motor, ESC, cables, battery internal resistance, avionics.", model: MIC-MIS-BUDGET}
+hover (W): {definition: "Power of the sink in hover.", unit: W, model: MIC-MIS-BUDGET}
+hover (%): {definition: "Share of the battery chemical power taken by the sink in hover.", unit: "%", model: MIC-MIS-BUDGET}
+V1 (W): {definition: "Power of the sink in cruise at V1.", unit: W, model: MIC-MIS-BUDGET}
+V1 (%): {definition: "Share of the battery chemical power taken by the sink at V1.", unit: "%", model: MIC-MIS-BUDGET}
+V2 (W): {definition: "Power of the sink in cruise at V2.", unit: W, model: MIC-MIS-BUDGET}
+V2 (%): {definition: "Share of the battery chemical power taken by the sink at V2.", unit: "%", model: MIC-MIS-BUDGET}

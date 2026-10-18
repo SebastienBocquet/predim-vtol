@@ -123,6 +123,10 @@ class CruiseResult:
     time_sd_s: float = float("nan")
     flight_time_s: float = float("nan")
     range_m: float = float("nan")
+    shaft_power_w: float = float("nan")
+    """Σ rotor shaft power, multicopter forward-flight model only (W)."""
+    terminal_power_w: float = float("nan")
+    """Power at the battery terminals, multicopter forward-flight model only (W)."""
 
 
 @dataclass
@@ -472,6 +476,8 @@ class TwoPhaseEvaluation(CompositeModel):
                         None,
                         float(y["chemical_power_w"]),
                         "multicopter forward-flight model of the MVP (MIC-MIS-SEG)",
+                        shaft_power_w=float(y["shaft_power_w"]),
+                        terminal_power_w=float(y["battery_power_w"]),
                     )
                 )
             return out, None

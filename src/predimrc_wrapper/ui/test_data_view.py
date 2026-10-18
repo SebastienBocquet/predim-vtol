@@ -31,7 +31,9 @@ def compare_points(project: Project, backend: AeroBackend | None = None) -> list
             "kind": point.kind,
             "date": point.date,
             "mass (kg)": round(aircraft.total_mass_kg, 3),
-            "speed (m/s)": point.speed_m_s,
+            "speed (km/h)": None
+            if point.speed_m_s is None
+            else round(3.6 * point.speed_m_s, 1),
             "measured (W)": point.battery_power_w,
         }
         try:

@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from predimrc_wrapper.ui import units
+
 if TYPE_CHECKING:
     from predimrc_wrapper.mission.two_phase import TwoPhaseResult
 
@@ -23,7 +25,7 @@ def kpi_rows(r: TwoPhaseResult) -> list[list[tuple[str, str, bool]]]:
         [
             (
                 f"V{c.index}",
-                fmt(c.v_m_s, ".1f", "m/s") + f" ({c.v_m_s * 3.6:.0f} km/h)",
+                units.speed_text(c.v_m_s, 1),
                 False,
             ),
             (
@@ -60,7 +62,7 @@ def hover_rows(r: TwoPhaseResult) -> list[dict]:
             "motor": m.index + 1,
             "unit": m.unit,
             "pair (data)": m.pair,
-            "thrust (g)": round(m.thrust_n / 9.81 * 1000),
+            "thrust": units.thrust_text(m.thrust_n),
             "share (%)": round(100 * m.fraction, 1),
             "power (W)": round(m.power_w, 1),
             "± σ (W)": round(m.power_sd_w, 1),
@@ -85,7 +87,7 @@ def cruise_rows(r: TwoPhaseResult) -> list[dict]:
         if not c.motors:
             rows.append({
                 "V": c.index,
-                "speed (m/s)": round(c.v_m_s, 2),
+                "speed (km/h)": round(units.kmh(c.v_m_s), 1),
                 "aero power (W)": round(c.aero_power_w, 1),
                 "battery power (W)": round(c.battery_power_w, 1),
                 "model": c.source,
@@ -93,9 +95,9 @@ def cruise_rows(r: TwoPhaseResult) -> list[dict]:
         rows.extend(
             {
                 "V": c.index,
-                "speed (m/s)": round(c.v_m_s, 2),
+                "speed (km/h)": round(units.kmh(c.v_m_s), 1),
                 "motor": m.index + 1,
-                "thrust (N)": round(m.thrust_n, 2),
+                "thrust": units.thrust_text(m.thrust_n),
                 "rpm": round(m.rpm),
                 "prop efficiency": round(m.prop_efficiency, 3),
                 "motor input (W)": round(m.motor_input_w, 1),

@@ -9,6 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 from predimrc_wrapper.core.units import GRAVITY
+from predimrc_wrapper.ui import units
 
 if TYPE_CHECKING:
     from predimrc_wrapper.mission.two_phase import MotorHover
@@ -77,7 +78,7 @@ def pair_figure(r: TwoPhaseResult, pair: str) -> go.Figure:
     for i, t in enumerate(tests):
         fig.add_trace(
             go.Scatter(
-                x=t.thrust_n / GRAVITY * 1000.0,
+                x=t.thrust_n,
                 y=t.power_w,
                 mode="markers",
                 name=f"test data {t.voltage_v:g} V",
@@ -86,23 +87,28 @@ def pair_figure(r: TwoPhaseResult, pair: str) -> go.Figure:
                     "size": 8,
                     "symbol": "circle-open",
                 },
-                hovertext=[f"throttle {100 * th:.0f} %" for th in t.throttle],
+                hovertext=[
+                    f"throttle {100 * th:.0f} %, {units.thrust_text(tn)}"
+                    for th, tn in zip(t.throttle, t.thrust_n, strict=False)
+                ],
             )
         )
     fig.add_trace(
         go.Scatter(
-            x=[m.thrust_n / GRAVITY * 1000.0 for m in motors],
+            x=[m.thrust_n for m in motors],
             y=[m.power_w for m in motors],
             error_y={"type": "data", "array": [1.96 * m.power_sd_w for m in motors]},
             mode="markers",
             name="hover operating point",
             marker={"color": "black", "size": 11, "symbol": "diamond"},
-            hovertext=[f"motor {m.index + 1}" for m in motors],
+            hovertext=[
+                f"motor {m.index + 1}: {units.thrust_text(m.thrust_n)}" for m in motors
+            ],
         )
     )
     fig.update_layout(
         title=f"{pair} — power at {m0.voltage_v:.1f} V ({m0.measured_at.replace('_', ' ')})",
-        xaxis_title="thrust (g)",
+        xaxis_title="thrust (N)",
         yaxis_title="electric power (W)",
         height=400,
         margin={"l": 10, "r": 10, "t": 40, "b": 10},
@@ -123,7 +129,7 @@ def points_near_rows(m: MotorHover, k: int = 6) -> list[dict]:
                 "test": t.id,
                 "throttle (%)": round(100 * t.throttle[i]),
                 "voltage (V)": t.voltage[i],
-                "thrust (g)": round(t.thrust_n[i] / GRAVITY * 1000),
+                "thrust": units.thrust_text(float(t.thrust_n[i])),
                 "power (W)": t.power_w[i],
                 "current (A)": t.current_a[i],
                 "rpm": None if not np.isfinite(t.rpm[i]) else int(t.rpm[i]),
