@@ -1,0 +1,26 @@
+# Thrust-power test copied from the manufacturer page (REQ-DATA-005). Manufacturer units.
+id: tmotor-at2308-1450kv__apc-9x6__11.2v
+motor_id: tmotor-at2308-1450kv
+propeller_id: apc-9x6
+esc: null
+measured_at: motor_input  # no ESC named by the table
+voltage_v: 11.2
+bench: manufacturer
+source: https://store.tmotor.com/product/at2308-long-shaft-fixed-wing-motor.html
+retrieved: 2026-10-14
+status: verified
+temperature_c: 79
+notes: "Temperature: motor surface at 100 % throttle for 3 min. Data for reference only (manufacturer note)."
+columns: [throttle_pct, voltage_v, current_a, power_w, thrust_g, rpm, torque_nm]
+rows:
+  - [40, 11.42, 4.33, 49.38, 328, 5272, 0.054]
+  - [45, 11.4, 5.22, 59.34, 377, 5631, 0.062]
+  - [50, 11.38, 6.42, 72.85, 445, 6054, 0.072]
+  - [55, 11.35, 7.68, 86.97, 518, 6474, 0.081]
+  - [60, 11.31, 9.29, 104.94, 596, 6904, 0.092]
+  - [65, 11.27, 10.95, 123.44, 667, 7265, 0.103]
+  - [70, 11.23, 12.74, 142.96, 742, 7604, 0.113]
+  - [75, 11.19, 14.48, 161.78, 807, 7908, 0.123]
+  - [80, 11.15, 16.46, 183.27, 873, 8173, 0.134]
+  - [90, 11.04, 20.83, 229.72, 1007, 8681, 0.154]
+  - [100, 11, 22.42, 246.35, 1045, 8827, 0.159]

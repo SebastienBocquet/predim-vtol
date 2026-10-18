@@ -1,0 +1,83 @@
+# MVP motor database (REQ-DATA-001, REQ-DATA-003): motors of 150 W to 250 W max power.
+# Values copied from the cited pages on 2026-10-12, manufacturer units.
+# i_max_a: the "180 s" continuous or peak rating published by the source.
+- id: tmotor-mn2212-780kv
+  manufacturer: T-Motor
+  range: MN
+  role: lift
+  kv: 780
+  rm_mohm: 173
+  i0_a: 0.4
+  i0_test_voltage_v: 10
+  i_max_a: 13
+  p_max_w: 200
+  mass_g: 65
+  cells: "2-4S"
+  source: https://store.tmotor.com/product/mn2212-v2-motor-navigator-type.html
+  retrieved: 2026-10-12
+  status: verified
+  notes: "MN2212 V2.0."
+- id: tmotor-mn2212-920kv
+  manufacturer: T-Motor
+  range: MN
+  role: lift
+  kv: 920
+  rm_mohm: 142
+  i0_a: 0.5
+  i0_test_voltage_v: 10
+  i_max_a: 15
+  p_max_w: 220
+  mass_g: 65
+  cells: "2-4S"
+  source: https://store.tmotor.com/product/mn2212-v2-motor-navigator-type.html
+  retrieved: 2026-10-12
+  status: verified
+  notes: "MN2212 V2.0."
+- id: tmotor-mn2806-400kv
+  manufacturer: T-Motor / LIGPOWER
+  range: MN (Antigravity)
+  role: lift
+  kv: 400
+  rm_mohm: 645
+  i0_a: 0.2
+  i0_test_voltage_v: 18
+  i_max_a: 9.4
+  p_max_w: 216
+  mass_g: 46
+  cells: "4-6S"
+  source: https://www.ligpower.com/product/mn2806-motor-antigravity-type.html
+  retrieved: 2026-10-12
+  status: verified
+  notes: "Page of the LIGPOWER brand of T-Motor. Recommended props P12X4 / P13X4.4."
+- id: tmotor-mn2806-650kv
+  manufacturer: T-Motor / LIGPOWER
+  range: MN (Antigravity)
+  role: lift
+  kv: 650
+  rm_mohm: 275
+  i0_a: 0.2
+  i0_test_voltage_v: 18
+  i_max_a: 12.3
+  p_max_w: 187
+  mass_g: 46
+  cells: "4S"
+  source: https://www.ligpower.com/product/mn2806-kv650-motor-antigravity-type.html
+  retrieved: 2026-10-12
+  status: verified
+  notes: "Page of the LIGPOWER brand of T-Motor. Recommended props P12X4 / P13X4.4."
+- id: tmotor-at2308-1450kv
+  manufacturer: T-Motor
+  range: AT
+  role: cruise
+  kv: 1450
+  rm_mohm: 90
+  i0_a: 0.8
+  i0_test_voltage_v: 10
+  i_max_a: 23
+  p_max_w: 250
+  mass_g: 47
+  cells: "2-4S"
+  source: https://store.tmotor.com/product/at2308-long-shaft-fixed-wing-motor.html
+  retrieved: 2026-10-12
+  status: verified
+  notes: "Long shaft. T-Motor bench test: APC 8x6 prop."

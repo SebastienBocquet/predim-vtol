@@ -1,0 +1,11 @@
+# Drag coefficients of the PredimRC accessory shapes, referred to the frontal area
+# (extracted by tools/extract_drag_shapes.py on 2026-10-14, workbook sha256 3ca8980920336fe3).
+- label: Profilé
+  cd: 0.2
+  source: PredimRC_SD7003.xls Calculs1!AD3 with S_acc = 1.0 dm², S_ref = 30.80 dm²
+- label: Mixte
+  cd: 0.6
+  source: PredimRC_SD7003.xls Calculs1!AD3 with S_acc = 1.0 dm², S_ref = 30.80 dm²
+- label: Non profilé
+  cd: 1.0
+  source: PredimRC_SD7003.xls Calculs1!AD3 with S_acc = 1.0 dm², S_ref = 30.80 dm²

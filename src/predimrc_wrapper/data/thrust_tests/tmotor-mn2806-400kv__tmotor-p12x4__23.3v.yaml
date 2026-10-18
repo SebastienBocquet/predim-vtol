@@ -1,0 +1,28 @@
+# Thrust-power test copied from the manufacturer page (REQ-DATA-005). Manufacturer units.
+id: tmotor-mn2806-400kv__tmotor-p12x4__23.3v
+motor_id: tmotor-mn2806-400kv
+propeller_id: tmotor-p12x4
+esc: null
+measured_at: motor_input  # no ESC named by the table
+voltage_v: 23.3
+bench: manufacturer
+source: https://www.ligpower.com/product/mn2806-motor-antigravity-type.html
+retrieved: 2026-10-14
+status: verified
+temperature_c: 45
+notes: "Temperature: motor surface after 10 min at 80 % throttle."
+columns: [throttle_pct, voltage_v, current_a, power_w, thrust_g, rpm, torque_nm]
+rows:
+  - [40, 23.59, 0.76, 17.85, 230, 3080, 0.04]
+  - [45, 23.54, 1, 23.62, 282, 3417, 0.05]
+  - [50, 23.46, 1.32, 30.94, 344, 3755, 0.06]
+  - [55, 23.33, 1.63, 37.94, 398, 4036, 0.07]
+  - [60, 23.28, 2, 46.61, 458, 4319, 0.08]
+  - [65, 23.16, 2.38, 55.18, 511, 4571, 0.08]
+  - [70, 23.12, 2.83, 65.34, 568, 4837, 0.09]
+  - [75, 23.09, 3.34, 77.08, 642, 5094, 0.1]
+  - [80, 23.01, 3.84, 88.41, 705, 5337, 0.11]
+  - [85, 22.93, 4.45, 101.97, 774, 5594, 0.12]
+  - [90, 22.91, 5.1, 116.77, 845, 5838, 0.14]
+  - [95, 22.9, 5.78, 132.32, 915, 6068, 0.14]
+  - [100, 22.86, 6.3, 144.03, 958, 6235, 0.15]

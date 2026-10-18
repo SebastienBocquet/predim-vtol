@@ -1,0 +1,93 @@
+"""Single entry point used by GEMSEO and the GUI: ``evaluate(project)``."""
+
+from __future__ import annotations
+
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from predimrc_wrapper.aircraft import AircraftModel
+from predimrc_wrapper.aircraft import Project
+from predimrc_wrapper.mission.solver import MissionResult
+from predimrc_wrapper.mission.solver import MissionSolver
+
+if TYPE_CHECKING:
+    from predimrc_wrapper.predimrc_wrapper import AeroBackend
+
+
+def profiles_dir() -> Path:
+    """Folder of the PredimRC workbooks: user settings, overridden by $PREDIMRC_PROFILES."""
+    from predimrc_wrapper.settings import predimrc_folder  # noqa: PLC0415
+
+    return predimrc_folder()
+
+
+def evaluate(project: Project | str | Path, scenario_name: str | None = None,
+             backend: AeroBackend | None = None) -> MissionResult:
+    """Evaluate one scenario of a project.
+
+    Args:
+        project: The project, or the path of a project file.
+        scenario_name: The scenario; the first one of the project by default.
+        backend: The PredimRC backend; for a quadplane without backend, a PredimRC
+            session is opened for this call and closed afterwards.
+
+    Returns:
+        The mission result.
+    """
+    if not isinstance(project, Project):
+        project = Project.load(project)
+    name = scenario_name or next(iter(project.scenarios))
+    if name not in project.scenarios:
+        msg = f"Unknown scenario '{name}'. Available: {list(project.scenarios)}"
+        raise KeyError(msg)
+    if project.architecture == "quadplane" and backend is None:
+        from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+
+        with PredimRCWrapper(profile=project.aero.profile, template_dir=profiles_dir()) as session:
+            return _solve(project, name, session)
+    return _solve(project, name, backend)
+
+
+def _solve(project: Project, name: str, backend: AeroBackend | None) -> MissionResult:
+    """Solve a scenario; a project with a ``calibration`` block is calibrated first."""
+    report = None
+    if project.calibration is not None:
+        from predimrc_wrapper.calibration import calibrate  # noqa: PLC0415
+
+        project, report = calibrate(project, backend)
+    aircraft = AircraftModel(project, aero_backend=backend)
+    result = MissionSolver(aircraft).solve(project.scenarios[name], name)
+    if report is not None:
+        result.metadata["calibration"] = report.to_dict()
+    return result
+
+
+def evaluate_two_phase(project: Project | str | Path, backend: AeroBackend | None = None,
+                       hover_time_s: float | None = None,
+                       target_speeds_m_s: tuple[float, float] | None = None):
+    """Two-phase flight time of the designer's process (INC2-007).
+
+    Args:
+        project: The project, or the path of a project file.
+        backend: The PredimRC backend; for a quadplane without backend, a PredimRC session
+            is opened for this call and closed afterwards.
+        hover_time_s: The hover time; ``project.mission.hover_time_s`` by default.
+        target_speeds_m_s: The cruise speeds V1, V2; the project ones, else minimum power
+            and maximum L/D.
+
+    Returns:
+        The ``TwoPhaseResult``.
+    """
+    from predimrc_wrapper.mission.two_phase import TwoPhaseEvaluation  # noqa: PLC0415
+
+    if not isinstance(project, Project):
+        project = Project.load(project)
+    mission = project.mission
+    t_h = mission.hover_time_s if hover_time_s is None else hover_time_s
+    speeds = target_speeds_m_s or (tuple(mission.target_speeds_m_s) if mission.target_speeds_m_s else None)
+    if project.architecture == "quadplane" and backend is None:
+        from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+
+        with PredimRCWrapper(profile=project.aero.profile, template_dir=profiles_dir()) as session:
+            return TwoPhaseEvaluation(AircraftModel(project, aero_backend=session)).solve(t_h, speeds)
+    return TwoPhaseEvaluation(AircraftModel(project, aero_backend=backend)).solve(t_h, speeds)

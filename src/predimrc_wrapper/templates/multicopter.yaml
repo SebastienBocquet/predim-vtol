@@ -1,0 +1,39 @@
+# Template multicopter: quadcopter X, arms of 300 mm. Masses are illustrative starting values.
+format_version: 2
+name: quadcopter
+architecture: multicopter
+# Cruise drag of the body: C_d of the shape (PredimRC Non profilé = 1.0) × frontal area.
+body_shape: Non profilé
+body_frontal_area_dm2: 3.0
+propulsion_units:
+  lift:
+    motor_id: tmotor-mn2806-400kv
+    prop_diameter_in: 13
+    prop_pitch_in: 4.4
+    prop_mass_g: 25
+    esc_mass_g: 25
+# ArduPilot quad X order is 1 front-right, 2 rear-left, 3 front-left, 4 rear-right; here: clockwise from front-right.
+motors:
+  - {unit: lift, role: lift, x_mm: -212.1, y_mm: 212.1}
+  - {unit: lift, role: lift, x_mm: 212.1, y_mm: 212.1}
+  - {unit: lift, role: lift, x_mm: 212.1, y_mm: -212.1}
+  - {unit: lift, role: lift, x_mm: -212.1, y_mm: -212.1}
+battery:
+  chemistry: li-ion
+  n_series: 6
+  mode: mass
+  mass_g: 700
+mass_items:
+  - {name: frame, category: airframe, mass_g: 500}
+  - {name: camera, category: payload, mass_g: 300}
+  - {name: "flight controller, GPS, receiver", category: avionics, mass_g: 120}
+max_takeoff_mass_kg: 3.0
+sizing:
+  target_mass_kg: [1.8, 2.4]
+scenarios:
+  hover_90s:
+    segments:
+      - {kind: vertical_climb, altitude_change_m: 30, vertical_speed_m_s: 2.0}
+      - {kind: hover, duration_s: 90}
+      - {kind: cruise, until_reserve: true, speed: optimal_range}
+      - {kind: vertical_descent, altitude_change_m: -30, vertical_speed_m_s: 1.5}

@@ -1,0 +1,28 @@
+# Thrust-power test copied from the manufacturer page (REQ-DATA-005). Manufacturer units.
+id: tmotor-mn2806-650kv__tmotor-p13x4.4__15.3v
+motor_id: tmotor-mn2806-650kv
+propeller_id: tmotor-p13x4.4
+esc: null
+measured_at: motor_input  # no ESC named by the table
+voltage_v: 15.3
+bench: manufacturer
+source: https://www.ligpower.com/product/mn2806-motor-antigravity-type.html
+retrieved: 2026-10-14
+status: verified
+temperature_c: 65
+notes: "Temperature: motor surface after 10 min at 80 % throttle."
+columns: [throttle_pct, voltage_v, current_a, power_w, thrust_g, rpm, torque_nm]
+rows:
+  - [40, 15.51, 1.32, 20.44, 269, 2994, 0.04]
+  - [45, 15.51, 1.88, 29.13, 346, 3371, 0.06]
+  - [50, 15.43, 2.48, 38.3, 417, 3694, 0.07]
+  - [55, 15.42, 3.13, 48.2, 485, 3989, 0.08]
+  - [60, 15.39, 3.88, 59.69, 557, 4278, 0.09]
+  - [65, 15.37, 4.64, 71.38, 626, 4538, 0.11]
+  - [70, 15.33, 5.46, 83.73, 700, 4777, 0.11]
+  - [75, 15.33, 6.49, 99.46, 785, 5041, 0.13]
+  - [80, 15.28, 7.59, 115.98, 863, 5284, 0.14]
+  - [85, 15.25, 8.77, 133.74, 941, 5510, 0.15]
+  - [90, 15.22, 10.01, 152.4, 1015, 5729, 0.16]
+  - [95, 15.19, 11.29, 171.6, 1090, 5925, 0.18]
+  - [100, 15.17, 12.28, 186.36, 1138, 6061, 0.18]

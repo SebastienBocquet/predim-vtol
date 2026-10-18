@@ -1,0 +1,20 @@
+# Thrust-power test copied from the manufacturer page (REQ-DATA-005). Manufacturer units.
+id: tmotor-mn2212-780kv__tmotor-9545b__14.8v
+motor_id: tmotor-mn2212-780kv
+propeller_id: tmotor-9545b
+esc: null
+measured_at: motor_input  # no ESC named by the table
+voltage_v: 14.8
+bench: manufacturer
+source: https://store.tmotor.com/product/mn2212-v2-motor-navigator-type.html
+retrieved: 2026-10-14
+status: verified
+temperature_c: null
+notes: "Voltage given once for the table (14.8 V). The 85 % row reads 6000 rpm, between 5960 and 7350: copied as published."
+columns: [throttle_pct, voltage_v, current_a, power_w, thrust_g, rpm, torque_nm]
+rows:
+  - [50, 14.8, 2.1, 31.08, 293, 4260, null]
+  - [65, 14.8, 4, 59.2, 476, 5300, null]
+  - [75, 14.8, 5.6, 82.88, 605, 5960, null]
+  - [85, 14.8, 7.4, 109.52, 742, 6000, null]
+  - [100, 14.8, 10.3, 152.44, 918, 7350, null]

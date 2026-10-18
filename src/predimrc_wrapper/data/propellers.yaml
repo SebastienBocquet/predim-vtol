@@ -1,0 +1,51 @@
+# Propeller database (REQ-DATA-002, REQ-DATA-003): the propellers of the shipped
+# thrust-power tests. Diameter and pitch are those of the propeller name on the cited
+# test page (manufacturer naming: diameter x pitch, inches). Masses are not published on
+# these pages: left empty (never invented).
+- id: tmotor-9545b
+  manufacturer: T-Motor
+  name: T-MOTOR 9545B
+  diameter_in: 9.5
+  pitch_in: 4.5
+  n_blades: 2
+  source: https://store.tmotor.com/product/mn2212-v2-motor-navigator-type.html
+  retrieved: 2026-10-14
+  status: verified
+- id: tmotor-p12x4
+  manufacturer: T-Motor
+  name: T-MOTOR P12*4
+  diameter_in: 12
+  pitch_in: 4
+  n_blades: 2
+  source: https://www.ligpower.com/product/mn2806-motor-antigravity-type.html
+  retrieved: 2026-10-14
+  status: verified
+- id: tmotor-p13x4.4
+  manufacturer: T-Motor
+  name: T-MOTOR P13*4.4
+  diameter_in: 13
+  pitch_in: 4.4
+  n_blades: 2
+  source: https://www.ligpower.com/product/mn2806-motor-antigravity-type.html
+  retrieved: 2026-10-14
+  status: verified
+- id: apc-8x6
+  manufacturer: APC
+  name: APC 8*6
+  diameter_in: 8
+  pitch_in: 6
+  n_blades: 2
+  source: https://store.tmotor.com/product/at2308-long-shaft-fixed-wing-motor.html
+  retrieved: 2026-10-14
+  status: verified
+  notes: "APC series (E, SF...) not stated on the test page."
+- id: apc-9x6
+  manufacturer: APC
+  name: APC 9*6
+  diameter_in: 9
+  pitch_in: 6
+  n_blades: 2
+  source: https://store.tmotor.com/product/at2308-long-shaft-fixed-wing-motor.html
+  retrieved: 2026-10-14
+  status: verified
+  notes: "APC series (E, SF...) not stated on the test page."

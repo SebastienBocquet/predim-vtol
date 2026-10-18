@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+.venv/
+env/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+examples/mvp/outputs/
+~$*.xls*
+# PredimRC workbooks: third-party, given by the PredimRC folder setting
+profiles/*.xls*
+*.bak*
+# Local tool state
+.claude/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.ruff_cache/
+# Studies stored by the GUI (exploration / optimisation)
+20*-exploration-*/
+20*-optimisation-*/
