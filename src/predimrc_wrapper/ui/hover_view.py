@@ -8,7 +8,6 @@ from typing import TYPE_CHECKING
 import numpy as np
 import plotly.graph_objects as go
 
-from predimrc_wrapper.core.units import GRAVITY
 from predimrc_wrapper.ui import units
 
 if TYPE_CHECKING:
@@ -52,20 +51,24 @@ def pair_figure(r: TwoPhaseResult, pair: str) -> go.Figure:
     thrust = np.linspace(0.15 * t_max, 1.1 * t_max, 50)
     p = _model(m0).predict(thrust, m0.voltage_v)
     low, high = p.interval95()
-    g = thrust / GRAVITY * 1000.0
+    # Same factor as the operating points (calibration on a measured hover point).
+    k_h = r.metadata.get("hover_power_factor", 1.0)
+    low, high, mean = k_h * low, k_h * high, k_h * p.power_w
+    g = thrust
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
             x=np.r_[g, g[::-1]],
             y=np.r_[high, low[::-1]],
             fill="toself",
-            name="surrogate 95 %",
+            name="surrogate 95 %"
+            + (f" × k_h {k_h:.3f}" if abs(k_h - 1.0) > 1e-9 else ""),
             line={"width": 0},
             fillcolor="rgba(31,119,180,0.2)",
         )
     )
     fig.add_trace(
-        go.Scatter(x=g, y=p.power_w, name="surrogate mean", line={"color": COLORS[0]})
+        go.Scatter(x=g, y=mean, name="surrogate mean", line={"color": COLORS[0]})
     )
     fig.add_trace(
         go.Scatter(

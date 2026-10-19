@@ -23,7 +23,7 @@ from predimrc_wrapper.core import Param
 from predimrc_wrapper.core import Port
 from predimrc_wrapper.core import params
 from predimrc_wrapper.core import ports
-from predimrc_wrapper.propulsion.wiring import awg_for_current
+from predimrc_wrapper.propulsion.wiring import default_gauges
 from predimrc_wrapper.propulsion.wiring import default_layout
 from predimrc_wrapper.propulsion.wiring import resistance_ohm
 
@@ -157,7 +157,7 @@ class PowerChain(Model):
             "—",
             "AWG",
             "main cable gauge",
-            origin="project or current",
+            origin="project or motor maximum current",
             source="project",
         ),
         Param(
@@ -193,19 +193,18 @@ class PowerChain(Model):
         cls,
         project: Project,
         battery: BatteryModel,
-        hover_currents_a: list[float] | None = None,
     ) -> PowerChain:
-        """Chain of a project; gauges not entered are chosen from the hover currents (default 10 A)."""
+        """Chain of a project; gauges not entered are sized for the motor maximum current."""
         from predimrc_wrapper.aircraft.project import WiringSpec  # noqa: PLC0415
 
         spec = project.wiring or WiringSpec()
         layout = default_layout(project)
         overrides = {o.motor_index: o for o in spec.overrides}
-        currents = hover_currents_a or [10.0] * len(project.motors)
+        main_awg, gauges = default_gauges(project)
         four_in_one = spec.lift_esc == "four_in_one"
         branches = []
-        for b, m, current in zip(
-            layout.branches, project.motors, currents, strict=False
+        for b, m, (dc_awg, phase_awg) in zip(
+            layout.branches, project.motors, gauges, strict=False
         ):
             o = overrides.get(b.motor_index)
             dc = (
@@ -220,9 +219,9 @@ class PowerChain(Model):
                 BranchSpec(
                     name=f"motor {b.motor_index + 1} ({m.unit})",
                     dc_length_mm=dc,
-                    dc_awg=spec.dc_awg or awg_for_current(current),
+                    dc_awg=dc_awg,
                     phase_length_mm=phase,
-                    phase_awg=spec.phase_awg or awg_for_current(current),
+                    phase_awg=phase_awg,
                     esc_efficiency=project.propulsion_units[m.unit].esc_efficiency,
                     four_in_one=four_in_one and m.role != "cruise",
                 )
@@ -230,7 +229,7 @@ class PowerChain(Model):
         return cls(
             branches=branches,
             main_length_mm=layout.main_length_mm,
-            main_awg=spec.main_awg or awg_for_current(sum(currents)),
+            main_awg=main_awg,
             connector_mohm=spec.connector_mohm,
             wire_temperature_c=spec.wire_temperature_c,
             battery=battery,

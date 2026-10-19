@@ -163,8 +163,11 @@ class AircraftModel:
 
     def _mass(self) -> dict:
         p = self.project
+        from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
+
         return MassBudget().evaluate({
-            "mass_items": [(i.category, i.mass_g / 1000.0) for i in p.mass_items],
+            "mass_items": [(i.category, i.mass_g / 1000.0) for i in p.mass_items]
+            + [("wiring", wiring_mass_kg(p))],
             "propulsion_items": [
                 (ROLE_CATEGORY[m.role], self.units[m.unit].mass_kg) for m in p.motors
             ],

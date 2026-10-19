@@ -83,14 +83,30 @@ def results_rows(r: TwoPhaseResult) -> list[dict]:
     ]
 
 
+def v_limit_kmh(r: TwoPhaseResult) -> float:
+    """Upper speed shown on the cruise charts: 1.5 × V2 (km/h)."""
+    return 1.5 * 3.6 * max(c.v_m_s for c in r.cruise)
+
+
 def palier_figure(r: TwoPhaseResult) -> go.Figure:
     """ "Performances en palier (plané)": sink rate, L/D and C_z versus V_x (km/h)."""
     a = r.aero_results
     fig = make_subplots(rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.05)
     vx = 3.6 * np.asarray(a.vx)
-    fig.add_trace(go.Scatter(x=vx, y=a.sink_rate, name="Vz (m/s)"), 1, 1)
-    fig.add_trace(go.Scatter(x=vx, y=a.finesse_vx, name="Finesse (Cz/Cx)"), 2, 1)
-    fig.add_trace(go.Scatter(x=vx, y=a.cz, name="Cz aile"), 3, 1)
+    keep = vx <= v_limit_kmh(r)
+    fig.add_trace(
+        go.Scatter(x=vx[keep], y=np.asarray(a.sink_rate)[keep], name="Vz (m/s)"), 1, 1
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=vx[keep], y=np.asarray(a.finesse_vx)[keep], name="Finesse (Cz/Cx)"
+        ),
+        2,
+        1,
+    )
+    fig.add_trace(
+        go.Scatter(x=vx[keep], y=np.asarray(a.cz)[keep], name="Cz aile"), 3, 1
+    )
     for c in r.cruise:
         fig.add_vline(
             x=3.6 * c.v_m_s, line={"color": V_COLORS[c.index], "dash": "dash"}
@@ -113,22 +129,30 @@ def power_figure(r: TwoPhaseResult) -> go.Figure:
     c = r.curve
     fig = go.Figure()
     v = 3.6 * c.v_m_s
+    keep = v <= v_limit_kmh(r)
     fig.add_trace(
         go.Scatter(
-            x=v,
-            y=c.power_predimrc_w,
+            x=v[keep],
+            y=np.asarray(c.power_predimrc_w)[keep],
             name="PredimRC (P (W) column)",
             line={"dash": "dot"},
         )
     )
     fig.add_trace(
         go.Scatter(
-            x=v,
-            y=c.drag_sources_n * c.v_m_s * c.drag_factor,
+            x=v[keep],
+            y=np.asarray(c.drag_sources_n * c.v_m_s * c.drag_factor)[keep],
             name="drag sources ½ρV³ΣCdS",
         )
     )
-    fig.add_trace(go.Scatter(x=v, y=c.power_total_w, name="total", line={"width": 3}))
+    fig.add_trace(
+        go.Scatter(
+            x=v[keep],
+            y=np.asarray(c.power_total_w)[keep],
+            name="total",
+            line={"width": 3},
+        )
+    )
     for p in r.cruise:
         fig.add_trace(
             go.Scatter(

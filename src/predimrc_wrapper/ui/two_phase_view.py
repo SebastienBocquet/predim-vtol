@@ -47,7 +47,7 @@ def kpi_rows(r: TwoPhaseResult) -> list[list[tuple[str, str, bool]]]:
     ]
     rows.append([
         (
-            f"Margin {k.replace('_', ' ')}",
+            margin_label(k),
             fmt(v, "+.2f"),
             bool(np.isfinite(v) and v < 0),
         )
@@ -56,7 +56,43 @@ def kpi_rows(r: TwoPhaseResult) -> list[list[tuple[str, str, bool]]]:
     return rows
 
 
-def hover_rows(r: TwoPhaseResult) -> list[dict]:
+MARGIN_LABELS = {
+    "hover_thrust": "Margin hover thrust within test data",
+    "thrust_to_weight": "Margin thrust-to-weight (control)",
+    "transition": "Margin transition (tilting motors)",
+}
+
+
+def margin_label(key: str) -> str:
+    return MARGIN_LABELS.get(key, f"Margin {key.replace('_', ' ')}")
+
+
+def phase_rows(r: TwoPhaseResult) -> list[dict]:
+    """Vertical phases then the cruise to the reserve at V1: duration, power, energy."""
+    rows = [
+        {
+            "phase": p.name,
+            "duration (s)": round(p.duration_s, 1),
+            "battery power (W)": round(p.battery_power_w, 1),
+            "energy (Wh)": round(p.energy_j / 3600.0, 2),
+        }
+        for p in r.phases
+    ]
+    rows.extend(
+        {
+            "phase": f"cruise at V{c.index} (until the reserve)",
+            "duration (s)": round(c.time_s, 1),
+            "battery power (W)": round(c.battery_power_w, 1),
+            "energy (Wh)": round(c.battery_power_w * c.time_s / 3600.0, 2),
+        }
+        for c in r.cruise
+    )
+    return rows
+
+
+def hover_rows(r: TwoPhaseResult, point=None) -> list[dict]:
+    """One row per lift motor of an operating point (hover by default, or climb, transition)."""
+    point = point or r.hover
     return [
         {
             "motor": m.index + 1,
@@ -77,7 +113,7 @@ def hover_rows(r: TwoPhaseResult) -> list[dict]:
             "trusted": m.trusted,
             "why not": m.reason,
         }
-        for m in r.hover.motors
+        for m in point.motors
     ]
 
 

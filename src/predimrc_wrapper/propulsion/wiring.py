@@ -26,6 +26,33 @@ COPPER_ALPHA = 0.00393
 AMPACITY_A = {10: 55.0, 12: 41.0, 14: 32.0, 16: 22.0, 18: 16.0, 20: 11.0, 22: 7.0}
 """Continuous current of a single conductor in free air (chassis wiring practice, A)."""
 
+COPPER_DENSITY_G_CM3 = 8.96
+SILICONE_DENSITY_G_CM3 = 1.2
+
+
+def silicone_wall_mm(awg: int) -> float:
+    """Insulation wall of RC silicone wire (mm).
+
+    Linear in the gauge through two published wires (Pimoroni dual silicone wire, 1 m red +
+    1 m black: 20 AWG 1.8 mm OD 14.2 g, 14 AWG 3.5 mm OD 56.3 g,
+    https://shop.pimoroni.com/en-eu/products/dual-silicone-wire-per-metre, 2026-10-19):
+    walls 0.49 mm (20 AWG) and 0.94 mm (14 AWG).
+    """
+    return 0.94 - 0.075 * (awg - 14)
+
+
+def conductor_mass_g_per_m(awg: int) -> float:
+    """Mass of one silicone-insulated conductor (g/m): copper plus silicone wall.
+
+    Reproduces the two published wires to 2 % (7.0 and 27.9 g/m per conductor against 7.1 and
+    28.2).
+    """
+    area_cu = awg_area_mm2(awg)
+    d = np.sqrt(4.0 * area_cu / np.pi)
+    od = d + 2.0 * silicone_wall_mm(awg)
+    area_si = np.pi / 4.0 * (od**2 - d**2)
+    return float(area_cu * COPPER_DENSITY_G_CM3 + area_si * SILICONE_DENSITY_G_CM3)
+
 
 def awg_area_mm2(awg: int) -> float:
     """Cross-section of an AWG wire: d = 0.127 mm · 92^((36 − n) / 39)."""
@@ -37,6 +64,80 @@ def resistance_ohm(length_mm: float, awg: int, temperature_c: float = 40.0) -> f
     """Resistance of one conductor (Ω)."""
     rho = COPPER_RHO_20C * (1.0 + COPPER_ALPHA * (temperature_c - 20.0))
     return rho * (length_mm / 1000.0) / (awg_area_mm2(awg) * 1e-6)
+
+
+def default_gauges(project: Project) -> tuple[int, list[tuple[int, int]]]:
+    """(main AWG, [(DC AWG, phase AWG) per motor]): entered, else sized for the maximum current.
+
+    The cables are installed for the full-throttle current, so each branch is sized for the
+    maximum current I_max of its motor (data sheet) and the main cable for the largest of
+    Σ I_max of the lift motors and Σ I_max of the cruise motors; the same cables at every
+    operating point (losses, mass, cost).
+    """
+    from predimrc_wrapper.aircraft.project import WiringSpec  # noqa: PLC0415
+    from predimrc_wrapper.data import default_database  # noqa: PLC0415
+
+    spec = project.wiring or WiringSpec()
+    db = default_database()
+    i_max = [
+        db.motor(project.propulsion_units[m.unit].motor_id).i_max
+        for m in project.motors
+    ]
+    lift = sum(
+        i for i, m in zip(i_max, project.motors, strict=True) if m.role != "cruise"
+    )
+    cruise = sum(
+        i for i, m in zip(i_max, project.motors, strict=True) if m.role != "lift"
+    )
+    main = spec.main_awg or awg_for_current(max(lift, cruise))
+    branches = [
+        (spec.dc_awg or awg_for_current(i), spec.phase_awg or awg_for_current(i))
+        for i in i_max
+    ]
+    return main, branches
+
+
+def cable_rows_mass(project: Project) -> list[dict]:
+    """Every cable with its length, conductors, gauge and mass (main, DC, phase)."""
+    from predimrc_wrapper.aircraft.project import WiringSpec  # noqa: PLC0415
+
+    spec = project.wiring or WiringSpec()
+    layout = default_layout(project)
+    overrides = {o.motor_index: o for o in spec.overrides}
+    main_awg, gauges = default_gauges(project)
+    rows = [
+        ("main", "battery → distribution point", layout.main_length_mm, 2, main_awg)
+    ]
+    for b, (dc_awg, phase_awg), m in zip(
+        layout.branches, gauges, project.motors, strict=True
+    ):
+        o = overrides.get(b.motor_index)
+        dc = o.dc_length_mm if (o and o.dc_length_mm is not None) else b.dc_length_mm
+        phase = (
+            o.phase_length_mm
+            if (o and o.phase_length_mm is not None)
+            else b.phase_length_mm
+        )
+        name = f"motor {b.motor_index + 1} ({m.unit})"
+        if dc > 0:
+            rows.append(("DC", f"distribution → ESC of {name}", dc, 2, dc_awg))
+        rows.append(("phase", f"ESC → {name}", phase, 3, phase_awg))
+    return [
+        {
+            "cable": kind,
+            "from → to": path,
+            "length (mm)": round(length),
+            "conductors": n,
+            "gauge (AWG)": awg,
+            "mass (g)": round(n * length / 1000.0 * conductor_mass_g_per_m(awg), 1),
+        }
+        for kind, path, length, n, awg in rows
+    ]
+
+
+def wiring_mass_kg(project: Project) -> float:
+    """Mass of all the cables (kg)."""
+    return sum(r["mass (g)"] for r in cable_rows_mass(project)) / 1000.0
 
 
 def awg_for_current(current_a: float, margin: float = 1.25) -> int:

@@ -6,6 +6,10 @@ versions from git tags (setuptools-scm).
 ## Unreleased
 
 ### Added
+- Vertical phases: climb to the transition altitude, hover, transition (tilting motors at a
+  tilt angle, vertical thrust T·sin θ, transition margin), descent; table of the phases.
+- Cable mass (copper + silicone) in the mass budget and the Power chain tab; mass recap by
+  component; battery mass ↔ capacity shown with the specific energy.
 - CG check: the PredimRC CG for the static margin entered is shown next to the CG entered,
   with a warning above 2 % of the MAC and a button to use it.
 - Two-phase calibration on a measured hover point (motor powers of the test data) and cruise
@@ -43,6 +47,8 @@ versions from git tags (setuptools-scm).
 - Propeller sizing: cruise motors (V1 / V2) apart from the lift-only motors (hover).
 
 ### Fixed
+- Hover chart: surrogate curves drawn in grams while the points were in N.
+- Cable gauges sized for the motor maximum current (the cruise chain used thinner cables).
 - IndexError in the Power chain tab when motors were removed after a Run.
 
 ## 0.2.0 — increment 2 (2026-10-15)

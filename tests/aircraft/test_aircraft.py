@@ -86,7 +86,11 @@ def test_defaults_left():
 def test_mass_budget_exact():
     model = AircraftModel(Project.template("multicopter"))
     unit = model.units["lift"].mass_kg
-    expected = 0.5 + 0.3 + 0.12 + 4 * unit + 0.7
+    from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
+
+    wiring = wiring_mass_kg(model.project)
+    assert model.mass["breakdown"]["wiring"] == pytest.approx(wiring)
+    expected = 0.5 + 0.3 + 0.12 + 4 * unit + 0.7 + wiring
     assert model.total_mass_kg == pytest.approx(expected, rel=1e-12)
     assert model.mass["margin_mass"] == pytest.approx(1 - expected / 3.0)
 

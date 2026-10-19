@@ -49,6 +49,7 @@ from predimrc_wrapper.ui import explanations
 from predimrc_wrapper.ui import forms
 from predimrc_wrapper.ui import geometry
 from predimrc_wrapper.ui import hover_view as hv
+from predimrc_wrapper.ui import mass_view as mv
 from predimrc_wrapper.ui import mic_page
 from predimrc_wrapper.ui import positions_view
 from predimrc_wrapper.ui import prop_sizing as ps
@@ -98,19 +99,14 @@ def table(rows: list[dict] | dict, **kwargs) -> None:
 
 
 def cost_and_reliability(project: Project, two=None):
-    """Cost (flight time and gauges from an up-to-date Run, else 0 h and 10 A) and motor-out."""
+    """Cost (flight time of an up-to-date Run, else 0 h) and motor-out hover."""
     from predimrc_wrapper.cost import cost  # noqa: PLC0415
     from predimrc_wrapper.reliability import motor_out  # noqa: PLC0415
 
     aircraft = AircraftModel(project)
     current = two is not None and not app.outdated
     flight = two.cruise[0].flight_time_s if current else 0.0
-    currents = None
-    if current and all(m.index < len(project.motors) for m in two.hover.motors):
-        currents = [10.0] * len(project.motors)
-        for m in two.hover.motors:
-            currents[m.index] = m.motor_current_a
-    return cost(aircraft, flight, currents), motor_out(aircraft)
+    return cost(aircraft, flight), motor_out(aircraft)
 
 
 OUTDATED = (
@@ -729,6 +725,8 @@ with tabs["Masses and battery"]:
             st, BatterySpec, battery, "battery", errors, {}, gen, skip=("mode", hidden)
         )
         # The other quantity is kept (hidden) so that switching back restores it.
+        if checked.project is not None:
+            st.info(mv.battery_text(AircraftModel(checked.project)))
         data["battery"] = {
             **({hidden: battery[hidden]} if battery.get(hidden) is not None else {}),
             **out,
@@ -766,6 +764,8 @@ with tabs["Masses and battery"]:
                 margin={"l": 10, "r": 10, "t": 40, "b": 10},
             )
             st.plotly_chart(fig, width="stretch")
+            st.markdown("**Mass recap by component**")
+            table(mv.mass_rows(AircraftModel(checked.project)))
 
 with tabs["Mission"]:
     left, right = st.columns(2)
@@ -993,19 +993,12 @@ with tabs["Power chain"]:
             st.plotly_chart(
                 wv.diagram(checked.project), width="stretch", key="chain.diagram"
             )
-            currents = None
-            n_motors = len(checked.project.motors)
-            if (
-                two is not None
-                and not app.outdated
-                and all(m.index < n_motors for m in two.hover.motors)
-            ):
-                # The gauges follow the hover currents of the last Run, only while that
-                # result still describes this project (motors may have been removed).
-                currents = [10.0] * n_motors
-                for m in two.hover.motors:
-                    currents[m.index] = m.motor_current_a
-            table(wv.cable_rows(checked.project, currents))
+            rows = wv.cable_rows(checked.project)
+            st.markdown(
+                f"**Cables: {sum(r['mass (g)'] for r in rows):.0f} g** (copper and silicone "
+                "insulation, counted in the mass budget as 'wiring')"
+            )
+            table(rows)
         if two is not None:
             st.markdown(
                 "**Losses per segment** (W) at hover, V1, V2 — segments inside the test data marked"
@@ -1029,9 +1022,7 @@ with tabs["Power chain"]:
             )
             st.plotly_chart(fig, width="stretch", key="chain.losses")
         else:
-            st.info(
-                "Press Run to compute the losses (the cable gauges then use the hover currents)."
-            )
+            st.info("Press Run to compute the losses.")
 
 data = {k: v for k, v in data.items() if v is not None and v != {}}
 app.data = data
@@ -1050,6 +1041,30 @@ with tabs["Hover"]:
             f"{two.hover.battery_power_w:.0f} ± {two.hover.battery_power_sd_w:.0f} W."
         )
         table(tpv.hover_rows(two))
+        mission = checked.project.mission if checked.project is not None else None
+        if two.transition is not None and mission is not None:
+            st.subheader(
+                f"Transition: tilting motors at {mission.transition_tilt_deg:g}° "
+                f"for {mission.transition_time_s:g} s"
+            )
+            st.markdown(
+                "A tilting motor gives T·sin θ vertically: to carry its hover share F it "
+                f"gives T = F / sin θ = F × {1 / np.sin(np.radians(mission.transition_tilt_deg)):.3f} "
+                "(no wing lift yet, start of the transition). Battery power "
+                f"{two.transition.battery_power_w:.0f} W; margins of each motor below."
+            )
+            table(tpv.hover_rows(two, two.transition))
+        if two.climb is not None and mission is not None:
+            with st.expander(
+                f"Climb to {mission.transition_altitude_m:g} m at "
+                f"{mission.vertical_climb_speed_m_s:g} m/s: "
+                f"{two.climb.battery_power_w:.0f} W"
+            ):
+                st.caption(
+                    "Each rotor at its hover thrust with the momentum-theory climb factor "
+                    "k_c = v_c/(2v_h) + √((v_c/(2v_h))² + 1) on its power."
+                )
+                table(tpv.hover_rows(two, two.climb))
         for pair, motors in hv.pairs(two).items():
             with st.container(border=True):
                 st.plotly_chart(
@@ -1389,6 +1404,10 @@ with tabs["Results"]:
                 st.warning(f"Cost / reliability not computed: {error}")
         for w in two.warnings:
             st.warning(w)
+        st.markdown(
+            "**Flight phases** (vertical phases, then the cruise until the reserve)"
+        )
+        table(tpv.phase_rows(two))
         for c in two.cruise:
             st.caption(f"V{c.index}: " + two.hand_check(c.index))
         st.markdown(

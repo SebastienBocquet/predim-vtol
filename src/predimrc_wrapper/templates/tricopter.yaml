@@ -1,5 +1,6 @@
 # Template tricopter: reference aircraft of 1870 g, 12 in propellers at the front, 10 in at
-# the rear, 280 W measured in hover. Masses are illustrative values adding up to 1870 g.
+# the rear, 280 W measured in hover. Masses are illustrative values adding up to 1870 g
+# with the cables computed from the power chain (38.3 g, wiring).
 format_version: 2
 name: tricopter
 architecture: multicopter
@@ -31,7 +32,7 @@ battery:
   mode: mass
   mass_g: 450
 mass_items:
-  - {name: frame, category: airframe, mass_g: 600}
+  - {name: frame, category: airframe, mass_g: 561.7}
   - {name: tail servo and tilt mechanism, category: airframe, mass_g: 100}
   - {name: camera, category: payload, mass_g: 300}
   - {name: "flight controller, GPS, receiver", category: avionics, mass_g: 148}

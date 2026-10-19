@@ -2,8 +2,9 @@
 
 Post-processing of a ``TwoPhaseResult``, no new physics:
 
-- useful aerodynamic power: hover, ideal induced power Σ T_i^1.5 / √(2ρA_i); cruise, Σ T_i·V
-  (= D·V);
+- useful aerodynamic power: hover, ideal induced power Σ T_i^1.5 / √(2ρA_i); climb at v_c,
+  Σ T_i·(v_c/2 + √((v_c/2)² + v_h,i²)); transition, as hover with the tilted thrusts; cruise,
+  Σ T_i·V (= D·V);
 - motor: copper and no-load losses I²R_m + I₀·U_emf, U_emf = rpm / K_v (MIC-PROP-MOT); in
   cruise, motor input − shaft power;
 - propeller: shaft − useful (hover shaft = motor input − motor losses);
@@ -96,22 +97,31 @@ def power_budget(aircraft: AircraftModel, result: TwoPhaseResult) -> list[PhaseB
     avionics = project.mission.avionics_power_w
     out = []
 
-    h = result.hover
-    useful = motor = 0.0
-    for m in h.motors:
-        diameter = project.propulsion_units[m.unit].prop_diameter_in * INCH
-        area = np.pi * diameter**2 / 4.0
-        useful += m.thrust_n**1.5 / np.sqrt(2.0 * aircraft.rho * area)
-        motor += _motor_loss(aircraft, m.motor_id, m.motor_current_a, m.rpm)
-    shaft = h.chain.motor_power_w - motor
-    sinks = {
-        "useful aerodynamic": useful,
-        "propeller": shaft - useful,
-        "motor": motor,
-        **_chain_sinks(h.chain),
-        "avionics": avionics,
-    }
-    out.append(PhaseBudget("hover", h.chain.chemical_power_w, sinks))
+    v_c = project.mission.vertical_climb_speed_m_s
+    for label, h, climb in (
+        ("hover", result.hover, 0.0),
+        ("climb", result.climb, v_c),
+        ("transition", result.transition, 0.0),
+    ):
+        if h is None:
+            continue
+        useful = motor = 0.0
+        for m in h.motors:
+            diameter = project.propulsion_units[m.unit].prop_diameter_in * INCH
+            area = np.pi * diameter**2 / 4.0
+            v_h2 = m.thrust_n / (2.0 * aircraft.rho * area)
+            # Ideal (momentum) power in axial climb: T·(v_c/2 + √((v_c/2)² + v_h²)).
+            useful += m.thrust_n * (climb / 2.0 + np.sqrt((climb / 2.0) ** 2 + v_h2))
+            motor += _motor_loss(aircraft, m.motor_id, m.motor_current_a, m.rpm)
+        shaft = h.chain.motor_power_w - motor
+        sinks = {
+            "useful aerodynamic": useful,
+            "propeller": shaft - useful,
+            "motor": motor,
+            **_chain_sinks(h.chain),
+            "avionics": avionics,
+        }
+        out.append(PhaseBudget(label, h.chain.chemical_power_w, sinks))
 
     for c in result.cruise:
         label = f"V{c.index}"

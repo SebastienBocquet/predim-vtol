@@ -33,19 +33,27 @@ def test_flight_time_formula_and_reserve():
     assert r.energy_nominal_j == pytest.approx(
         150.0 * 0.45 * 3600, rel=1e-9
     )  # LiPo 150 Wh/kg, 450 g
+    mission = Project.template("tricopter").mission
+    durations = {p.name: p.duration_s for p in r.phases}
+    assert durations == pytest.approx({
+        "climb": mission.transition_altitude_m / mission.vertical_climb_speed_m_s,
+        "hover": 90.0,
+        "descent": mission.transition_altitude_m / mission.vertical_descent_speed_m_s,
+    })  # no transition for a multicopter
+    assert r.climb.battery_power_w > r.hover.battery_power_w
+    energy = sum(p.battery_power_w * p.duration_s for p in r.phases)
     for c in r.cruise:
         expected = (
-            90.0
-            + (r.energy_available_j - r.hover.battery_power_w * 90.0)
-            / c.battery_power_w
+            sum(durations.values())
+            + (r.energy_available_j - energy) / c.battery_power_w
         )
         assert c.flight_time_s == pytest.approx(expected, rel=1e-12)
-        assert c.range_m == pytest.approx(c.v_m_s * (c.flight_time_s - 90.0), rel=1e-12)
+        assert c.range_m == pytest.approx(c.v_m_s * c.time_s, rel=1e-12)
     assert "E_avail" in r.hand_check(1)
 
 
 def test_zero_hover_and_too_long_hover():
-    base = _solve("tricopter", hover=0.0)
+    base = _solve("tricopter", hover=0.0, **{"mission.transition_altitude_m": 0.0})
     for c in base.cruise:
         assert c.flight_time_s == pytest.approx(
             base.energy_available_j / c.battery_power_w, rel=1e-12

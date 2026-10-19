@@ -412,7 +412,36 @@ class MissionSettings(_Strict):
         ),
     )
     hover_time_s: float = opt(
-        90.0, ge=0, description="Hover time of the two-phase flight time (s)"
+        60.0,
+        ge=0,
+        description="Hover time at the transition altitude, before the transition (s)",
+    )
+    transition_altitude_m: float = opt(
+        30.0,
+        ge=0,
+        description="Transition altitude (m): vertical climb to it, vertical descent from it",
+    )
+    vertical_climb_speed_m_s: float = opt(
+        2.0, gt=0, description="Vertical climb speed to the transition altitude (m/s)"
+    )
+    vertical_descent_speed_m_s: float = opt(
+        1.5,
+        gt=0,
+        description="Vertical descent speed from the transition altitude (m/s)",
+    )
+    transition_time_s: float = opt(
+        15.0,
+        ge=0,
+        description="Duration of the transition from hover to cruise (s), winged aircraft",
+    )
+    transition_tilt_deg: float = opt(
+        60.0,
+        gt=0,
+        le=90,
+        description=(
+            "Tilt angle of the tilting motors during the transition, from the horizontal (°): "
+            "90° = vertical; a tilting motor gives T·sin θ vertically"
+        ),
     )
     target_speeds_m_s: list[float] | None = opt(
         None,

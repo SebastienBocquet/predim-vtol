@@ -39,6 +39,10 @@ INC3-001 (tooling) is on `main`.
 | Why both a two-phase flight and a scenario mode? → two-phase only in the GUI, calibration ported to it | REQ-UI-008, REQ-NFR-007 | INC3-005 |
 | Propeller sizing sized a front (lift) motor with only the rear motor tilting | REQ-PROP-007 | INC3-005 |
 | Show the PredimRC CG next to the CG entered, warn when they differ | REQ-AERO-012 | INC3-005 |
+| Duration of the descent? Transition altitude, climb and descent | REQ-MIS-010 | INC3-006 |
+| How is the transition modelled? Transition tilt angle, vertical thrust T·sin θ, power margin | REQ-MIS-011 | INC3-006 |
+| Cable mass; mass recap (cables, ESC, motors...); battery mass ↔ capacity | REQ-CFG-015, REQ-UI-012 | INC3-006 |
+| Hover chart bug, cruise charts up to 1.5 × V2, margins explained | REQ-UI-010 | INC3-006 |
 
 ## Definition of done
 
@@ -67,6 +71,7 @@ INC3-001 (tooling) is on `main`.
 | INC3-003 | `feat/configurations` | [Feat] cfg — tilt mask, user templates, positions drawing, diagonal booms | DoD 5–7 |
 | INC3-004 | `feat/cost-reliability` | [Feat] cost — prices, cost of use, motor-out reliability | DoD 8 |
 | INC3-005 | `fix/gui-feedback-2` | [Fix] ui — motor layout box, two-phase only with calibration, CG check | feedback of 2026-10-19 |
+| INC3-006 | `feat/vertical-phases` | [Feat] mission — vertical phases, transition tilt, cable mass, mass recap | feedback of 2026-10-19 (2) |
 
 ```mermaid
 flowchart LR
@@ -74,6 +79,7 @@ flowchart LR
   A2 --> B3[INC3-003 configurations]
   B3 --> C4[INC3-004 cost and reliability]
   C4 --> D5[INC3-005 feedback 2026-10-19]
+  D5 --> E6[INC3-006 vertical phases]
 ```
 
 Each branch is rebased on the previous one before merging (they all touch `ui/app.py`).

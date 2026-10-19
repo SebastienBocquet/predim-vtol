@@ -62,3 +62,15 @@
 - **Verification:** Test — boom lengths and angles from the anchor equal a hand
   calculation; the phase cable length of a diagonal boom motor includes the boom length.
 - **Satisfied by:** INC3-003
+
+### REQ-CFG-015 — The cables are in the mass budget
+
+- **Statement:** The mass of every cable of the power chain (copper and silicone insulation,
+  per gauge, times its length and number of conductors) shall be counted in the mass budget
+  (category wiring) and shown in the Power chain tab; the gauges not entered are sized for the
+  maximum current of the motors (data sheet), the same cables at every operating point.
+- **Priority:** Must
+- **Status:** Implemented (2026-10-19)
+- **Verification:** Test — mass per metre against two published wires (2 %); budget includes
+  the wiring; gauges from I_max.
+- **Satisfied by:** INC3-006

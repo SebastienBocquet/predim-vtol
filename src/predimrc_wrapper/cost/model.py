@@ -96,13 +96,11 @@ class CostResult:
 def cost(
     aircraft: AircraftModel,
     flight_time_s: float,
-    hover_currents_a: list[float] | None = None,
 ) -> CostResult:
     """Purchase cost and cost of use of a project."""
     from predimrc_wrapper.aircraft.project import CostSpec  # noqa: PLC0415
     from predimrc_wrapper.data import default_propellers  # noqa: PLC0415
-    from predimrc_wrapper.propulsion.chain import PowerChain  # noqa: PLC0415
-    from predimrc_wrapper.propulsion.wiring import default_layout  # noqa: PLC0415
+    from predimrc_wrapper.propulsion.wiring import cable_rows_mass  # noqa: PLC0415
 
     project = aircraft.project
     spec = project.cost or CostSpec()
@@ -211,16 +209,11 @@ def cost(
         prices.battery(chem),
     )
 
-    chain = PowerChain.from_project(project, battery, hover_currents_a).p
-    layout = default_layout(project)
     metres: dict[int, float] = {}
-    metres[chain.main_awg] = (
-        metres.get(chain.main_awg, 0.0) + 2 * layout.main_length_mm / 1000
-    )
-    for b in chain.branches:
-        metres[b.dc_awg] = metres.get(b.dc_awg, 0.0) + 2 * b.dc_length_mm / 1000
-        metres[b.phase_awg] = (
-            metres.get(b.phase_awg, 0.0) + 3 * b.phase_length_mm / 1000
+    for row in cable_rows_mass(project):
+        awg = row["gauge (AWG)"]
+        metres[awg] = (
+            metres.get(awg, 0.0) + row["conductors"] * row["length (mm)"] / 1000
         )
     for awg, length in sorted(metres.items()):
         if length > 0:

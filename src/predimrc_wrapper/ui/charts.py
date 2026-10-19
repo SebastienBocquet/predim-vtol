@@ -9,6 +9,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import plotly.graph_objects as go
 
+from predimrc_wrapper.ui.two_phase_view import margin_label
+
 if TYPE_CHECKING:
     from predimrc_wrapper.mission.solver import MissionResult
 
@@ -36,7 +38,7 @@ def kpis(result: MissionResult) -> list[Kpi]:
         Kpi("Total mass", result.mass_total_kg, "kg"),
     ]
     tiles += [
-        Kpi(f"Margin {k.replace('_', ' ')}", v, "", bool(v < 0))
+        Kpi(margin_label(k), v, "", bool(v < 0))
         for k, v in result.margins.items()
         if v is not None and np.isfinite(v)
     ]

@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import plotly.graph_objects as go
 
+from predimrc_wrapper.propulsion.wiring import cable_rows_mass
 from predimrc_wrapper.propulsion.wiring import default_layout
 from predimrc_wrapper.propulsion.wiring import phase_path
 
@@ -23,8 +24,8 @@ TERMS = """
 - **DC cables**: distribution point → each separate ESC (2 conductors per ESC). None with a 4-in-1 board.
 - **Phase cables**: ESC → motor (3 conductors). They carry the motor current, larger than the battery-side current at
   part throttle (the ESC lowers the voltage seen by the motor).
-- **Gauge (AWG)**: when not entered, the smallest wire whose current rating is at least 1.25 × the hover current it
-  carries (table below). Losses use the copper resistance at the wire temperature.
+- **Gauge (AWG)**: when not entered, the smallest wire whose current rating is at least 1.25 × the maximum current
+  of the motor (data sheet), the same cable at every operating point (table below). Losses use the copper resistance at the wire temperature.
 """
 
 COLORS = {"main": "black", "DC": "#1f77b4", "phase": "#ff7f0e"}
@@ -156,46 +157,15 @@ def diagram(project: Project) -> go.Figure:
     return fig
 
 
-def cable_rows(
-    project: Project, hover_currents: list[float] | None = None
-) -> list[dict]:
-    """Lengths and gauges of every cable (gauges from the hover currents when not entered)."""
-    from predimrc_wrapper.aircraft import AircraftModel  # noqa: PLC0415
-    from predimrc_wrapper.propulsion.chain import PowerChain  # noqa: PLC0415
-
-    chain = PowerChain.from_project(
-        project, AircraftModel(project).battery, hover_currents
-    )
-    layout = default_layout(project)
-    rows = [
-        {
-            "cable": "main",
-            "from → to": "battery → distribution point",
-            "length (mm)": round(chain.p.main_length_mm),
-            "gauge (AWG)": chain.p.main_awg,
-            "gauge from": "entered"
-            if project.wiring and project.wiring.main_awg
-            else "current",
-        }
-    ]
-    for b, _lay in zip(chain.p.branches, layout.branches, strict=False):
-        if b.dc_length_mm > 0:
-            rows.append({
-                "cable": "DC",
-                "from → to": f"distribution → ESC of {b.name}",
-                "length (mm)": round(b.dc_length_mm),
-                "gauge (AWG)": b.dc_awg,
-                "gauge from": "entered"
-                if project.wiring and project.wiring.dc_awg
-                else "current",
-            })
-        rows.append({
-            "cable": "phase",
-            "from → to": f"ESC → {b.name}",
-            "length (mm)": round(b.phase_length_mm),
-            "gauge (AWG)": b.phase_awg,
-            "gauge from": "entered"
-            if project.wiring and project.wiring.phase_awg
-            else "current",
-        })
+def cable_rows(project: Project) -> list[dict]:
+    """Every cable: length, conductors, gauge (entered or sized for the motor I_max), mass."""
+    rows = cable_rows_mass(project)
+    spec = project.wiring
+    entered = {
+        "main": spec is not None and spec.main_awg is not None,
+        "DC": spec is not None and spec.dc_awg is not None,
+        "phase": spec is not None and spec.phase_awg is not None,
+    }
+    for r in rows:
+        r["gauge from"] = "entered" if entered[r["cable"]] else "motor I_max"
     return rows

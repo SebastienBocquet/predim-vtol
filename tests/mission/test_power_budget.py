@@ -18,7 +18,8 @@ def test_sinks_add_up_to_the_chemical_power(name):
     backend = ParabolicAero() if project.architecture == "quadplane" else None
     result = evaluate_two_phase(project, backend=backend)
     budgets = power_budget(AircraftModel(project, aero_backend=backend), result)
-    assert [b.phase for b in budgets] == ["hover", "V1", "V2"]
+    expected = ["hover", "climb"] + (["transition"] if name == "tiltrotor" else [])
+    assert [b.phase for b in budgets] == [*expected, "V1", "V2"]
     for b in budgets:
         assert abs(b.closure_w) <= 1e-9 * b.chemical_w, (b.phase, b.closure_w)
         assert all(v >= -1e-9 for v in b.sinks.values()), b.sinks

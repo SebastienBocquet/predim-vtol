@@ -95,11 +95,7 @@ def _cost_and_reliability(project: Project, r: Any) -> dict[str, float]:
 
     try:
         aircraft = AircraftModel(project)
-        c = cost(
-            aircraft,
-            r.cruise[0].flight_time_s,
-            [m.motor_current_a for m in r.hover.motors],
-        )
+        c = cost(aircraft, r.cruise[0].flight_time_s)
         return {
             "cost_purchase": c.purchase,
             "cost_per_hour": c.cost_per_hour,

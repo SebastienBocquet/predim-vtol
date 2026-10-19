@@ -115,3 +115,15 @@
 - **Status:** Implemented (2026-10-18)
 - **Verification:** Inspection.
 - **Satisfied by:** INC3-002
+
+### REQ-UI-012 — The masses are recapitulated with their origin
+
+- **Statement:** The Masses and battery tab shall list every mass of the budget — user items,
+  motors, propellers, ESCs, cables, battery — with count, unit mass, total and where it comes
+  from (entered, data sheet, computed), adding up to the total mass; next to the battery
+  definition it gives the derived quantity (capacity from the mass or mass from the
+  capacity) with the specific energy of the chemistry.
+- **Priority:** Should
+- **Status:** Implemented (2026-10-19)
+- **Verification:** Test — the recap adds up to the total mass for every template.
+- **Satisfied by:** INC3-006

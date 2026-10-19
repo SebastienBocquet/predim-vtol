@@ -13,8 +13,9 @@ Cruise power (battery): {definition: "Power drawn from the cells in cruise at th
 Aerodynamic power: {definition: "Drag × speed at the target speed: PredimRC imposed-speed value plus the drag sources (times the drag factor).", unit: W, symbol: D·V, model: MIC-MIS-TWO}
 Margin motor power: {definition: "Worst 1 − P / P_max over the motors in hover and cruise (≥ 0 acceptable).", model: MIC-MIS-TWO}
 Margin motor current: {definition: "Worst 1 − I_motor / I_max over the motors in hover and cruise (≥ 0 acceptable).", model: MIC-MIS-TWO}
-Margin hover thrust: {definition: "Worst 1 − T / T_max,test of the lift motors: hover thrust versus the largest thrust of the test table (NaN without data).", model: MIC-MIS-TWO}
-Margin thrust to weight: {definition: "Lift thrust-to-weight / minimum thrust-to-weight − 1 (≥ 0 acceptable).", model: MIC-MIS-TWO}
+Margin hover thrust within test data: {definition: "Worst 1 − T / T_max,test over the lift motors in hover, climb and transition: how far the operating thrust is from the largest thrust measured in the test table; negative means the surrogate extrapolates beyond the data (NaN without data). Data coverage, not control.", model: MIC-MIS-TWO}
+Margin thrust-to-weight (control): {definition: "(T/W reachable at full throttle by the lift motors, motor model at the nominal voltage, keeping the hover split) / T/W_min − 1: the control authority left in hover (≥ 0 acceptable).", model: MIC-MIS-TWO}
+Margin transition (tilting motors): {definition: "Worst min(power margin, current margin) of the motors during the transition, the tilting motors giving F / sin θ (NaN without transition).", model: MIC-MIS-TWO}
 Margin battery c: {definition: "1 − battery current / maximum continuous current (C rate) at the most demanding phase.", model: MIC-PROP-BAT}
 Margin mass: {definition: "1 − total mass / maximum take-off mass (NaN when no maximum is set).", model: MIC-CFG-MASS}
 Margin voltage: {definition: "1 − motor voltage / (maximum duty × battery voltage), scenario mode.", model: MIC-MIS-SEG}
@@ -185,7 +186,7 @@ cable: {definition: "Kind of cable: main (battery → distribution), DC (distrib
 from → to: {definition: "Ends of the cable.", model: MIC-PROP-CHAIN}
 length (mm): {definition: "Length of the cable, from the geometry or entered per motor.", unit: mm, model: MIC-PROP-CHAIN}
 gauge (AWG): {definition: "Wire gauge; when not entered, the smallest wire whose current rating is ≥ 1.25 × the hover current it carries.", unit: AWG, model: MIC-PROP-CHAIN}
-gauge from: {definition: "entered (in the wiring inputs) or current (chosen from the hover current).", model: MIC-PROP-CHAIN}
+gauge from: {definition: "entered (in the wiring inputs) or motor I_max (smallest wire rated for 1.25 × the maximum current of the motor, data sheet).", model: MIC-PROP-CHAIN}
 efficiency: {definition: "Propeller × motor efficiency T·V / P_el (solid) and propeller efficiency T·V / P_shaft (dotted).", model: MIC-PROP-BEM}
 
 # --- power budget (MIC-MIS-BUDGET) ---------------------------------------------------------
@@ -231,3 +232,15 @@ model after (W): {definition: "Battery power of the model at the measured point 
 factor set: {definition: "Model factor set by the point: hover_power_factor (hover point) or drag_factor (cruise point).", model: MIC-CAL-REF}
 factor: {definition: "Value of the factor relative to its value before the calibration (1 = no change).", model: MIC-CAL-REF}
 note: {definition: "Remark of the calibration: a factor at its bound means the measurement is outside what the model can represent.", model: MIC-CAL-REF}
+
+# --- vertical phases, masses (INC3-006) ---------------------------------------------------------
+phase: {definition: "Flight phase: climb to the transition altitude, hover, transition, descent, cruise until the reserve.", model: MIC-MIS-TWO}
+climb (W): {definition: "Power of the sink in the climb to the transition altitude.", unit: W, model: MIC-MIS-BUDGET}
+climb (%): {definition: "Share of the battery chemical power taken by the sink in the climb.", unit: "%", model: MIC-MIS-BUDGET}
+transition (W): {definition: "Power of the sink during the transition (tilting motors at the tilt angle).", unit: W, model: MIC-MIS-BUDGET}
+transition (%): {definition: "Share of the battery chemical power taken by the sink during the transition.", unit: "%", model: MIC-MIS-BUDGET}
+component: {definition: "Mass component: user item, motor, propeller, ESC, cables, battery.", model: MIC-CFG-MASS}
+count: {definition: "Number of items (a tilting motor counts once).", model: MIC-CFG-MASS}
+unit mass (g): {definition: "Mass of one item.", unit: g, model: MIC-CFG-MASS}
+mass from: {definition: "Where the mass comes from: entered, data sheet of the motor, or computed (cables, battery from its capacity).", model: MIC-CFG-MASS}
+conductors: {definition: "Conductors of the cable: 2 for the main and DC cables, 3 for the phase cables.", model: MIC-PROP-CHAIN}

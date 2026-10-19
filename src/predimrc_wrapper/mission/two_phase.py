@@ -9,9 +9,17 @@ The designer's process (INC2-007):
    sources (wing-borne, `aircraft/cruise.py`); thrust shared by the cruise and tilt motors
    by disc area; blade-element propeller (MIC-PROP-BEM) and motor constants for the motor
    power; power chain. Multicopter: forward-flight model of the MVP (MIC-MIS-SEG).
-3. E_avail = (1 − r)·E_nom (80 % of the nominal energy by default);
-   t_c = (E_avail − P_h·t_h) / P_c; flight time t_h + t_c; range V·t_c. Powers are the
-   powers drawn from the cells (chemical power, battery losses included).
+3. Vertical phases (INC3-006): climb to the transition altitude h at v_c, hover t_h,
+   transition t_tr (winged aircraft), descent from h at v_d. Climb: each rotor at its hover
+   thrust with the momentum-theory factor k_c = v_c/(2v_h) + √((v_c/(2v_h))² + 1),
+   v_h = √(T/(2ρA)), on its power. Transition: the tilting motors at the tilt angle θ give
+   T·sin θ vertically, so T_i = F_i / sin θ (F_i their hover share), no wing lift
+   (start of the transition, conservative; default θ = 60°); a winged aircraft without tilting motors
+   transitions at hover power. Descent at hover power (conservative).
+4. E_avail = (1 − r)·E_nom (80 % of the nominal energy by default);
+   t_c = (E_avail − Σ P_k·t_k) / P_c over the vertical phases k; flight time Σ t_k + t_c;
+   range V·t_c. Powers are the powers drawn from the cells (chemical power, battery losses
+   included).
 """
 
 from __future__ import annotations
@@ -130,6 +138,21 @@ class CruiseResult:
 
 
 @dataclass
+class PhaseResult:
+    """One vertical phase of the flight."""
+
+    name: str
+    """climb, hover, transition or descent."""
+    duration_s: float
+    battery_power_w: float
+    battery_power_sd_w: float = 0.0
+
+    @property
+    def energy_j(self) -> float:
+        return self.battery_power_w * self.duration_s
+
+
+@dataclass
 class TwoPhaseResult:
     """Flight time of the designer's process, per target speed."""
 
@@ -149,18 +172,36 @@ class TwoPhaseResult:
     """``CruiseCurve`` of a wing-borne aircraft (aerodynamic power versus speed)."""
     aero_results: Any = None
     """PredimRC ``AeroResults`` at the target speeds (geometry results, imposed-speed blocks)."""
+    phases: list[PhaseResult] = field(default_factory=list)
+    """Vertical phases: climb, hover, transition, descent (zero-duration ones left out)."""
+    climb: HoverResult | None = None
+    """Operating point of the climb (rotors at the climb power), when there is a climb."""
+    transition: HoverResult | None = None
+    """Operating point of the transition (tilting motors at the tilt angle)."""
 
     @property
     def hover_energy_j(self) -> float:
         return self.hover.battery_power_w * self.hover_time_s
 
+    @property
+    def vertical_time_s(self) -> float:
+        return sum(p.duration_s for p in self.phases)
+
+    @property
+    def vertical_energy_j(self) -> float:
+        return sum(p.energy_j for p in self.phases)
+
     def hand_check(self, k: int) -> str:
         """The flight-time formula with the numbers of target speed k (1 or 2)."""
         c = self.cruise[k - 1]
+        terms = " + ".join(
+            f"{p.battery_power_w:.1f} W × {p.duration_s:.0f} s ({p.name})"
+            for p in self.phases
+        )
         return (
-            f"t = t_h + (E_avail − P_h·t_h) / P_c = {self.hover_time_s:.0f} s + "
-            f"({self.energy_available_j / 3600:.2f} Wh − {self.hover.battery_power_w:.1f} W × "
-            f"{self.hover_time_s:.0f} s) / {c.battery_power_w:.1f} W = {c.flight_time_s:.0f} s "
+            f"t = Σt_k + (E_avail − Σ P_k·t_k) / P_c = {self.vertical_time_s:.0f} s + "
+            f"({self.energy_available_j / 3600:.2f} Wh − ({terms or '0'})) / "
+            f"{c.battery_power_w:.1f} W = {c.flight_time_s:.0f} s "
             f"({c.flight_time_s / 60:.1f} min); E_avail = (1 − {self.reserve_fraction:g}) × "
             f"{self.energy_nominal_j / 3600:.2f} Wh"
         )
@@ -272,7 +313,16 @@ class TwoPhaseEvaluation(CompositeModel):
 
     # --- hover -----------------------------------------------------------------
 
-    def hover(self) -> HoverResult:
+    def hover(
+        self, climb_speed_m_s: float = 0.0, tilt_deg: float | None = None
+    ) -> HoverResult:
+        """Operating point of the lift motors carrying the weight.
+
+        Args:
+            climb_speed_m_s: Vertical climb speed (momentum-theory power factor per rotor).
+            tilt_deg: Tilt angle of the tilting motors from the horizontal (transition):
+                a tilting motor gives F_i / sin θ to carry its share F_i.
+        """
         from predimrc_wrapper.data import default_tests  # noqa: PLC0415
         from predimrc_wrapper.propulsion.chain import PowerChain  # noqa: PLC0415
         from predimrc_wrapper.propulsion.surrogate import ThrustPowerSurrogate  # noqa: PLC0415
@@ -297,12 +347,19 @@ class TwoPhaseEvaluation(CompositeModel):
                     pitch_in=p_in,
                 )
                 thrust = f * weight
+                if tilt_deg is not None and slot.role == "tilt":
+                    thrust /= np.sin(np.radians(tilt_deg))
                 p = model.predict(thrust, u_bus, ac.rho)
+                k_c = 1.0
+                if climb_speed_m_s > 0:
+                    v_h = np.sqrt(thrust / (2.0 * ac.rho * ac.disc_area_m2(slot)))
+                    ratio = climb_speed_m_s / (2.0 * v_h)
+                    k_c = float(ratio + np.sqrt(ratio**2 + 1.0))
                 pair_tests = tests.tests(motor_id, prop_id) if prop_id else []
                 measured_at = pair_tests[0].measured_at if pair_tests else "motor_input"
                 record = ac.db.motor(motor_id)
                 k_h = ac.project.mission.hover_power_factor  # calibration, 1 by default
-                power = k_h * float(p.power_w[0])
+                power = k_h * k_c * float(p.power_w[0])
                 eta = ac.project.propulsion_units[slot.unit].esc_efficiency
                 motor_in = power * eta if measured_at == "esc_input" else power
                 current = _motor_current(
@@ -320,6 +377,7 @@ class TwoPhaseEvaluation(CompositeModel):
                         float(f),
                         power,
                         k_h
+                        * k_c
                         * float(
                             p.power_sd[0]
                             if hasattr(p, "power_sd")
@@ -343,9 +401,7 @@ class TwoPhaseEvaluation(CompositeModel):
                         u_bus,
                     )
                 )
-            chain = PowerChain.from_project(
-                ac.project, ac.battery, self._branch_currents(motors)
-            ).evaluate({
+            chain = PowerChain.from_project(ac.project, ac.battery).evaluate({
                 "motor_power_w": self._branch_values(motors, "power_w"),
                 "motor_current_a": self._branch_values(motors, "motor_current_a"),
                 "esc_input": self._branch_values(
@@ -390,10 +446,6 @@ class TwoPhaseEvaluation(CompositeModel):
         for m in motors:
             values[m.index] = convert(getattr(m, attr))
         return values
-
-    def _branch_currents(self, motors: list) -> list[float]:
-        values = self._branch_values(motors, "motor_current_a")
-        return [v if v > 0 else 10.0 for v in values]
 
     # --- cruise ----------------------------------------------------------------
 
@@ -506,9 +558,7 @@ class TwoPhaseEvaluation(CompositeModel):
             currents = [0.0] * len(ac.project.motors)
             for m in motors:
                 powers[m.index], currents[m.index] = m.motor_input_w, m.motor_current_a
-            chain = PowerChain.from_project(
-                ac.project, ac.battery, [c if c > 0 else 10.0 for c in currents]
-            ).evaluate({
+            chain = PowerChain.from_project(ac.project, ac.battery).evaluate({
                 "motor_power_w": powers,
                 "motor_current_a": currents,
                 "avionics_power_w": self.p.avionics_power_w,
@@ -533,12 +583,43 @@ class TwoPhaseEvaluation(CompositeModel):
         self, hover_time_s: float, speeds_m_s: tuple[float, float] | None = None
     ) -> TwoPhaseResult:
         ac = self.aircraft
+        mission = ac.project.mission
         hover = self.hover()
+        h = mission.transition_altitude_m
+        climb = (
+            self.hover(climb_speed_m_s=mission.vertical_climb_speed_m_s)
+            if h > 0
+            else None
+        )
+        tilting = any(m.role == "tilt" for m in ac.project.motors)
+        t_tr = mission.transition_time_s if ac.wing_borne else 0.0
+        transition = (
+            self.hover(tilt_deg=mission.transition_tilt_deg)
+            if t_tr > 0 and tilting
+            else None
+        )
+        phases = [
+            PhaseResult(
+                name,
+                duration,
+                point.battery_power_w,
+                point.battery_power_sd_w,
+            )
+            for name, duration, point in (
+                ("climb", h / mission.vertical_climb_speed_m_s, climb),
+                ("hover", hover_time_s, hover),
+                ("transition", t_tr, transition or hover),
+                ("descent", h / mission.vertical_descent_speed_m_s, hover),
+            )
+            if duration > 0 and point is not None
+        ]
         self._curve = self._aero = None
         cruise, iso = self.cruise(speeds_m_s)
         e_nom = ac.battery.energy_wh() * 3600.0
         e_avail = (1.0 - self.p.reserve_fraction) * e_nom
-        e_left = e_avail - hover.battery_power_w * hover_time_s
+        e_left = e_avail - sum(ph.energy_j for ph in phases)
+        t_vertical = sum(ph.duration_s for ph in phases)
+        e_vertical_sd = sum(ph.battery_power_sd_w * ph.duration_s for ph in phases)
         warnings, feasible, limiting = [], True, ""
         for c in cruise:
             c.time_s = (
@@ -546,33 +627,37 @@ class TwoPhaseEvaluation(CompositeModel):
                 if c.battery_power_w > 0
                 else float("nan")
             )
-            sd_rel = (
-                np.hypot(hover_time_s * hover.battery_power_sd_w / e_left, 0.0)
-                if e_left > 0
-                else float("nan")
-            )
+            sd_rel = e_vertical_sd / e_left if e_left > 0 else float("nan")
             c.time_sd_s = c.time_s * sd_rel
-            c.flight_time_s = hover_time_s + c.time_s
+            c.flight_time_s = t_vertical + c.time_s
             c.range_m = c.v_m_s * c.time_s
         if e_left <= 0:
             feasible, limiting = False, "hover_too_long"
+        vertical = [p for p in (hover, climb, transition) if p is not None]
+        steady = [p for p in (hover, climb) if p is not None]
+        thrust_margins = [m.thrust_margin for p in vertical for m in p.motors]
         margins: dict[str, float] = {
             "motor_power": min(
-                [m.power_margin for m in hover.motors]
+                [m.power_margin for p in steady for m in p.motors]
                 + [m.power_margin for c in cruise for m in c.motors]
             ),
             "motor_current": min(
-                [m.current_margin for m in hover.motors]
+                [m.current_margin for p in steady for m in p.motors]
                 + [m.current_margin for c in cruise for m in c.motors]
             ),
-            "hover_thrust": float(np.nanmin([m.thrust_margin for m in hover.motors]))
-            if any(np.isfinite(m.thrust_margin) for m in hover.motors)
+            "transition": min(
+                min(m.power_margin, m.current_margin) for m in transition.motors
+            )
+            if transition is not None
+            else float("nan"),
+            "hover_thrust": float(np.nanmin(thrust_margins))
+            if any(np.isfinite(t) for t in thrust_margins)
             else float("nan"),
             "thrust_to_weight": ac.lift_thrust_to_weight() / self.p.min_thrust_to_weight
             - 1.0,
             "battery_c": 1.0
             - max(
-                [hover.chain.battery_current_a]
+                [p.chain.battery_current_a for p in vertical]
                 + [c.chain.battery_current_a for c in cruise if c.chain]
             )
             / ac.battery.max_current_a(),
@@ -584,12 +669,13 @@ class TwoPhaseEvaluation(CompositeModel):
             "motor_current",
             "battery_c",
             "thrust_to_weight",
+            "transition",
             "hover_thrust",
             "mass",
         ):
             if feasible and np.isfinite(margins[name]) and margins[name] < 0:
                 feasible, limiting = False, name
-        if not hover.chain.feasible:
+        if not all(p.chain.feasible for p in vertical):
             feasible, limiting = False, limiting or "battery_power"
         untrusted = [
             f"motor {m.index + 1}: {m.reason}" for m in hover.motors if not m.trusted
@@ -631,10 +717,14 @@ class TwoPhaseEvaluation(CompositeModel):
                 "project": ac.project.name,
                 "test_data_hash": default_tests().hash(),
                 "mass_total_kg": ac.total_mass_kg,
+                "hover_power_factor": mission.hover_power_factor,
                 "mass_breakdown": dict(ac.mass["breakdown"]),
             },
             self._curve,
             self._aero,
+            phases,
+            climb,
+            transition,
         )
 
     def evaluate(self, x):
@@ -656,12 +746,12 @@ def _formula(_: TwoPhaseEvaluation) -> bool:
     )
     c = r.cruise[0]
     expected = (
-        90.0
-        + (r.energy_available_j - r.hover.battery_power_w * 90.0) / c.battery_power_w
+        r.vertical_time_s
+        + (r.energy_available_j - r.vertical_energy_j) / c.battery_power_w
     )
     return bool(np.isclose(c.flight_time_s, expected, rtol=1e-12))
 
 
 TwoPhaseEvaluation.expected_forms = [
-    Invariant("flight time = t_h + (E_avail − P_h·t_h) / P_c", _formula)
+    Invariant("flight time = Σt_k + (E_avail − Σ P_k·t_k) / P_c", _formula)
 ]
