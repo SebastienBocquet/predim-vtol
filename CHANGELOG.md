@@ -6,6 +6,10 @@ versions from git tags (setuptools-scm).
 ## Unreleased
 
 ### Added
+- CG check: the PredimRC CG for the static margin entered is shown next to the CG entered,
+  with a warning above 2 % of the MAC and a button to use it.
+- Two-phase calibration on a measured hover point (motor powers of the test data) and cruise
+  point (drag factor), applied by every Run and study.
 - Project tooling as in vimseo: tox (tox-uv), ruff, pre-commit, coverage, GitHub Actions, compiled
   requirements.
 - Results: power budget, every power sink per phase (MIC-MIS-BUDGET).
@@ -26,6 +30,11 @@ versions from git tags (setuptools-scm).
   (MIC-REL); KPIs in Results; outputs and objectives for exploration and optimisation.
 
 ### Changed
+- First tab: motor layout in a collapsed box under the wing geometry; the layout generator is
+  removed. Battery defined by its mass or its capacity, only the matching field shown.
+- The GUI keeps only the two-phase flight time; the scenario mode stays in the Python API.
+- Tricopter-with-wing template: units `front` / `rear`, CG = PredimRC CG, rear motor on a tail
+  boom at 600 mm with the front motor.
 - Wing, stabiliser and fuselage entered in the first tab (the Cruise tab shows the results).
 - Propeller overlap error names the motors, their diameters and the distance missing.
 - Templates: the manual boom drag sources become the booms of the configuration (same drag).

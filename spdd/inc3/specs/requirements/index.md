@@ -10,12 +10,12 @@ Status values: `Proposed`, `Implemented (date)`.
 
 | Area | File | Requirements |
 |---|---|---|
-| AERO | [Aerodynamics](REQ-AERO.md) | 009 (changed) |
+| AERO | [Aerodynamics](REQ-AERO.md) | 009 (changed), 012 (new) |
 | CFG | [Configuration](REQ-CFG.md) | 002, 004 (changed), 013, 014 (new) |
 | PROP | [Propulsion](REQ-PROP.md) | 007, 009 (changed) |
 | MIS | [Mission](REQ-MIS.md) | 009 (new) |
 | UI | [User interface](REQ-UI.md) | 002, 008, 010 (changed), 011 (new) |
-| NFR | [Non-functional](REQ-NFR.md) | 002 (changed), 008 (new) |
+| NFR | [Non-functional](REQ-NFR.md) | 002, 007 (changed), 008 (new) |
 | COST | [Cost and reliability](REQ-COST.md) | 001, 002, 003 (new area) |
 
 ## Glossary (additions)

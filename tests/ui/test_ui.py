@@ -149,7 +149,7 @@ def test_gui_save_api_load_round_trip(tmp_path):
 
 def test_outdated_flag():
     app = state.AppState(state.load_template("multicopter"))
-    app.result, app.result_key = object(), state.project_key(app.data)
+    app.two_phase, app.result_key = object(), state.project_key(app.data)
     assert not app.outdated
     app.data["battery"]["mass_g"] = 999
     assert app.outdated

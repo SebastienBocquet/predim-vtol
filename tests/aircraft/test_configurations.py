@@ -120,7 +120,7 @@ def test_tilt_motors_lift_and_cruise_and_count_once():
     assert [m.role for m in aircraft.cruise_motors] == ["tilt", "tilt"]
     breakdown = aircraft.mass["breakdown"]
     assert breakdown["tilt propulsion"] == pytest.approx(
-        2 * aircraft.units["tilt"].mass_kg
+        2 * aircraft.units["front"].mass_kg
     )
     assert breakdown["lift propulsion"] == pytest.approx(aircraft.units["rear"].mass_kg)
     assert "cruise propulsion" not in breakdown

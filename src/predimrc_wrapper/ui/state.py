@@ -49,7 +49,7 @@ class AppState:
 
     @property
     def outdated(self) -> bool:
-        return self.result is not None and self.result_key != project_key(self.data)
+        return self.two_phase is not None and self.result_key != project_key(self.data)
 
 
 @dataclass
@@ -113,8 +113,11 @@ def save_project(data: dict[str, Any], path: str | Path) -> Path:
 
 
 def project_key(data: dict[str, Any]) -> str:
+    """Hash of the project data; empty top-level values (None, {}) do not count (the forms set
+    them while a page is drawn, the page removes them at its end)."""
+    kept = {k: v for k, v in data.items() if v is not None and v != {}}
     return hashlib.sha1(
-        json.dumps(data, sort_keys=True, default=str).encode()
+        json.dumps(kept, sort_keys=True, default=str).encode()
     ).hexdigest()
 
 

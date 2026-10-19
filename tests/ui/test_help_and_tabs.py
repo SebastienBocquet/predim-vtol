@@ -58,6 +58,7 @@ def _displayed_labels() -> set[str]:
         summary, per_pair = hv.validation_rows()
         labels.update(summary), rows(per_pair)
         rows(tdv.compare_points(p, backend))
+        rows(tdv.calibration_rows(r.metadata.get("calibration") or []))
         rows(budget_rows(power_budget(AircraftModel(p, aero_backend=backend), r)))
         c_res = cost(AircraftModel(p), r.cruise[0].flight_time_s)
         rel = motor_out(AircraftModel(p))
@@ -211,3 +212,30 @@ def test_tilt_mask_quick_choice_updates_the_roles():
     assert roles == ["lift", "lift", "tilt"]
     mask = next(m for m in at.multiselect if "tiltmask" in str(m.key))
     assert mask.value == [3]
+
+
+def test_first_tab_mission_and_battery_after_feedback_2026_10_19():
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    at = AppTest.from_file(str(APP), default_timeout=300).run()
+    at.selectbox(key="configuration").set_value("quadplane").run()
+    assert not at.exception, at.exception
+    labels = [e.label for e in at.expander]
+    assert not any("Generate the motor positions" in label for label in labels)
+    wing = next(
+        i for i, label in enumerate(labels) if label.startswith("Wing, stabiliser")
+    )
+    layout = next(
+        i for i, label in enumerate(labels) if label.startswith("Motor layout")
+    )
+    booms = next(i for i, label in enumerate(labels) if label.startswith("Booms"))
+    assert wing < layout < booms
+    assert not any("Scenario mode" in label for label in labels)
+    assert not any(b.label.startswith("Add scenario") for b in at.button)
+    # Battery defined by its capacity: the mass field disappears.
+    mode = next(s for s in at.selectbox if str(s.key).endswith("battery.mode"))
+    mode.set_value("capacity").run()
+    assert not at.exception, at.exception
+    keys = [str(n.key) for n in at.number_input]
+    assert any(k.endswith("battery.capacity_mah") for k in keys)
+    assert not any(k.endswith("battery.mass_g") for k in keys)

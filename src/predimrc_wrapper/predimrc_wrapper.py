@@ -406,6 +406,22 @@ class AeroResults:
     temperature_c: float = field(default=float("nan"))
     """Temperature read back from PredimRC (°C)."""
 
+    cg_mm: float = field(default=float("nan"))
+    """CG giving the static margin entered (mm from the wing root leading edge), 3-Geometrie!D30."""
+
+    neutral_point_mm: float = field(default=float("nan"))
+    """Neutral point (mm from the wing root leading edge), 3-Geometrie!D31."""
+
+    @property
+    def mac_mm(self) -> float:
+        """Mean aerodynamic chord (mm), from the CG and neutral point in % of MAC and in mm."""
+        d_pct = self.foyer - self.cg
+        return (
+            100.0 * (self.neutral_point_mm - self.cg_mm) / d_pct
+            if d_pct
+            else float("nan")
+        )
+
 
 def derive_drag(
     vx_kmh: np.ndarray, sink_rate: np.ndarray, mass_kg: float
@@ -424,6 +440,14 @@ def derive_drag(
     vx = np.asarray(vx_kmh, dtype=float) / 3.6
     power = mass_kg * G * np.abs(np.asarray(sink_rate, dtype=float))
     return vx, power / vx, power
+
+
+def _number(value) -> float:
+    """A cell value as a float; NaN for "-" or an empty cell."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float("nan")
 
 
 def _valid(values: list) -> np.ndarray:
@@ -664,6 +688,8 @@ class PredimRCWrapper:
             imposed=self._read_imposed(),
             altitude_m=float(geom[_ATMOSPHERE_CELLS["altitude_m"]].value),
             temperature_c=float(geom[_ATMOSPHERE_CELLS["temperature_c"]].value),
+            cg_mm=_number(geom["D30"].value),
+            neutral_point_mm=_number(geom["D31"].value),
             **metrics,
         )
 

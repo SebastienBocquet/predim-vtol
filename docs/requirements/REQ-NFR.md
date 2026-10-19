@@ -77,6 +77,7 @@
 - **Status:** Implemented for the scenario mode; not applied to the two-phase evaluation
 - **Verification:** Test — calibrated model reproduces the measurement to 1e-6.
 - **Satisfied by:** INC2-001, INC2-009
+- **Increment 3 (2026-10-18):** statement changed, see `spdd/inc3/specs/requirements/REQ-NFR.md#req-nfr-007`.
 
 ## Added by increment 3 (2026-10-18)
 

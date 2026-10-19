@@ -292,7 +292,13 @@ class BatterySpec(_Strict):
 
     chemistry: Literal["lipo", "li-ion"] = req(description="Cell chemistry")
     n_series: int = req(ge=1, le=14, description="Cells in series")
-    mode: Literal["mass", "capacity"] = opt("mass", description="Given quantity")
+    mode: Literal["mass", "capacity"] = opt(
+        "mass",
+        description=(
+            "Battery defined by: its mass (the capacity follows from the specific energy of the "
+            "chemistry) or its capacity (the mass follows)"
+        ),
+    )
     mass_g: float | None = opt(None, gt=0, description="Pack mass (g), mass mode")
     capacity_mah: float | None = opt(
         None, gt=0, description="Pack capacity (mAh), capacity mode"
@@ -401,7 +407,8 @@ class MissionSettings(_Strict):
         ge=0,
         le=0.5,
         description=(
-            "Energy reserve: fraction of the nominal energy (two-phase flight time), of the usable energy (scenario mode)"
+            "Energy reserve: fraction of the nominal energy kept at landing (two-phase flight time; "
+            "of the usable energy in the scenario mode of the Python API)"
         ),
     )
     hover_time_s: float = opt(
@@ -437,6 +444,11 @@ class MissionSettings(_Strict):
         1.0,
         gt=0,
         description="Multiplier of the total cruise drag (set by the calibration)",
+    )
+    hover_power_factor: float = adv(
+        1.0,
+        gt=0,
+        description="Multiplier of the hover motor powers read in the test data (set by the calibration)",
     )
 
 
@@ -609,9 +621,12 @@ class CalibrationSpec(_Strict):
 
     hover: HoverReference | None = opt(None, description="Hover reference point")
     cruise: CruiseReference | None = opt(None, description="Cruise reference point")
-    cruise_parameter: Literal["auto", "propeller_efficiency", "drag"] = opt(
+    cruise_parameter: Literal["auto", "propeller_efficiency", "drag"] = adv(
         "auto",
-        description="Factor set by the cruise point (auto: propeller efficiency if wing-borne, else drag)",
+        description=(
+            "Factor set by the cruise point in the scenario mode (auto: propeller efficiency if "
+            "wing-borne, else drag); the two-phase calibration always sets the drag factor"
+        ),
     )
 
 

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import contextlib
-import inspect
 import sys
 import traceback
 from pathlib import Path
@@ -15,7 +14,6 @@ import yaml
 
 from predimrc_wrapper.aircraft import AircraftModel
 from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft import layouts
 from predimrc_wrapper.aircraft import templates as user_templates
 from predimrc_wrapper.aircraft.project import TEMPLATES
 from predimrc_wrapper.aircraft.project import AeroSpec
@@ -32,7 +30,6 @@ from predimrc_wrapper.aircraft.project import MissionSettings
 from predimrc_wrapper.aircraft.project import PropulsionSpec
 from predimrc_wrapper.aircraft.project import SizingSpec
 from predimrc_wrapper.aircraft.project import WiringSpec
-from predimrc_wrapper.api import evaluate
 from predimrc_wrapper.api import evaluate_two_phase
 from predimrc_wrapper.api import profiles_dir
 from predimrc_wrapper.calibration import __doc__ as calibration_doc
@@ -41,11 +38,10 @@ from predimrc_wrapper.data import default_propellers
 from predimrc_wrapper.data import default_tests
 from predimrc_wrapper.mission.power_budget import budget_rows
 from predimrc_wrapper.mission.power_budget import power_budget
-from predimrc_wrapper.mission.scenario import Segment
 from predimrc_wrapper.settings import Settings
 from predimrc_wrapper.settings import available_profiles
 from predimrc_wrapper.sizing import motor_power_ranges
-from predimrc_wrapper.ui import charts
+from predimrc_wrapper.ui import cg_view
 from predimrc_wrapper.ui import cost_view as cov
 from predimrc_wrapper.ui import cruise_view as cv
 from predimrc_wrapper.ui import drag_view as dv
@@ -115,6 +111,12 @@ def cost_and_reliability(project: Project, two=None):
         for m in two.hover.motors:
             currents[m.index] = m.motor_current_a
     return cost(aircraft, flight, currents), motor_out(aircraft)
+
+
+OUTDATED = (
+    "The project changed since the last Run: the values below are those of the last Run. "
+    "Press Run to update them."
+)
 
 
 def metric(col, label: str, text: str, negative: bool = False) -> None:
@@ -368,6 +370,193 @@ with tabs[config_label]:
                     {"aero.profile": available_profiles() or ["SD7003"]},
                     gen,
                 )
+        winged = architecture == "quadplane"
+        units = dict(data.get("propulsion_units") or {})
+        with st.expander(
+            "Motor layout: positions, roles"
+            + (", tilting motors (tilt mask)" if winged else ""),
+            expanded=False,
+        ):
+            st.caption(
+                "One motor per arm or boom end, numbered in this order (ArduPilot outputs). Positions "
+                "in mm from the reference point "
+                + ("(**wing root leading edge**)" if winged else "(**frame centre**)")
+                + ": x aft-positive, y right-positive — see the drawing on the right. "
+                + (
+                    "Role: lift (vertical flight) or cruise (forward flight); the tilting motors are "
+                    "chosen below with the tilt mask."
+                    if winged
+                    else "A multicopter flies forward by tilting the whole frame: every motor lifts, no "
+                    "tilting motor (a tricopter's rear motor tilts for yaw only). For tilting motors, "
+                    "choose a configuration with a wing (e.g. tricopter with wing)."
+                )
+            )
+            motors_in = data.get("motors") or []
+            rows = [
+                {
+                    "unit": m.get("unit"),
+                    "role": "lift" if m.get("role") == "tilt" else m.get("role"),
+                    "tilts": m.get("role") == "tilt",
+                    "x_mm": m.get("x_mm"),
+                    "y_mm": m.get("y_mm"),
+                }
+                for m in motors_in
+            ]
+            layout_version = st.session_state.setdefault("layout_version", 0)
+            edited = st.data_editor(
+                rows,
+                key=f"{gen}:motors:{layout_version}",
+                num_rows="dynamic",
+                hide_index=False,
+                width="stretch",
+                column_config={
+                    "unit": st.column_config.SelectboxColumn(
+                        "unit", options=list(units), help=HELP.tooltip("motors.*.unit")
+                    ),
+                    "role": st.column_config.SelectboxColumn(
+                        "role",
+                        options=["lift", "cruise"] if winged else ["lift"],
+                        help=HELP.tooltip("motors.*.role"),
+                    ),
+                    "tilts": st.column_config.CheckboxColumn(
+                        "tilts (mask)", help=HELP.tooltip("tilts"), disabled=True
+                    ),
+                    "x_mm": st.column_config.NumberColumn(
+                        "x (mm)", help=HELP.tooltip("motors.*.x_mm")
+                    ),
+                    "y_mm": st.column_config.NumberColumn(
+                        "y (mm)", help=HELP.tooltip("motors.*.y_mm")
+                    ),
+                },
+                column_order=["unit", "role", "tilts", "x_mm", "y_mm"]
+                if winged
+                else ["unit", "role", "x_mm", "y_mm"],
+            )
+            data["motors"] = [
+                {
+                    "unit": r["unit"],
+                    "role": "tilt" if r.get("tilts") else (r.get("role") or "lift"),
+                    "x_mm": r["x_mm"],
+                    "y_mm": r["y_mm"],
+                }
+                for r in edited
+                if r.get("unit") is not None
+                and r.get("x_mm") is not None
+                and r.get("y_mm") is not None
+            ]
+            if winged:
+                numbers = list(range(1, len(data["motors"]) + 1))
+                mask = [
+                    i + 1 for i, m in enumerate(data["motors"]) if m["role"] == "tilt"
+                ]
+                cg = data.get("cg_x_mm")
+                ref = (
+                    cg
+                    if cg is not None
+                    else float(np.mean([m["x_mm"] for m in data["motors"]] or [0.0]))
+                )
+                quick = {
+                    "none": [],
+                    "front": [
+                        i + 1 for i, m in enumerate(data["motors"]) if m["x_mm"] < ref
+                    ],
+                    "rear": [
+                        i + 1 for i, m in enumerate(data["motors"]) if m["x_mm"] > ref
+                    ],
+                    "all": numbers,
+                }
+                c1, c2 = st.columns([3, 2])
+                chosen = c1.multiselect(
+                    "Tilting motors (tilt mask)",
+                    numbers,
+                    default=[n for n in mask if n in numbers],
+                    key=f"{gen}:tiltmask:{layout_version}",
+                    help="Motor numbers that tilt: they lift in hover and push in cruise (ArduPilot "
+                    "Q_TILT_MASK). The others keep their role. A wing-borne aircraft needs at least "
+                    "one motor able to push in cruise (cruise or tilting).",
+                )
+                pick = c2.selectbox(
+                    "Quick choice",
+                    ["—", *quick],
+                    key=f"{gen}:tiltquick:{layout_version}",
+                    help="front / rear: the motors ahead of / behind the CG (or of the mean station).",
+                )
+                new_mask = quick[pick] if pick != "—" else chosen
+                if sorted(new_mask) != sorted(mask):
+                    for i, m in enumerate(data["motors"]):
+                        if i + 1 in new_mask:
+                            m["role"] = "tilt"
+                        elif m["role"] == "tilt":
+                            m["role"] = "lift"
+                    st.session_state["layout_version"] = layout_version + 1
+                    app.data = data
+                    st.rerun()
+        with st.expander(
+            "Booms carrying the lift motors", expanded=data.get("booms") is not None
+        ):
+            st.caption(
+                "**Parallel**: booms along the flow carrying the off-centreline lift motors (quadplane "
+                "4+1). **Diagonal**: one straight boom per lift motor from an anchor under the "
+                "fuselage (or the frame centre). The section sets the drag (Drag tab, cross-flow "
+                "model on the frontal area for diagonal booms); the cables follow the booms "
+                "(Power chain tab)."
+            )
+            if st.checkbox(
+                "The aircraft has booms",
+                value=data.get("booms") is not None,
+                key=f"{gen}:booms.on",
+            ):
+                data["booms"] = forms.render_model(
+                    st,
+                    BoomSpec,
+                    data.get("booms")
+                    or {"layout": "parallel" if winged else "diagonal"},
+                    "booms",
+                    errors,
+                    {},
+                    gen,
+                )
+            else:
+                data.pop("booms", None)
+        c1, c2 = st.columns(2)
+        with c1:
+            data["cg_x_mm"] = forms.render_field(
+                st,
+                "cg_x_mm",
+                Project.model_fields["cg_x_mm"],
+                data.get("cg_x_mm"),
+                "cg_x_mm",
+                errors,
+                {},
+                gen,
+            )
+        with c2:
+            data["cg_y_mm"] = forms.render_field(
+                st,
+                "cg_y_mm",
+                Project.model_fields["cg_y_mm"],
+                data.get("cg_y_mm", 0.0),
+                "cg_y_mm",
+                errors,
+                {},
+                gen,
+            )
+        if architecture == "quadplane":
+            level, text = cg_view.cg_check(
+                two.aero_results if two is not None else None,
+                data.get("cg_x_mm"),
+                (data.get("aero") or {}).get("static_margin_pct"),
+            )
+            show = {"none": st.caption, "unset": st.info, "ok": st.success}.get(
+                level, st.warning
+            )
+            show(text + (" (last Run)" if two is not None and app.outdated else ""))
+            if level in ("unset", "warning") and st.button(
+                "Use the PredimRC CG", key=f"{gen}:cg.use_predimrc"
+            ):
+                app.data["cg_x_mm"] = round(two.aero_results.cg_mm, 1)
+                app.generation += 1
+                st.rerun()
         units = dict(data.get("propulsion_units") or {})
         st.subheader("Propulsion unit types")
         st.caption(
@@ -431,224 +620,6 @@ with tabs[config_label]:
             st.rerun()
         data["propulsion_units"] = units
 
-        winged = architecture == "quadplane"
-        st.subheader("Motors and tilting motors" if winged else "Motors")
-        st.caption(
-            "One motor per arm or boom end, numbered in this order (ArduPilot outputs). Positions "
-            "in mm from the reference point "
-            + ("(**wing root leading edge**)" if winged else "(**frame centre**)")
-            + ": x aft-positive, y right-positive — see the drawing on the right. "
-            + (
-                "Role: lift (vertical flight) or cruise (forward flight); the tilting motors are "
-                "chosen below with the tilt mask."
-                if winged
-                else "A multicopter flies forward by tilting the whole frame: every motor lifts, no "
-                "tilting motor (a tricopter's rear motor tilts for yaw only). For tilting motors, "
-                "choose a configuration with a wing (e.g. tricopter with wing)."
-            )
-        )
-        motors_in = data.get("motors") or []
-        rows = [
-            {
-                "unit": m.get("unit"),
-                "role": "lift" if m.get("role") == "tilt" else m.get("role"),
-                "tilts": m.get("role") == "tilt",
-                "x_mm": m.get("x_mm"),
-                "y_mm": m.get("y_mm"),
-            }
-            for m in motors_in
-        ]
-        layout_version = st.session_state.setdefault("layout_version", 0)
-        edited = st.data_editor(
-            rows,
-            key=f"{gen}:motors:{layout_version}",
-            num_rows="dynamic",
-            hide_index=False,
-            width="stretch",
-            column_config={
-                "unit": st.column_config.SelectboxColumn(
-                    "unit", options=list(units), help=HELP.tooltip("motors.*.unit")
-                ),
-                "role": st.column_config.SelectboxColumn(
-                    "role",
-                    options=["lift", "cruise"] if winged else ["lift"],
-                    help=HELP.tooltip("motors.*.role"),
-                ),
-                "tilts": st.column_config.CheckboxColumn(
-                    "tilts (mask)", help=HELP.tooltip("tilts"), disabled=True
-                ),
-                "x_mm": st.column_config.NumberColumn(
-                    "x (mm)", help=HELP.tooltip("motors.*.x_mm")
-                ),
-                "y_mm": st.column_config.NumberColumn(
-                    "y (mm)", help=HELP.tooltip("motors.*.y_mm")
-                ),
-            },
-            column_order=["unit", "role", "tilts", "x_mm", "y_mm"]
-            if winged
-            else ["unit", "role", "x_mm", "y_mm"],
-        )
-        data["motors"] = [
-            {
-                "unit": r["unit"],
-                "role": "tilt" if r.get("tilts") else (r.get("role") or "lift"),
-                "x_mm": r["x_mm"],
-                "y_mm": r["y_mm"],
-            }
-            for r in edited
-            if r.get("unit") is not None
-            and r.get("x_mm") is not None
-            and r.get("y_mm") is not None
-        ]
-        if winged:
-            numbers = list(range(1, len(data["motors"]) + 1))
-            mask = [i + 1 for i, m in enumerate(data["motors"]) if m["role"] == "tilt"]
-            cg = data.get("cg_x_mm")
-            ref = (
-                cg
-                if cg is not None
-                else float(np.mean([m["x_mm"] for m in data["motors"]] or [0.0]))
-            )
-            quick = {
-                "none": [],
-                "front": [
-                    i + 1 for i, m in enumerate(data["motors"]) if m["x_mm"] < ref
-                ],
-                "rear": [
-                    i + 1 for i, m in enumerate(data["motors"]) if m["x_mm"] > ref
-                ],
-                "all": numbers,
-            }
-            c1, c2 = st.columns([3, 2])
-            chosen = c1.multiselect(
-                "Tilting motors (tilt mask)",
-                numbers,
-                default=[n for n in mask if n in numbers],
-                key=f"{gen}:tiltmask:{layout_version}",
-                help="Motor numbers that tilt: they lift in hover and push in cruise (ArduPilot "
-                "Q_TILT_MASK). The others keep their role. A wing-borne aircraft needs at least "
-                "one motor able to push in cruise (cruise or tilting).",
-            )
-            pick = c2.selectbox(
-                "Quick choice",
-                ["—", *quick],
-                key=f"{gen}:tiltquick:{layout_version}",
-                help="front / rear: the motors ahead of / behind the CG (or of the mean station).",
-            )
-            new_mask = quick[pick] if pick != "—" else chosen
-            if sorted(new_mask) != sorted(mask):
-                for i, m in enumerate(data["motors"]):
-                    if i + 1 in new_mask:
-                        m["role"] = "tilt"
-                    elif m["role"] == "tilt":
-                        m["role"] = "lift"
-                st.session_state["layout_version"] = layout_version + 1
-                app.data = data
-                st.rerun()
-        with st.expander(
-            "Booms carrying the lift motors", expanded=data.get("booms") is not None
-        ):
-            st.caption(
-                "**Parallel**: booms along the flow carrying the off-centreline lift motors (quadplane "
-                "4+1). **Diagonal**: one straight boom per lift motor from an anchor under the "
-                "fuselage (or the frame centre). The section sets the drag (Drag tab, cross-flow "
-                "model on the frontal area for diagonal booms); the cables follow the booms "
-                "(Power chain tab)."
-            )
-            if st.checkbox(
-                "The aircraft has booms",
-                value=data.get("booms") is not None,
-                key=f"{gen}:booms.on",
-            ):
-                data["booms"] = forms.render_model(
-                    st,
-                    BoomSpec,
-                    data.get("booms")
-                    or {"layout": "parallel" if winged else "diagonal"},
-                    "booms",
-                    errors,
-                    {},
-                    gen,
-                )
-            else:
-                data.pop("booms", None)
-        c1, c2 = st.columns(2)
-        with c1:
-            data["cg_x_mm"] = forms.render_field(
-                st,
-                "cg_x_mm",
-                Project.model_fields["cg_x_mm"],
-                data.get("cg_x_mm"),
-                "cg_x_mm",
-                errors,
-                {},
-                gen,
-            )
-        with c2:
-            data["cg_y_mm"] = forms.render_field(
-                st,
-                "cg_y_mm",
-                Project.model_fields["cg_y_mm"],
-                data.get("cg_y_mm", 0.0),
-                "cg_y_mm",
-                errors,
-                {},
-                gen,
-            )
-        with st.expander("Generate the motor positions from a few dimensions"):
-            n_lift = sum(
-                1 for m in data.get("motors") or [] if m.get("role") in ("lift", "tilt")
-            )
-            presets = layouts.presets_for(architecture, n_lift)
-            st.caption(
-                "Recomputes the motor positions of **this** configuration from its dimensions (arm length, boom "
-                "span, stations...) and replaces the motor table. To change the configuration itself "
-                "(tricopter, quadcopter, quadplane...), use the Configuration selector in the sidebar."
-            )
-            preset = st.selectbox("Layout", list(presets), key=f"{gen}:preset")
-            func = presets[preset]
-            kwargs = {}
-            for pname, param in inspect.signature(func).parameters.items():
-                key = f"{gen}:preset.{preset}.{pname}"
-                if pname.endswith("_unit") or pname == "unit":
-                    kwargs[pname] = st.selectbox(
-                        pname.replace("_", " "),
-                        list(units) or [str(param.default)],
-                        key=key,
-                    )
-                elif pname in ("n", "per_boom"):
-                    default = (
-                        max(4, n_lift)
-                        if pname == "n"
-                        else (
-                            2
-                            if param.default is inspect.Parameter.empty
-                            else param.default
-                        )
-                    )
-                    low = 4 if pname == "n" else 1
-                    kwargs[pname] = int(
-                        st.number_input(
-                            "number of arms" if pname == "n" else "motors per boom",
-                            low,
-                            12,
-                            int(default),
-                            key=key,
-                        )
-                    )
-                else:
-                    default = (
-                        300.0
-                        if param.default is inspect.Parameter.empty
-                        else float(param.default)
-                    )
-                    kwargs[pname] = float(
-                        st.number_input(pname.replace("_", " "), value=default, key=key)
-                    )
-            if st.button("Replace the motors with this layout"):
-                data["motors"] = func(**kwargs)
-                st.session_state["layout_version"] = layout_version + 1
-                st.rerun()
         with st.expander("Motor pre-selection from a target mass range"):
             st.markdown(r"""
 **What it is for**: before choosing a motor, narrow the database to the motors whose maximum power fits the aircraft.
@@ -742,9 +713,27 @@ with tabs["Masses and battery"]:
     left, right = st.columns(2)
     with left:
         st.subheader("Battery")
-        data["battery"] = forms.render_model(
-            st, BatterySpec, data.get("battery"), "battery", errors, {}, gen
+        battery = dict(data.get("battery") or {})
+        mode = forms.render_field(
+            st,
+            "mode",
+            BatterySpec.model_fields["mode"],
+            battery.get("mode", "mass"),
+            "battery.mode",
+            errors,
+            {},
+            gen,
         )
+        hidden = "capacity_mah" if mode == "mass" else "mass_g"
+        out = forms.render_model(
+            st, BatterySpec, battery, "battery", errors, {}, gen, skip=("mode", hidden)
+        )
+        # The other quantity is kept (hidden) so that switching back restores it.
+        data["battery"] = {
+            **({hidden: battery[hidden]} if battery.get(hidden) is not None else {}),
+            **out,
+            "mode": mode,
+        }
         info = Project.model_fields["max_takeoff_mass_kg"]
         data["max_takeoff_mass_kg"] = forms.render_field(
             st,
@@ -791,7 +780,7 @@ with tabs["Mission"]:
             errors,
             {},
             gen,
-            skip=("target_speeds_m_s",),
+            skip=("target_speeds_m_s", "transition_factor"),
         )
         auto = st.checkbox(
             "Target speeds: minimum aerodynamic power (V1) and maximum L/D (V2)",
@@ -827,30 +816,6 @@ with tabs["Mission"]:
         data["environment"] = forms.render_model(
             st, EnvironmentSpec, data.get("environment"), "environment", errors, {}, gen
         )
-    scenario_names = list((data.get("scenarios") or {}).keys())
-    with st.expander("Scenario mode (MVP solver: segments, transitions)"):
-        scenario = (
-            st.selectbox("Scenario", scenario_names, key=f"{gen}:scenario")
-            if scenario_names
-            else None
-        )
-        if scenario:
-            segments = (data["scenarios"][scenario] or {}).get("segments") or []
-            data["scenarios"][scenario] = {
-                "segments": forms.render_items(
-                    st, Segment, segments, f"scenarios.{scenario}.segments", errors, gen
-                )
-            }
-        new = st.text_input("New scenario name", key=f"{gen}:new_scenario")
-        if st.button("Add scenario (hover 90 s)") and new:
-            data["scenarios"][new] = {
-                "segments": [
-                    s.model_dump(mode="json", exclude_none=True)
-                    for s in ui_state.hover_scenario(architecture).segments
-                ]
-            }
-            st.rerun()
-
 with tabs["Cruise"]:
     if architecture != "quadplane":
         st.info(
@@ -1073,6 +1038,8 @@ app.data = data
 checked = ui_state.check(data)
 
 with tabs["Hover"]:
+    if two is not None and app.outdated:
+        st.warning(OUTDATED)
     if two is None:
         st.info("Press Run to compute the hover operating points.")
     else:
@@ -1118,6 +1085,8 @@ with tabs["Hover"]:
         ])
 
 with tabs["Propeller sizing"]:
+    if two is not None and app.outdated:
+        st.warning(OUTDATED)
     with st.expander("How to choose the pitch"):
         st.markdown(pc.__doc__.split("\n\n", 2)[2])
     st.markdown(
@@ -1271,7 +1240,7 @@ with tabs["Test data"]:
             "Model without calibration, at the mass and conditions of each point."
         )
         table(st.session_state["comparison"])
-    with st.expander("Calibration (scenario mode)"):
+    with st.expander("Calibration on the measured points"):
         calibration = dict(data.get("calibration") or {})
         c1, c2 = st.columns(2)
         for column, point, model_cls, default in (
@@ -1300,12 +1269,19 @@ with tabs["Test data"]:
                     )
                 else:
                     calibration.pop(point, None)
+        calibration.pop(
+            "cruise_parameter", None
+        )  # the two-phase calibration sets the drag
         data["calibration"] = (
             calibration
             if (calibration.get("hover") or calibration.get("cruise"))
             else None
         )
         st.markdown(explanations.CALIBRATION)
+        report = (two.metadata.get("calibration") if two is not None else None) or []
+        if report:
+            st.markdown("**Factors set by the last Run**")
+            table(tdv.calibration_rows(report))
         with st.expander("Calibration procedure in detail (MIC-CAL-REF)"):
             st.markdown(calibration_doc)
     data = {k: v for k, v in data.items() if v is not None and v != {}}
@@ -1333,7 +1309,8 @@ with st.sidebar:
         "Run",
         type="primary",
         disabled=not ui_state.run_enabled(checked) or bool(excel_reason),
-        help="Two-phase flight time (and the scenario mode).",
+        help="Two-phase flight time: hover, then cruise at V1 and V2 (calibrated first when "
+        "measured points are given for the calibration).",
     )
     st.divider()
     default_name = (
@@ -1360,8 +1337,6 @@ if run:
         try:
             backend = backend_for(checked.project)
             app.two_phase = evaluate_two_phase(checked.project, backend=backend)
-            scenario_name = st.session_state.get(f"{gen}:scenario")
-            app.result = evaluate(checked.project, scenario_name, backend=backend)
             app.result_key = ui_state.project_key(data)
             st.rerun()
         except Exception as error:  # ruff: ignore[blind-except]
@@ -1452,25 +1427,6 @@ with tabs["Results"]:
             c1.plotly_chart(fig, width="stretch", key="results.budget")
             with c2:
                 table(budget_rows(budgets))
-    result = app.result
-    if result is not None:
-        with st.expander("Scenario mode (MVP solver)"):
-            st.markdown(
-                f"**Scenario `{result.scenario}`** — "
-                + (
-                    "feasible"
-                    if result.feasible
-                    else f":red[infeasible] (limiting: {result.limiting})"
-                )
-            )
-            tiles = charts.kpis(result)
-            for row in range(0, len(tiles), 5):
-                for col, kpi in zip(st.columns(5), tiles[row : row + 5], strict=False):
-                    metric(col, kpi.label, kpi.text(), kpi.negative)
-            c1, c2 = st.columns(2)
-            c1.plotly_chart(charts.power_figure(result), width="stretch")
-            c2.plotly_chart(charts.mass_figure(result), width="stretch")
-            table(charts.segment_rows(result))
 
 with tabs["Cost and reliability"]:
     left, right = st.columns([2, 3])

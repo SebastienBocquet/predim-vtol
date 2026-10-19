@@ -301,7 +301,8 @@ class TwoPhaseEvaluation(CompositeModel):
                 pair_tests = tests.tests(motor_id, prop_id) if prop_id else []
                 measured_at = pair_tests[0].measured_at if pair_tests else "motor_input"
                 record = ac.db.motor(motor_id)
-                power = float(p.power_w[0])
+                k_h = ac.project.mission.hover_power_factor  # calibration, 1 by default
+                power = k_h * float(p.power_w[0])
                 eta = ac.project.propulsion_units[slot.unit].esc_efficiency
                 motor_in = power * eta if measured_at == "esc_input" else power
                 current = _motor_current(
@@ -318,7 +319,8 @@ class TwoPhaseEvaluation(CompositeModel):
                         thrust,
                         float(f),
                         power,
-                        float(
+                        k_h
+                        * float(
                             p.power_sd[0]
                             if hasattr(p, "power_sd")
                             else p.power_w[0] * p.sd_rel[0]

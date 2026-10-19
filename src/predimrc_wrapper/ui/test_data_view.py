@@ -11,6 +11,22 @@ if TYPE_CHECKING:
     from predimrc_wrapper.predimrc_wrapper import AeroBackend
 
 
+def calibration_rows(report: list[dict]) -> list[dict]:
+    """One row per calibrated point: measured, model before / after, factor."""
+    return [
+        {
+            "point": r["point"],
+            "measured (W)": round(r["measured_w"], 1),
+            "model before (W)": round(r["model_before_w"], 1),
+            "model after (W)": round(r["model_after_w"], 1),
+            "factor set": r["parameter"],
+            "factor": round(r["factor"], 4),
+            "note": r["note"],
+        }
+        for r in report
+    ]
+
+
 def compare_points(project: Project, backend: AeroBackend | None = None) -> list[dict]:
     """Battery power of the two-phase model at the conditions of each flight point (uncalibrated)."""
     from predimrc_wrapper.aircraft import AircraftModel  # noqa: PLC0415

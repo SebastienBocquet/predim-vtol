@@ -88,21 +88,22 @@ CRUISE_MULTICOPTER = [
 ]
 
 CALIBRATION = """
-**Calibration (scenario mode only).** The comparison above never changes the model. The calibration
-does: each measured point sets **one** factor so that the scenario-mode model gives exactly the
-measured battery power.
+**Calibration.** The comparison above never changes the model. The calibration does: each measured
+point ticked here sets **one** factor so that the two-phase model gives exactly the measured battery
+power, at the mass of the point. The Run then uses the calibrated factors (flight time, power
+budget...).
 
 - **Why one factor per point:** one measurement is one equation, it can determine only one unknown.
   The factor goes to the least known term.
-- **Hover point → factor k_h on the figure of merit** of the lift propellers (motors and ESC come from
-  data sheets): P_hover,model(k_h) = P_hover,measured.
-- **Cruise point, after k_h →** winged aircraft: factor on the cruise propulsive efficiency η_c (the
-  PredimRC polar is kept); multicopter: factor on the total drag.
+- **Hover point → k_h**, multiplier of the motor powers read in the thrust–power test data
+  (`mission.hover_power_factor`, 0.5 to 2): P_hover,model(k_h) = P_hover,measured. It covers what the
+  test bench did not see: installation, propeller differences, battery and wiring of the aircraft.
+- **Cruise point, after k_h → k_D**, multiplier of the total cruise drag (`mission.drag_factor`, 0.2
+  to 5; PredimRC polar or body C_d·A, plus the drag sources): P_cruise,model(V, k_D) =
+  P_cruise,measured. The propeller (blade elements at its pitch) and the motor are physics models,
+  the drag is the least known term.
 - A factor reaching its bound means the measurement is outside what the model can represent: check
-  the masses, motor and battery first.
-
-The two-phase flight time (main result) uses the test data of the motors through the surrogate and is
-**not** calibrated.
+  the masses, the motor and the battery first.
 """
 
 

@@ -224,3 +224,10 @@ hover survives: {definition: "The other lift motors balance the weight, pitch, r
 remaining T/W: {definition: "Thrust-to-weight left with the motor stopped: 1 / max(T_i / T_max,i) of the balanced thrust split; 0 when no balance exists.", model: MIC-REL}
 why: {definition: "Reason of the motor-out result.", model: MIC-REL}
 price (USD): {definition: "Price axis.", unit: USD, model: MIC-COST}
+
+# --- calibration of the two-phase model (MIC-CAL-REF) ----------------------------------------
+model before (W): {definition: "Battery power of the model at the measured point before the calibration.", unit: W, model: MIC-CAL-REF}
+model after (W): {definition: "Battery power of the model at the measured point with the calibrated factor (equal to the measurement unless the factor is at a bound).", unit: W, model: MIC-CAL-REF}
+factor set: {definition: "Model factor set by the point: hover_power_factor (hover point) or drag_factor (cruise point).", model: MIC-CAL-REF}
+factor: {definition: "Value of the factor relative to its value before the calibration (1 = no change).", model: MIC-CAL-REF}
+note: {definition: "Remark of the calibration: a factor at its bound means the measurement is outside what the model can represent.", model: MIC-CAL-REF}

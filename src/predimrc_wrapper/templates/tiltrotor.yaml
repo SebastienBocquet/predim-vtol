@@ -1,5 +1,9 @@
-# Template tricopter with wing (tilt-rotor VTOL): wing of the quadplane template, two tilting
-# front motors (lift in hover, thrust in cruise) and one rear lift motor stopped in cruise. Illustrative masses.
+# Template tricopter with wing (tilt-rotor VTOL): wing of the quadplane template, two front
+# motors and one rear motor; the tilt mask (roles) chooses which ones tilt (default: the two front
+# ones, lift in hover and thrust in cruise; the rear one lifts and stops in cruise).
+# CG = PredimRC CG for the 5 % static margin of this wing; the rear motor sits on a tail boom
+# far enough aft (600 mm) to carry a third of the weight with the same motor as the front.
+# Illustrative masses.
 format_version: 2
 name: tricopter_wing_tilt
 architecture: quadplane
@@ -34,24 +38,25 @@ aero:
   static_margin_pct: 5
   cz_reg: 0.3
 propulsion_units:
-  tilt:
+  front:
     motor_id: tmotor-mn2806-650kv
     prop_diameter_in: 12
     prop_pitch_in: 6
     prop_mass_g: 20
     esc_mass_g: 25
   rear:
-    motor_id: tmotor-mn2212-780kv
-    prop_diameter_in: 10
-    prop_pitch_in: 4.5
-    prop_mass_g: 15
-    esc_mass_g: 20
-# Tilting motors on short booms ahead of the wing; rear motor on the tail boom.
+    motor_id: tmotor-mn2806-650kv
+    propeller_id: tmotor-p12x4
+    prop_diameter_in: 12
+    prop_pitch_in: 4
+    prop_mass_g: 20
+    esc_mass_g: 25
+# Front motors on short booms ahead of the wing; rear motor on a tail boom behind the fuselage.
 motors:
-  - {unit: tilt, role: tilt, x_mm: -200.0, y_mm: 300.0}
-  - {unit: tilt, role: tilt, x_mm: -200.0, y_mm: -300.0}
-  - {unit: rear, role: lift, x_mm: 450.0, y_mm: 0.0}
-cg_x_mm: 20
+  - {unit: front, role: tilt, x_mm: -200.0, y_mm: 300.0}
+  - {unit: front, role: tilt, x_mm: -200.0, y_mm: -300.0}
+  - {unit: rear, role: lift, x_mm: 600.0, y_mm: 0.0}
+cg_x_mm: 66.6  # PredimRC CG for the 5 % static margin of this wing (3-Geometrie!D30)
 battery:
   chemistry: li-ion
   n_series: 4
@@ -64,7 +69,7 @@ mass_items:
   - {name: "flight controller, GPS, receiver", category: avionics, mass_g: 120}
 booms: {layout: parallel, section: round, thickness_mm: 16}
 drag_sources:
-  - {name: stopped rear propeller, kind: stopped_rotor, count: 1, n_blades: 2, blade_chord_mm: 22, radius_mm: 127}
+  - {name: stopped rear propeller, kind: stopped_rotor, count: 1, n_blades: 2, blade_chord_mm: 25, radius_mm: 152}
 max_takeoff_mass_kg: 3.0
 sizing:
   target_mass_kg: [1.8, 2.4]

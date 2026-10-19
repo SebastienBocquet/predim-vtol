@@ -161,11 +161,13 @@ class PresizingDiscipline(Discipline):
         self._backend = backend
         self._owned_backend = None
         self.calibration_report = None
-        if self.base_project.calibration is not None and mode == "scenario":
+        if self.base_project.calibration is not None:
             # The measurements describe the base design: its factors apply to every variant.
             from predimrc_wrapper.calibration import calibrate  # noqa: PLC0415
+            from predimrc_wrapper.calibration import calibrate_two_phase  # noqa: PLC0415
 
-            self.base_project, self.calibration_report = calibrate(
+            run = calibrate_two_phase if mode == "two_phase" else calibrate
+            self.base_project, self.calibration_report = run(
                 self.base_project, self._get_backend()
             )
         self.input_grammar.update_from_names([p.name for p in self.parameters])

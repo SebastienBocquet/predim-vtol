@@ -85,7 +85,8 @@ def evaluate_two_phase(
             and maximum L/D.
 
     Returns:
-        The ``TwoPhaseResult``.
+        The ``TwoPhaseResult``; a project with a ``calibration`` block is calibrated first
+        (``calibrate_two_phase``), the report in ``metadata["calibration"]``.
     """
     from predimrc_wrapper.mission.two_phase import TwoPhaseEvaluation  # noqa: PLC0415
 
@@ -96,15 +97,25 @@ def evaluate_two_phase(
     speeds = target_speeds_m_s or (
         tuple(mission.target_speeds_m_s) if mission.target_speeds_m_s else None
     )
+
+    def solve(backend):
+        calibrated, report = project, None
+        if project.calibration is not None:
+            from predimrc_wrapper.calibration import calibrate_two_phase  # noqa: PLC0415
+
+            calibrated, report = calibrate_two_phase(project, backend)
+        result = TwoPhaseEvaluation(
+            AircraftModel(calibrated, aero_backend=backend)
+        ).solve(t_h, speeds)
+        if report is not None:
+            result.metadata["calibration"] = report.to_dict()
+        return result
+
     if project.architecture == "quadplane" and backend is None:
         from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
 
         with PredimRCWrapper(
             profile=project.aero.profile, template_dir=profiles_dir()
         ) as session:
-            return TwoPhaseEvaluation(
-                AircraftModel(project, aero_backend=session)
-            ).solve(t_h, speeds)
-    return TwoPhaseEvaluation(AircraftModel(project, aero_backend=backend)).solve(
-        t_h, speeds
-    )
+            return solve(session)
+    return solve(backend)
