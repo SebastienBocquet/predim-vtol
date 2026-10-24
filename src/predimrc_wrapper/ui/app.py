@@ -21,7 +21,6 @@ from predimrc_wrapper.aircraft.project import BatterySpec
 from predimrc_wrapper.aircraft.project import BoomSpec
 from predimrc_wrapper.aircraft.project import CostSpec
 from predimrc_wrapper.aircraft.project import CruiseReference
-from predimrc_wrapper.aircraft.project import DragSource
 from predimrc_wrapper.aircraft.project import EnvironmentSpec
 from predimrc_wrapper.aircraft.project import FlightPoint
 from predimrc_wrapper.aircraft.project import HoverReference
@@ -36,6 +35,7 @@ from predimrc_wrapper.calibration import __doc__ as calibration_doc
 from predimrc_wrapper.data import default_database
 from predimrc_wrapper.data import default_propellers
 from predimrc_wrapper.data import default_tests
+from predimrc_wrapper.data.prices import default_prices
 from predimrc_wrapper.mission.power_budget import budget_rows
 from predimrc_wrapper.mission.power_budget import power_budget
 from predimrc_wrapper.settings import Settings
@@ -67,10 +67,11 @@ forms.HELP = HELP.tooltip
 
 @st.cache_resource
 def predimrc_session(profile: str, folder: str):
-    """One Excel session per profile and folder for the whole GUI."""
-    from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+    """One PredimRC backend per profile and folder for the whole GUI: Excel in its own thread
+    (each rerun runs in a new thread, COM objects stay in theirs), behind the HDF5 cache."""
+    from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
 
-    return PredimRCWrapper(profile=profile, template_dir=folder).__enter__()
+    return open_backend(profile, folder)
 
 
 def backend_for(project: Project):
@@ -231,8 +232,18 @@ with st.sidebar:
             placeholder="~/.predimrc_wrapper/templates",
             help="Folder of the templates saved with 'Save as template'.",
         )
+        cache_file = st.text_input(
+            "PredimRC cache file",
+            settings.predimrc_cache,
+            key="settings.predimrc_cache",
+            placeholder="~/.predimrc_wrapper/predimrc_cache.h5",
+            help="HDF5 file of the PredimRC evaluations already computed: an evaluation found "
+            "there is not run again (Excel is not even started). A modified workbook starts new "
+            "entries; delete the file to empty the cache. Needs GEMSEO (mdo extra).",
+        )
         if st.button("Save the settings"):
             settings.studies_root, settings.templates_folder = root, templates_root
+            settings.predimrc_cache = cache_file
             st.success(f"Saved {settings.save()}")
         st.caption(
             "The PredimRC folder is set in the first tab (winged configurations)."
@@ -836,6 +847,8 @@ with tabs["Cruise"]:
             passed, message = cv.iso_text(two)
             (st.success if passed else st.warning)(message)
             table(cv.results_rows(two))
+            st.subheader("Stabilité longitudinale (PredimRC, Cz de réglage)")
+            table(cv.stability_rows(two))
             c1, c2 = st.columns(2)
             c1.plotly_chart(cv.power_figure(two), width="stretch")
             c2.plotly_chart(cv.imposed_figure(two), width="stretch")
@@ -912,14 +925,18 @@ with tabs["Drag"]:
     st.subheader("Parasitic drag sources")
     from predimrc_wrapper.data.drag_shapes import drag_shapes  # noqa: E402
 
-    data["drag_sources"] = forms.render_items(
+    st.caption(
+        "One form per source with the fields of its type. Choose the type of a new source in the "
+        "list, then Add; the source drag areas are in the table below."
+    )
+    data["drag_sources"] = data.get("drag_sources") or []
+    data["drag_sources"] = dv.render_sources(
         st,
-        DragSource,
-        data.get("drag_sources") or [],
-        "drag_sources",
+        data["drag_sources"],
         errors,
         gen,
-        options={"shape": list(drag_shapes())},
+        list(drag_shapes()),
+        len(data.get("motors") or []),
     )
     if checked.project is not None and checked.project.drag_sources:
         from predimrc_wrapper.aircraft.drag_sources import drag_report  # noqa: E402
@@ -1452,9 +1469,11 @@ with tabs["Cost and reliability"]:
     with left:
         st.subheader("Prices entered and wear")
         st.caption(
-            "Component prices come from the price list (source and date in the table); frame and "
-            "avionics are entered here. Overrides replace a database price: keys "
-            "`motor:<id>`, `propeller:<id>`, `esc`, `esc4in1`, `battery_per_wh`, `cable:<awg>`."
+            "Costs in euros. Component prices come from the price list (source and date in the "
+            f"table), read in USD and converted at {default_prices().usd_per_eur} USD/EUR (ECB "
+            f"reference rate of {default_prices().exchange_date}; changed in Advanced). Frame, "
+            "avionics and overrides are entered in euros. Overrides replace a database price: "
+            "keys `motor:<id>`, `propeller:<id>`, `esc`, `esc4in1`, `battery_per_wh`, `cable:<awg>`."
         )
         spec = dict(data.get("cost") or {})
         out = forms.render_model(
@@ -1470,7 +1489,7 @@ with tabs["Cost and reliability"]:
             width="stretch",
             column_config={
                 "key": st.column_config.TextColumn("override key"),
-                "price": st.column_config.NumberColumn("price", min_value=0.0),
+                "price": st.column_config.NumberColumn("price (EUR)", min_value=0.0),
             },
         )
         out["overrides"] = {

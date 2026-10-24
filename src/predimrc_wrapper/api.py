@@ -45,11 +45,9 @@ def evaluate(
         msg = f"Unknown scenario '{name}'. Available: {list(project.scenarios)}"
         raise KeyError(msg)
     if project.architecture == "quadplane" and backend is None:
-        from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+        from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
 
-        with PredimRCWrapper(
-            profile=project.aero.profile, template_dir=profiles_dir()
-        ) as session:
+        with open_backend(project.aero.profile, profiles_dir()) as session:
             return _solve(project, name, session)
     return _solve(project, name, backend)
 
@@ -112,10 +110,8 @@ def evaluate_two_phase(
         return result
 
     if project.architecture == "quadplane" and backend is None:
-        from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+        from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
 
-        with PredimRCWrapper(
-            profile=project.aero.profile, template_dir=profiles_dir()
-        ) as session:
+        with open_backend(project.aero.profile, profiles_dir()) as session:
             return solve(session)
     return solve(backend)

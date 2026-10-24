@@ -53,6 +53,11 @@ class PriceDatabase:
     def __init__(self, data: dict[str, Any]) -> None:
         self.currency: str = data["currency"]
         self.retrieved = str(data.get("retrieved", ""))
+        exchange = data["exchange"]
+        self.usd_per_eur = float(exchange["usd_per_eur"])
+        """ECB reference rate: price (EUR) = price (USD) / usd_per_eur."""
+        self.exchange_date = str(exchange["date"])
+        self.exchange_source: str = exchange["source"]
         self.motors = {
             k: Price(**_price(v, f"motor {k}")) for k, v in data["motors"].items()
         }

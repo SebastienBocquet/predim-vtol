@@ -1,9 +1,14 @@
 # Component prices (REQ-COST-001), copied from manufacturer or retailer pages on 2026-10-18.
 # Retail prices, taxes and shipping excluded, currency of the page (USD). No currency
-# conversion. status: verified = read on the product page; search = read in a search
+# conversion in this file: the cost model converts to euros with the rate below. status: verified = read on the product page; search = read in a search
 # result for that page (the page itself refused the robot), to check before relying on it.
 currency: USD
 retrieved: 2026-10-18
+exchange:  # the cost is given in euros: price (EUR) = price (USD) / usd_per_eur
+  usd_per_eur: 1.1539
+  date: 2026-09-15
+  source: https://www.bancaditalia.it/compiti/operazioni-cambi/cambio/cambi_rif_20260915
+  notes: "ECB euro reference rate of the US dollar (copy of the Banca d'Italia)."
 
 motors:  # per motor, ids of the motor database
   tmotor-mn2212-780kv:

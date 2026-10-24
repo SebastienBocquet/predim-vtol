@@ -3,7 +3,7 @@
 File ``~/.predimrc_wrapper/settings.yaml`` (or ``$PREDIMRC_SETTINGS``); environment
 variables override it: ``$PREDIMRC_PROFILES`` (PredimRC folder), ``$PREDIMRC_STUDIES``
 (studies root), ``$PREDIMRC_USER_DATA`` (user data folder), ``$PREDIMRC_TEMPLATES`` (user
-templates folder).
+templates folder), ``$PREDIMRC_CACHE`` (cache file of the PredimRC evaluations).
 """
 
 from __future__ import annotations
@@ -34,6 +34,8 @@ class Settings:
     """Root folder of the stored studies (default: current working directory)."""
     templates_folder: str = ""
     """Folder of the user templates (default ``~/.predimrc_wrapper/templates``)."""
+    predimrc_cache: str = ""
+    """HDF5 cache of the PredimRC evaluations (default ``~/.predimrc_wrapper/predimrc_cache.h5``)."""
 
     @classmethod
     def load(cls) -> Settings:
@@ -49,6 +51,8 @@ class Settings:
             settings.studies_root = os.environ["PREDIMRC_STUDIES"]
         if "PREDIMRC_TEMPLATES" in os.environ:
             settings.templates_folder = os.environ["PREDIMRC_TEMPLATES"]
+        if "PREDIMRC_CACHE" in os.environ:
+            settings.predimrc_cache = os.environ["PREDIMRC_CACHE"]
         return settings
 
     def save(self) -> Path:

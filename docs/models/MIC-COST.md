@@ -35,16 +35,17 @@
 
 | Name | Symbol | Unit | Description |
 |---|---|---|---|
-| items | — | USD | priced items with quantity, unit price, source and status |
-| purchase | C_p | USD | Σ priced items |
-| per flight | C_f | USD | wear cost of one flight |
-| per hour | C_h | USD/h | C_f / t |
+| items | — | EUR | priced items with quantity, unit price, source and status |
+| purchase | C_p | EUR | Σ priced items |
+| per flight | C_f | EUR | wear cost of one flight |
+| per hour | C_h | EUR/h | C_f / t |
 
 ### Parameters
 
 | Name | Default | Source |
 |---|---|---|
 | price list | `data/prices.yaml` | manufacturer and retailer pages, 2026-10-18 (URL per price) |
+| exchange rate | 1.1539 USD/EUR (`cost.usd_per_eur`) | ECB reference rate of 2026-09-15 (URL in `prices.yaml`) |
 | ESC margin | 1.25 × I_max of the motor | rule of thumb |
 | battery cycles | 300 (LiPo), 500 (Li-ion) | typical RC cycle life at 80 % capacity |
 | motor life | 1000 h | order of magnitude of bearing life of RC brushless motors |
@@ -65,12 +66,14 @@
 5. Cables: conductor lengths of the power chain (main 2, DC 2, phase 3 conductors) × price
    per metre of the gauge.
 6. Wear per flight: C_f = P_battery / N_cycles + Σ P_motor · t / L_motor + Σ P_prop / N_flights.
-7. An item without a price is listed as "missing" and left out of the total, never 0.
+7. Database prices (USD) divided by the exchange rate: every cost is in euros; frame,
+   avionics and overrides are entered in euros.
+8. An item without a price is listed as "missing" and left out of the total, never 0.
 
 ### Limitations
 
-- Retail prices of one date and one currency (USD, no conversion), taxes and shipping
-  excluded; some prices read in search results (status "search").
+- Retail prices of one date, read in USD and converted to euros at one exchange rate; taxes,
+  shipping and import duties excluded; some prices read in search results (status "search").
 - No connectors, servos, labour; frame and avionics as entered.
 
 ## Verification and validation

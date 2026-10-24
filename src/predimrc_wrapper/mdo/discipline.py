@@ -181,11 +181,11 @@ class PresizingDiscipline(Discipline):
         if self.base_project.architecture != "quadplane":
             return None
         if self._backend is None:
-            from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+            from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
 
-            self._owned_backend = PredimRCWrapper(
-                profile=self.base_project.aero.profile, template_dir=profiles_dir()
-            ).__enter__()
+            self._owned_backend = open_backend(
+                self.base_project.aero.profile, profiles_dir()
+            )
             self._backend = self._owned_backend
         return self._backend
 

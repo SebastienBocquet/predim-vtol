@@ -68,7 +68,7 @@ def test_purchase_cost_is_the_sum_of_the_items():
     assert sum(result.by_category().values()) == pytest.approx(result.purchase)
     motors = next(i for i in result.items if i.item == "tmotor-mn2806-650kv")
     assert motors.quantity == 4
-    assert motors.unit_price == pytest.approx(46.90)
+    assert motors.unit_price == pytest.approx(46.90 / default_prices().usd_per_eur)
 
 
 def test_override_replaces_the_database_price():

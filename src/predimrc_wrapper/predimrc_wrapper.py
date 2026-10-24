@@ -45,6 +45,7 @@ Example:
 from __future__ import annotations
 
 import logging
+import string
 import time
 from dataclasses import dataclass
 from dataclasses import field
@@ -412,6 +413,19 @@ class AeroResults:
     neutral_point_mm: float = field(default=float("nan"))
     """Neutral point (mm from the wing root leading edge), 3-Geometrie!D31."""
 
+    static_margin: float = field(default=float("nan"))
+    """Static margin used by PredimRC (% of MAC), 3-Geometrie!D29."""
+
+    tail_volume: float = field(default=float("nan"))
+    """Tail volume coefficient, 3-Geometrie!L21 (NaN without a stabiliser)."""
+
+    stab_incidence_deg: float = field(default=float("nan"))
+    """Stabiliser incidence at the trim Cz, airfoil 1 (°), 3-Geometrie!J31."""
+
+    longitudinal_dihedral_deg: float = field(default=float("nan"))
+    """Longitudinal dihedral (angle between wing and stabiliser) at the trim Cz, airfoil 1 (°),
+    3-Geometrie!J32."""
+
     @property
     def mac_mm(self) -> float:
         """Mean aerodynamic chord (mm), from the CG and neutral point in % of MAC and in mm."""
@@ -457,6 +471,56 @@ def _valid(values: list) -> np.ndarray:
     )
 
 
+def _cell_value(value: object) -> object:
+    """A value as written to and compared with a cell (numpy scalars as Python ones)."""
+    return value.item() if isinstance(value, np.generic) else value
+
+
+def _column_index(letters: str) -> int:
+    """1-based index of a column ("A" -> 1, "AQ" -> 43)."""
+    index = 0
+    for c in letters:
+        index = 26 * index + ord(c) - ord("A") + 1
+    return index
+
+
+class _Block:
+    """The values of a rectangle of cells, read in one COM call.
+
+    Args:
+        sheet: The COM worksheet.
+        col: The first column.
+        row: The first row.
+        last: The bottom-right cell, e.g. ``"AQ30"``.
+    """
+
+    def __init__(self, sheet, col: str, row: int, last: str) -> None:
+        self.col0, self.row0 = _column_index(col), row
+        # Value2 gives numbers as floats and cell errors (#DIV/0!, #N/A) as int codes.
+        self.values = [
+            [None if isinstance(v, int) else v for v in r]
+            for r in sheet.Range(f"{col}{row}:{last}").Value2
+        ]
+
+    def cell(self, ref: str) -> object:
+        letters = ref.rstrip(string.digits)
+        return self.values[int(ref[len(letters) :]) - self.row0][
+            _column_index(letters) - self.col0
+        ]
+
+    def column(
+        self, col: str, r0: int | None = None, r1: int | None = None
+    ) -> np.ndarray:
+        """A column as floats (errors and blanks as NaN), rows r0 to r1 (all by default)."""
+        j = _column_index(col) - self.col0
+        rows = self.values[
+            (0 if r0 is None else r0 - self.row0) : (
+                None if r1 is None else r1 - self.row0 + 1
+            )
+        ]
+        return _valid([r[j] for r in rows])
+
+
 class AeroBackend(Protocol):
     """An aerodynamic backend for the wing-borne aircraft."""
 
@@ -495,6 +559,9 @@ class PredimRCWrapper:
         self._app = None
         self._wb = None
         self._labels: dict[str, list[str]] = {}
+        self._geom_api = self._calc_api = None
+        self._written: dict[str, object] = {}
+        """Values written in this session, by cell: an unchanged input is not written again."""
 
     # --- session -------------------------------------------------------------
 
@@ -512,6 +579,10 @@ class PredimRCWrapper:
             )
             self._wb.api.Activate()
             self._app.api.Calculation = _XL_CALCULATION_MANUAL
+            # Raw COM on cached sheets: ~1 ms per cell instead of ~20 ms through xlwings.
+            self._geom_api = self._wb.sheets[_SHEET_GEOM].api
+            self._calc_api = self._wb.sheets[_SHEET_CALC].api
+            self._written = {}
             calc = self._wb.sheets[_SHEET_CALC]
             for name, (_, rng) in _DROPDOWNS.items():
                 self._labels[name] = [
@@ -531,14 +602,19 @@ class PredimRCWrapper:
             if self._wb is not None:
                 self._wb.close()
         except Exception:  # ruff: ignore[blind-except]
-            LOGGER.warning("Could not close the PredimRC workbook cleanly.")
+            LOGGER.warning(
+                "Could not close the PredimRC workbook cleanly.", exc_info=True
+            )
         finally:
-            self._wb = None
+            self._wb = self._geom_api = self._calc_api = None
+            self._written = {}
             if self._app is not None:
                 try:
                     self._app.quit()
                 except Exception:  # ruff: ignore[blind-except]
-                    LOGGER.warning("Could not quit Excel cleanly; killing it.")
+                    LOGGER.warning(
+                        "Could not quit Excel cleanly; killing it.", exc_info=True
+                    )
                     self._app.kill()
                 self._app = None
 
@@ -587,11 +663,20 @@ class PredimRCWrapper:
         return labels.index(text) + 1
 
     def _set(self, cell: str, value: object) -> None:
+        """Write a cell or a row range of 3-Geometrie, unless it holds this value already."""
+        if isinstance(value, list):
+            value = tuple(tuple(_cell_value(v) for v in row) for row in value)
+        else:
+            value = _cell_value(value)
+        if self._written.get(cell) == value:
+            return
+        self._written.pop(cell, None)
         try:
-            self._geom[cell].value = value
+            self._geom_api.Range(cell).Value2 = value
         except Exception as error:
             msg = f"Cannot write {value!r} to {_SHEET_GEOM}!{cell}: {error}"
             raise PredimRCError(msg) from error
+        self._written[cell] = value
 
     def _write_trapeze(self, rows: dict[str, int], obj: object) -> None:
         """Write panel values, one range write per row (columns C to G)."""
@@ -648,13 +733,14 @@ class PredimRCWrapper:
     # --- outputs -------------------------------------------------------------
 
     def _read_outputs(self, mass_g: float) -> AeroResults:
-        calc = self._calc
-        cz = _valid(calc["B5:B30"].value)
-        cx = _valid(calc["AE5:AE30"].value)
-        vx_kmh = _valid(calc["AH5:AH30"].value)
-        sink = _valid(calc["AK5:AK30"].value)
-        finesse = _valid(calc["AN5:AN30"].value)
-        power_col = _valid(calc["AQ5:AQ30"].value)
+        # One COM read per block of cells (a read costs ~1 ms whatever its size).
+        polar = _Block(self._calc_api, "B", 5, "AQ30")
+        cz = polar.column("B")
+        cx = polar.column("AE")
+        vx_kmh = polar.column("AH")
+        sink = polar.column("AK")
+        finesse = polar.column("AN")
+        power_col = polar.column("AQ")
         mask = ~(np.isnan(vx_kmh) | np.isnan(sink))
         if not mask.any():
             msg = "PredimRC returned no valid polar point (check macros and inputs)."
@@ -666,8 +752,8 @@ class PredimRCWrapper:
         cz, cx, sink, finesse, power_col = (
             a[mask][order] for a in (cz, cx, sink, finesse, power_col)
         )
-        geom = self._geom
-        metrics = {k: float(geom[c].value) for k, c in _WING_OUTPUT_CELLS.items()}
+        geom = _Block(self._geom_api, "C", 5, "AB34")
+        metrics = {k: float(geom.cell(c)) for k, c in _WING_OUTPUT_CELLS.items()}
         return AeroResults(
             cz=cz,
             cx=cx,
@@ -680,26 +766,32 @@ class PredimRCWrapper:
             v_min_power=float(vx[np.argmin(power)]),
             v_max_finesse=float(vx[np.nanargmax(finesse)]),
             mass_kg=mass_kg,
-            cg=100.0 * float(geom["C30"].value),
-            foyer=100.0 * float(geom["C31"].value),
-            wing_loading=float(geom["C34"].value),
-            rho=float(calc["B1"].value),
+            cg=100.0 * float(geom.cell("C30")),
+            foyer=100.0 * float(geom.cell("C31")),
+            wing_loading=float(geom.cell("C34")),
+            rho=float(self._calc_api.Range("B1").Value2),
             power_predimrc_w=power_col,
             imposed=self._read_imposed(),
-            altitude_m=float(geom[_ATMOSPHERE_CELLS["altitude_m"]].value),
-            temperature_c=float(geom[_ATMOSPHERE_CELLS["temperature_c"]].value),
-            cg_mm=_number(geom["D30"].value),
-            neutral_point_mm=_number(geom["D31"].value),
+            altitude_m=float(geom.cell(_ATMOSPHERE_CELLS["altitude_m"])),
+            temperature_c=float(geom.cell(_ATMOSPHERE_CELLS["temperature_c"])),
+            cg_mm=_number(geom.cell("D30")),
+            neutral_point_mm=_number(geom.cell("D31")),
+            static_margin=100.0 * _number(geom.cell("D29")),
+            tail_volume=_number(geom.cell("L21")),
+            stab_incidence_deg=_number(geom.cell("J31")),
+            longitudinal_dihedral_deg=_number(geom.cell("J32")),
             **metrics,
         )
 
     def _read_imposed(self) -> dict[int, ImposedSpeed]:
-        calc, out = self._calc, {}
+        r_first = min(r0 for r0, _ in _IMPOSED_BLOCK_ROWS.values())
+        r_last = max(r1 for _, r1 in _IMPOSED_BLOCK_ROWS.values())
+        block, out = _Block(self._calc_api, "B", r_first, f"AQ{r_last}"), {}
         for k, (r0, r1) in _IMPOSED_BLOCK_ROWS.items():
-            cz = _valid(calc[f"B{r0}:B{r1}"].value)
-            vx = _valid(calc[f"C{r0}:C{r1}"].value)
-            drag = _valid(calc[f"AK{r0}:AK{r1}"].value)
-            power = _valid(calc[f"AQ{r0}:AQ{r1}"].value)
+            cz = block.column("B", r0, r1)
+            vx = block.column("C", r0, r1)
+            drag = block.column("AK", r0, r1)
+            power = block.column("AQ", r0, r1)
             ok = np.isfinite(cz) & np.isfinite(drag) & np.isfinite(power)
             if ok.any():
                 out[k] = ImposedSpeed(
@@ -753,3 +845,97 @@ class PredimRCWrapper:
             The results, in the order of the cases.
         """
         return [self.run(**case) for case in cases]
+
+
+def _co_initialize() -> None:
+    import pythoncom  # noqa: PLC0415  (pywin32, installed with xlwings)
+
+    pythoncom.CoInitialize()
+
+
+class ExcelThreadBackend:
+    """A PredimRC session living in its own thread, usable from any thread.
+
+    Excel COM objects only work in the thread that created them, and Streamlit runs each
+    rerun in a new thread: the workbook is opened, evaluated and closed by one worker
+    thread, the callers wait for its result. Excel is started at the first evaluation.
+
+    Args:
+        profile: The wing airfoil: the workbook ``PredimRC_<profile>.xls`` of the folder.
+        template_dir: The folder of the PredimRC workbooks.
+        wrapper_factory: Builds the session in the worker thread (tests); a
+            ``PredimRCWrapper`` by default.
+    """
+
+    def __init__(
+        self,
+        profile: str = "SD7003",
+        template_dir: str | Path = "./profiles",
+        wrapper_factory=None,
+    ) -> None:
+        from concurrent.futures import ThreadPoolExecutor  # noqa: PLC0415
+
+        self.profile = profile
+        self.template_dir = template_dir
+        self._factory = wrapper_factory or (
+            lambda: PredimRCWrapper(profile, template_dir).__enter__()
+        )
+        self._executor = ThreadPoolExecutor(
+            max_workers=1,
+            thread_name_prefix="predimrc-excel",
+            initializer=None if wrapper_factory else _co_initialize,
+        )
+        self._wrapper = None
+        self._closed = False
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
+    def _call(self, function, *args, **kwargs):
+        return self._executor.submit(function, *args, **kwargs).result()
+
+    def _session(self):
+        if self._wrapper is None:
+            self._wrapper = self._factory()
+        return self._wrapper
+
+    @property
+    def last_eval_seconds(self) -> float:
+        return (
+            float("nan") if self._wrapper is None else self._wrapper.last_eval_seconds
+        )
+
+    def evaluate(
+        self,
+        wing: WingGeometry,
+        stab: StabGeometry,
+        fus: FuselageGeometry,
+        settings: Settings,
+    ) -> AeroResults:
+        """Evaluate in the Excel thread (opening Excel at the first call)."""
+        return self._call(lambda: self._session().evaluate(wing, stab, fus, settings))
+
+    run = evaluate
+
+    def is_alive(self) -> bool:
+        """Whether the session answers; True before Excel is started."""
+        return self._wrapper is None or self._call(self._wrapper.is_alive)
+
+    def close(self) -> None:
+        """Close the workbook and quit Excel in the Excel thread, then stop the thread."""
+
+        def close() -> None:
+            if self._wrapper is not None:
+                self._wrapper.close()
+                self._wrapper = None
+
+        if self._closed:
+            return
+        self._closed = True
+        try:
+            self._call(close)
+        finally:
+            self._executor.shutdown(wait=True)

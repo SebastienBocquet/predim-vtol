@@ -5,7 +5,28 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Fixed
+- GUI: every Run of a winged configuration restarted Excel (~7 s, "Could not close the PredimRC
+  workbook cleanly" / "Could not quit Excel cleanly"): Streamlit runs each rerun in a new thread
+  and COM objects only work in theirs. The PredimRC session now lives in its own thread
+  (`ExcelThreadBackend`) and is kept between Runs.
+- PredimRC evaluation 1.4 s → 0.25 s: raw COM writes on cached sheets (1 ms per cell instead of
+  20 ms through xlwings), unchanged inputs not written again, outputs read in three block reads.
+- Rotor model 7× faster (a quadplane Run 11.7 s → 4.8 s, then 0.7 s once the propeller
+  surrogate is fitted): the induced-velocity and rotation-speed bisections (~50 iterations
+  each, nested) are replaced by a bracketed regula falsi (Illinois); same results to 1e-9.
+
 ### Added
+- Cruise tab: longitudinal stability read from PredimRC (centrage, foyer, marge statique,
+  volume de stab, calage stab, Vé longi.) with the PredimRC descriptions of each quantity.
+- Persistent cache of the PredimRC evaluations: GEMSEO discipline with an HDF5 cache
+  (`aero_cache`, file `~/.predimrc_wrapper/predimrc_cache.h5`, setting `predimrc_cache` or
+  `$PREDIMRC_CACHE`); a cached evaluation does not start Excel. Entries are keyed by the
+  workbook content, so a modified workbook starts new entries. Without GEMSEO, no cache.
+- Drag tab: one form per drag source with only the fields of its type, a type list and an
+  Add button, a Remove button per source (replaces the table).
+- Costs in euros: database prices (USD) converted at the ECB rate of the price list,
+  `cost.usd_per_eur` to change it; frame, avionics and overrides entered in euros.
 - Vertical phases: climb to the transition altitude, hover, transition (tilting motors at a
   tilt angle, vertical thrust T·sin θ, transition margin), descent; table of the phases.
 - Cable mass (copper + silicone) in the mass budget and the Power chain tab; mass recap by

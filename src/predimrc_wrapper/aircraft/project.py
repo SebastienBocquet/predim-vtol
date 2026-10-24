@@ -260,17 +260,22 @@ class CostSpec(_Strict):
     frame: float = opt(
         0.0,
         ge=0,
-        description="Frame price: airframe, booms, fuselage (currency of the prices)",
+        description="Frame price: airframe, booms, fuselage (EUR)",
     )
     avionics: float = opt(
-        0.0, ge=0, description="Avionics price: flight controller, GPS, receiver"
+        0.0, ge=0, description="Avionics price: flight controller, GPS, receiver (EUR)"
     )
     overrides: dict[str, float] = opt(
         {},
         description=(
-            "Prices replacing the database: keys motor:<id>, propeller:<id>, esc, esc4in1, "
+            "Prices replacing the database (EUR): keys motor:<id>, propeller:<id>, esc, esc4in1, "
             "battery_per_wh, cable:<awg>"
         ),
+    )
+    usd_per_eur: float | None = adv(
+        None,
+        gt=0,
+        description="Exchange rate (USD per EUR) of the database prices; ECB rate of the price list when not set",
     )
     battery_cycles: int | None = opt(
         None,

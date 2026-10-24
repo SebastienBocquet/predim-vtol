@@ -78,6 +78,7 @@ drag power at V1 (W): {definition: "Power absorbed by the source at V1: ½ρV₁
 block: {definition: "PredimRC block of the result (Aile, Réglages, Performances)."}
 quantity: {definition: "Name of the quantity."}
 value: {definition: "Value of the quantity."}
+description: {definition: "Description of the quantity, from the PredimRC cell comment."}
 Vx (km/h): {definition: "Horizontal speed, PredimRC unit.", unit: km/h}
 Vz (m/s): {definition: "Vertical speed in glide (negative when sinking), PredimRC palier block.", unit: m/s}
 Cz: {definition: "Wing lift coefficient.", symbol: C_z}
@@ -207,24 +208,24 @@ C_d effective: {definition: "Drag coefficient referred to the frontal area: diag
 tilts (mask): {definition: "The motor is in the tilt mask: it lifts in hover and pushes in cruise (role tilt, ArduPilot Q_TILT_MASK). Set with the 'Tilting motors' selector below the table.", model: MIC-MIS-TWO}
 
 # --- cost and reliability (MIC-COST, MIC-REL) ------------------------------------------------
-Purchase cost: {definition: "Sum of the priced items: motors, propellers, ESCs, battery, cables, frame and avionics; items without a price are left out and listed.", unit: USD, model: MIC-COST}
-Cost per flight hour: {definition: "Wear cost of one flight (battery, motors, propellers) divided by the flight time at V1.", unit: USD/h, model: MIC-COST}
+Purchase cost: {definition: "Sum of the priced items: motors, propellers, ESCs, battery, cables, frame and avionics; items without a price are left out and listed.", unit: EUR, model: MIC-COST}
+Cost per flight hour: {definition: "Wear cost of one flight (battery, motors, propellers) divided by the flight time at V1.", unit: EUR/h, model: MIC-COST}
 Motor-out T/W (worst): {definition: "Smallest remaining thrust-to-weight over the lift motors stopped one at a time; 0 when hover cannot be balanced without one of them (shown in red).", model: MIC-REL}
 category: {definition: "Cost category: motors, propellers, ESCs, battery, cables, frame, avionics.", model: MIC-COST}
 item: {definition: "Priced component (database id, ESC model, wire gauge...).", model: MIC-COST}
 amount: {definition: "Number of items; Wh of nominal energy for the battery; metres of conductor for the cables.", model: MIC-COST}
-unit price (USD): {definition: "Price of one item (per Wh for the battery, per metre for a cable).", unit: USD, model: MIC-COST}
-total (USD): {definition: "Quantity × unit price; empty when the item has no price.", unit: USD, model: MIC-COST}
+unit price (EUR): {definition: "Price of one item (per Wh for the battery, per metre for a cable).", unit: EUR, model: MIC-COST}
+total (EUR): {definition: "Quantity × unit price; empty when the item has no price.", unit: EUR, model: MIC-COST}
 price status: {definition: "verified: read on the product page; search: read in a search result of that page; estimate: database propeller of the same diameter; entered: project; missing: no price.", model: MIC-COST}
 price source: {definition: "Page the price was copied from (data/prices.yaml, retrieved 2026-10-18), or the project.", model: MIC-COST}
 wear item: {definition: "Component worn by the flights: battery (cycle life), motors (life in hours), propellers (flights between replacements).", model: MIC-COST}
-per flight (USD): {definition: "Wear cost of one flight: battery price / cycles, motor price × flight time / motor life, propeller price / flights.", unit: USD, model: MIC-COST}
-per flight hour (USD): {definition: "Wear cost per flight hour: per-flight cost / flight time.", unit: USD/h, model: MIC-COST}
+per flight (EUR): {definition: "Wear cost of one flight: battery price / cycles, motor price × flight time / motor life, propeller price / flights.", unit: EUR, model: MIC-COST}
+per flight hour (EUR): {definition: "Wear cost per flight hour: per-flight cost / flight time.", unit: EUR/h, model: MIC-COST}
 motor stopped: {definition: "Lift motor assumed stopped (motor number).", model: MIC-REL}
 hover survives: {definition: "The other lift motors balance the weight, pitch, roll (and yaw unless a motor tilts) within their maximum thrust.", model: MIC-REL}
 remaining T/W: {definition: "Thrust-to-weight left with the motor stopped: 1 / max(T_i / T_max,i) of the balanced thrust split; 0 when no balance exists.", model: MIC-REL}
 why: {definition: "Reason of the motor-out result.", model: MIC-REL}
-price (USD): {definition: "Price axis.", unit: USD, model: MIC-COST}
+price (EUR): {definition: "Price axis.", unit: EUR, model: MIC-COST}
 
 # --- calibration of the two-phase model (MIC-CAL-REF) ----------------------------------------
 model before (W): {definition: "Battery power of the model at the measured point before the calibration.", unit: W, model: MIC-CAL-REF}

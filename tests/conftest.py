@@ -29,6 +29,15 @@ requires_excel = pytest.mark.skipif(
 )
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _predimrc_cache(tmp_path_factory):
+    """The PredimRC evaluations of the tests are cached in a file of their own."""
+    mp = pytest.MonkeyPatch()
+    mp.setenv("PREDIMRC_CACHE", str(tmp_path_factory.mktemp("cache") / "predimrc.h5"))
+    yield
+    mp.undo()
+
+
 @pytest.fixture(scope="session")
 def predimrc():
     """One PredimRC session shared by the slow tests."""

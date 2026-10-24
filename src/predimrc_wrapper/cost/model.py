@@ -1,7 +1,8 @@
 """Purchase cost and cost of use (REQ-COST-001, REQ-COST-002, MIC-COST).
 
-Purchase cost: Σ items, each priced from ``data/prices.yaml`` (with its source) or an override
-of the project (``cost.overrides``):
+Purchase cost in euros: Σ items, each priced from ``data/prices.yaml`` (with its source, read in
+USD and converted with the ECB rate of the file, or ``cost.usd_per_eur``) or an override of the
+project (``cost.overrides``, in euros):
 
 - motors: one per motor slot, price of the motor id;
 - propellers: one per motor, price of the database propeller of its unit type; a propeller given
@@ -37,6 +38,7 @@ if TYPE_CHECKING:
 
 DEFAULT_CYCLES = {"lipo": 300, "li-ion": 500}
 ESC_MARGIN = 1.25
+CURRENCY = "EUR"
 
 
 @dataclass
@@ -106,6 +108,7 @@ def cost(
     spec = project.cost or CostSpec()
     prices = default_prices()
     over = spec.overrides
+    usd_per_eur = spec.usd_per_eur or prices.usd_per_eur
     items: list[CostItem] = []
 
     def priced(category, item, quantity, key, record):
@@ -122,7 +125,12 @@ def cost(
         else:
             items.append(
                 CostItem(
-                    category, item, quantity, record.price, record.source, record.status
+                    category,
+                    item,
+                    quantity,
+                    record.price / usd_per_eur,
+                    record.source,
+                    record.status,
                 )
             )
 
@@ -167,7 +175,7 @@ def cost(
                 "propellers",
                 f"propeller {prop} in (priced as {p_id})",
                 n,
-                record.price,
+                record.price / usd_per_eur,
                 record.source,
                 "estimate",
             )
@@ -255,4 +263,4 @@ def cost(
         "motors": totals.get("motors", 0.0) * hours / spec.motor_life_h,
         "propellers": totals.get("propellers", 0.0) / spec.propeller_flights,
     }
-    return CostResult(items, prices.currency, flight_time_s, per_flight)
+    return CostResult(items, CURRENCY, flight_time_s, per_flight)

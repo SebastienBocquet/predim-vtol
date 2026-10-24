@@ -137,3 +137,25 @@ def test_charts_units_and_range():
     for fig in (cv.power_figure(r), cv.palier_figure(r)):
         xs = np.concatenate([np.asarray(t.x, dtype=float) for t in fig.data])
         assert np.nanmax(xs) <= limit + 1e-9
+
+
+def test_cruise_tab_shows_the_predimrc_stability_with_its_descriptions():
+    pytest.importorskip("plotly")
+    from predimrc_wrapper.ui import cruise_view as cv  # noqa: PLC0415
+
+    _, r = _solve("tiltrotor")
+    rows = {row["quantity"]: row for row in cv.stability_rows(r)}
+    assert list(rows) == [
+        "Centrage (% corde moyenne)",
+        "Centrage (mm)",
+        "Foyer (% corde moyenne)",
+        "Foyer (mm)",
+        "Marge statique (%)",
+        "Volume de stab",
+        "Calage stab (°)",
+        "Vé longi. (°)",
+    ]
+    assert rows["Foyer (mm)"]["value"] == round(r.aero_results.neutral_point_mm, 1)
+    assert rows["Volume de stab"]["value"] == "-"  # not given by the stub backend
+    assert rows["Vé longi. (°)"]["description"] == "Angle entre l'aile et le stab"
+    assert all(row["description"] for row in rows.values())
