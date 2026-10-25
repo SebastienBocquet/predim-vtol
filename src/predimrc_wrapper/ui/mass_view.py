@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 
 def mass_rows(aircraft: AircraftModel) -> list[dict]:
-    """Every mass of the budget: user items, motors, propellers, ESCs, cables, battery."""
+    """Every mass of the budget: user items, motors, propellers, ESCs (separate and 4-in-1), cables, battery."""
     from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
 
     project = aircraft.project
@@ -25,34 +25,64 @@ def mass_rows(aircraft: AircraftModel) -> list[dict]:
         for i in project.mass_items
     ]
     counts: dict[str, int] = {}
+    separate: dict[str, int] = {}
     for m in project.motors:  # a tilting motor counts once
         counts[m.unit] = counts.get(m.unit, 0) + 1
+        if not project.on_four_in_one(m):
+            separate[m.unit] = separate.get(m.unit, 0) + 1
     for name, n in counts.items():
         spec = project.propulsion_units[name]
         record = aircraft.db.motor(spec.motor_id)
-        for component, item, unit_g, origin in (
+        for component, item, count, unit_g, origin in (
             (
                 "motor",
                 spec.motor_id,
-                1000.0 * record.mass_kg,
-                f"data sheet ({record.source})",
+                n,
+                1000.0 * record.mass_kg
+                if spec.motor_mass_g is None
+                else spec.motor_mass_g,
+                f"data sheet ({record.source})"
+                if spec.motor_mass_g in (None, round(1000.0 * record.mass_kg, 3))
+                else "entered (unit type)",
             ),
             (
                 "propeller",
                 spec.propeller_id or f"{spec.prop_diameter_in:g} in",
+                n,
                 spec.prop_mass_g,
                 "entered (unit type)",
             ),
-            ("ESC", f"ESC of '{name}'", spec.esc_mass_g, "entered (unit type)"),
+            (
+                "ESC",
+                f"separate ESC of '{name}'",
+                separate.get(name, 0),
+                spec.esc_mass_g,
+                "entered (unit type)",
+            ),
         ):
+            if count == 0:  # every motor of the type on the 4-in-1 board
+                continue
             rows.append({
                 "component": component,
                 "item": f"{item} — unit type '{name}'",
-                "count": n,
+                "count": count,
                 "unit mass (g)": round(unit_g, 1),
-                "mass (g)": round(n * unit_g, 1),
+                "mass (g)": round(count * unit_g, 1),
                 "mass from": origin,
             })
+    if project.wiring is not None and project.wiring.lift_esc == "four_in_one":
+        board_g = project.wiring.four_in_one_mass_g
+        driven = [
+            i + 1 for i, m in enumerate(project.motors) if project.on_four_in_one(m)
+        ]
+        rows.append({
+            "component": "ESC",
+            "item": f"4-in-1 ESC board — motors {', '.join(map(str, driven))}",
+            "count": 1,
+            "unit mass (g)": round(board_g, 1),
+            "mass (g)": round(board_g, 1),
+            "mass from": "entered (Power chain tab)",
+        })
     wiring_g = 1000.0 * wiring_mass_kg(project)
     rows.append({
         "component": "cables",

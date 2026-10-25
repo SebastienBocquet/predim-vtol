@@ -88,7 +88,7 @@ def test_override_replaces_the_database_price():
 
 def test_four_in_one_is_one_board_for_the_lift_motors():
     project = Project.template("quadplane").with_overrides({
-        "wiring": {"lift_esc": "four_in_one"}
+        "wiring": {"lift_esc": "four_in_one", "four_in_one_mass_g": 15.0}
     })
     escs = [
         i for i in cost(AircraftModel(project), 1200.0).items if i.category == "ESCs"

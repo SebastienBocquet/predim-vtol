@@ -182,6 +182,22 @@ def _column_config(
     return config
 
 
+def editor_base(st, key: str, generation: int, build) -> Any:
+    """The table first given to the data editor ``key``, the same at every rerun.
+
+    The editor keeps its edits as changes to the table it was first given: giving it the
+    edited rows back at the next rerun applies them twice or drops them (a value then had to
+    be entered several times). Data changed elsewhere must come with a new key.
+    """
+    bases = st.session_state.setdefault("_editor_bases", {})
+    if key not in bases:
+        # Tables of the previous projects are forgotten.
+        for old in [k for k in bases if not k.startswith(f"{generation}:")]:
+            del bases[old]
+        bases[key] = build()
+    return bases[key]
+
+
 def render_items(
     st,
     item_cls: type[BaseModel],
@@ -195,24 +211,21 @@ def render_items(
     """A list of models edited as one table; ``options`` gives the choices of text columns."""
     import pandas as pd  # noqa: PLC0415
 
+    key = _key(path, generation) + key_suffix
     columns = list(item_cls.model_fields)
-    frame = pd.DataFrame(
-        [{c: v.get(c) for c in columns} for v in values], columns=columns
-    )
     scaled = {n: KMH_PER_M_S for n in columns if is_airspeed(n)}
-    for name, info in item_cls.model_fields.items():
-        ann, _ = unwrap_optional(info.annotation)
-        if not (ann in (int, float, bool) or get_origin(ann) is Literal):
-            frame[name] = frame[name].map(lambda v: None if _empty(v) else str(v))
-        elif name in scaled:
-            frame[name] = frame[name].astype(float) * scaled[name]
     st.caption(
         "Add a row with ＋ at the bottom; delete rows by ticking them in the left column, then the bin icon "
         "at the top right of the table."
     )
     edited = st.data_editor(
-        frame,
-        key=_key(path, generation) + key_suffix,
+        editor_base(
+            st,
+            key,
+            generation,
+            lambda: _items_frame(pd, item_cls, values, columns, scaled),
+        ),
+        key=key,
         num_rows="dynamic",
         hide_index=False,
         column_config=_column_config(st, item_cls, options, path),
@@ -225,6 +238,19 @@ def render_items(
             if not _empty(r.get(name)):
                 r[name] = float(r[name]) / factor
     return rows_to_items(records, item_cls)
+
+
+def _items_frame(pd, item_cls, values, columns, scaled):
+    frame = pd.DataFrame(
+        [{c: v.get(c) for c in columns} for v in values], columns=columns
+    )
+    for name, info in item_cls.model_fields.items():
+        ann, _ = unwrap_optional(info.annotation)
+        if not (ann in (int, float, bool) or get_origin(ann) is Literal):
+            frame[name] = frame[name].map(lambda v: None if _empty(v) else str(v))
+        elif name in scaled:
+            frame[name] = frame[name].astype(float) * scaled[name]
+    return frame
 
 
 def _render_panels(

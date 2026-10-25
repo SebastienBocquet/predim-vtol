@@ -80,6 +80,22 @@ class MotorHover:
     pitch_in: float = float("nan")
     voltage_v: float = float("nan")
     """Bus voltage at which the surrogate was evaluated (V)."""
+    safety_thrust_n: float = float("nan")
+    """Thrust with the safety factor: T/W_min · share · m·g (/ sin θ for a tilted motor) (N)."""
+    max_thrust_n: float = float("nan")
+    """Full-throttle thrust of the motor model at the nominal voltage (N)."""
+    test_max_thrust_n: float = float("nan")
+    """Largest thrust of the tested pair (N), NaN without data."""
+
+    @property
+    def safety_margin(self) -> float:
+        """T_full-throttle / T_safety − 1: power, current and voltage limits at T/W_min."""
+        return self.max_thrust_n / self.safety_thrust_n - 1.0
+
+    @property
+    def safety_test_margin(self) -> float:
+        """1 − T_safety / T_max of the tested pair (NaN without data)."""
+        return 1.0 - self.safety_thrust_n / self.test_max_thrust_n
 
 
 @dataclass
@@ -332,6 +348,7 @@ class TwoPhaseEvaluation(CompositeModel):
         tests = default_tests()
         u_bus = ac.battery.open_circuit_voltage
         chain = None
+        full_throttle: dict[str, float] = {}
         for _ in range(2):  # surrogate at the bus voltage under load, updated once
             motors = []
             for (i, slot), f in zip(
@@ -347,8 +364,14 @@ class TwoPhaseEvaluation(CompositeModel):
                     pitch_in=p_in,
                 )
                 thrust = f * weight
+                safety = self.p.min_thrust_to_weight * f * ac.total_mass_kg * GRAVITY
                 if tilt_deg is not None and slot.role == "tilt":
                     thrust /= np.sin(np.radians(tilt_deg))
+                    safety /= np.sin(np.radians(tilt_deg))
+                if slot.unit not in full_throttle:
+                    full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(
+                        ac.rho, ac.battery.open_circuit_voltage
+                    )
                 p = model.predict(thrust, u_bus, ac.rho)
                 k_c = 1.0
                 if climb_speed_m_s > 0:
@@ -360,7 +383,7 @@ class TwoPhaseEvaluation(CompositeModel):
                 record = ac.db.motor(motor_id)
                 k_h = ac.project.mission.hover_power_factor  # calibration, 1 by default
                 power = k_h * k_c * float(p.power_w[0])
-                eta = ac.project.propulsion_units[slot.unit].esc_efficiency
+                eta = ac.project.esc_efficiency(slot)
                 motor_in = power * eta if measured_at == "esc_input" else power
                 current = _motor_current(
                     motor_in, float(p.rpm[0]), record.kv, record.r_m
@@ -399,6 +422,9 @@ class TwoPhaseEvaluation(CompositeModel):
                         d_in,
                         p_in,
                         u_bus,
+                        safety,
+                        full_throttle[slot.unit],
+                        t_max,
                     )
                 )
             chain = PowerChain.from_project(ac.project, ac.battery).evaluate({

@@ -11,6 +11,8 @@ import plotly.graph_objects as go
 from predimrc_wrapper.ui import units
 
 if TYPE_CHECKING:
+    import pandas as pd
+
     from predimrc_wrapper.mission.two_phase import MotorHover
     from predimrc_wrapper.mission.two_phase import TwoPhaseResult
 
@@ -173,3 +175,19 @@ def validation_rows() -> tuple[dict, list[dict]]:
         for g, v in r.per_pair.items()
     ]
     return summary, rows
+
+
+def typed_test_rows(frame: pd.DataFrame, voltage_v: float) -> tuple[list[str], list[list]]:
+    """Columns and rows of a test from the table typed in the GUI.
+
+    Empty rows are dropped, columns without any value too, and an empty power is the
+    voltage (of the row, else of the table) times the current.
+    """
+    rows = frame.dropna(how="all")
+    power = rows["voltage_v"].fillna(voltage_v) * rows["current_a"]
+    rows = rows.assign(power_w=rows["power_w"].fillna(power))
+    columns = [c for c in rows.columns if rows[c].notna().any()]
+    return columns, [
+        [None if np.isnan(v) else float(v) for v in row]
+        for row in rows[columns].itertuples(index=False)
+    ]

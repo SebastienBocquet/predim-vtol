@@ -74,7 +74,9 @@ def test_drag_tab_add_fill_remove():
     assert sources[0].items() >= {"name": "body part", "kind": "body_part"}.items()
     at.number_input(key="0.0:drag_sources.0.frontal_area_dm2").set_value(0.8).run()
     assert at.session_state["app"].data["drag_sources"][0]["frontal_area_dm2"] == 0.8
-    next(b for b in at.button if b.label == "Remove").click().run()
+    next(
+        b for b in at.button if (b.key or "").endswith("drag_sources.0.remove")
+    ).click().run()
     assert not at.exception, at.exception
     assert at.session_state["app"].data["drag_sources"] == []
 
@@ -229,3 +231,85 @@ def test_gui_backend_from_several_threads(reference_case, tmp_path, caplog):
     assert again.v_min == first.v_min
     _in_thread(backend.close)
     assert "cleanly" not in caplog.text
+
+
+class FakeSession:
+    def __init__(self, profile):
+        self.profile, self.alive, self.closed = profile, True, 0
+
+    def is_alive(self):
+        return self.alive
+
+    def close(self):
+        self.closed += 1
+
+
+def test_gui_session_released_like_a_context_manager(monkeypatch):
+    pytest.importorskip("streamlit")
+    from predimrc_wrapper import aero_cache  # noqa: PLC0415
+    from predimrc_wrapper.ui import session  # noqa: PLC0415
+
+    monkeypatch.setattr(aero_cache, "open_backend", lambda p, f: FakeSession(p))
+    session.predimrc_session.clear()
+    first = session.predimrc_session("SD7003", "f")
+    assert session.predimrc_session("SD7003", "f") is first  # kept between reruns
+    # Another profile: one Excel at a time, the previous one is closed.
+    other = session.predimrc_session("MH32", "f")
+    assert first.closed == 1
+    # Excel closed outside: a new session, the dead one released.
+    other.alive = False
+    third = session.predimrc_session("MH32", "f")
+    assert third is not other
+    assert other.closed == 1
+    session.predimrc_session.clear()
+    assert third.closed == 1
+
+
+def _units_data():
+    return {
+        "propulsion_units": {"front": {"motor_id": "a"}, "rear": {"motor_id": "b"}},
+        "motors": [{"unit": "front"}, {"unit": "rear"}, {"unit": "front"}],
+    }
+
+
+def test_rename_unit_renames_its_motors_and_keeps_the_order():
+    from predimrc_wrapper.ui import state  # noqa: PLC0415
+
+    data = _units_data()
+    state.rename_unit(data, "front", " nose ")
+    assert list(data["propulsion_units"]) == ["nose", "rear"]
+    assert [m["unit"] for m in data["motors"]] == ["nose", "rear", "nose"]
+    with pytest.raises(ValueError, match="exists"):
+        state.rename_unit(data, "nose", "rear")
+    with pytest.raises(ValueError, match="empty"):
+        state.rename_unit(data, "nose", "  ")
+
+
+def test_remove_unit_moves_its_motors_to_the_replacement():
+    from predimrc_wrapper.ui import state  # noqa: PLC0415
+
+    data = _units_data()
+    with pytest.raises(ValueError, match="choose"):
+        state.remove_unit(data, "front")
+    state.remove_unit(data, "front", "rear")
+    assert list(data["propulsion_units"]) == ["rear"]
+    assert [m["unit"] for m in data["motors"]] == ["rear"] * 3
+    with pytest.raises(ValueError, match="last"):
+        state.remove_unit(data, "rear")
+
+
+def test_gui_rename_a_unit_type():
+    pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    at = AppTest.from_file(str(APP), default_timeout=120).run()
+    assert not at.exception, at.exception
+    data = at.session_state["app"].data
+    old = next(iter(data["propulsion_units"]))
+    at.text_input(key=f"0:rename_unit.{old}").set_value("main").run()
+    next(b for b in at.button if b.key == f"0:rename_unit_go.{old}").click().run()
+    assert not at.exception, at.exception
+    data = at.session_state["app"].data
+    assert "main" in data["propulsion_units"]
+    assert old not in data["propulsion_units"]
+    assert {m["unit"] for m in data["motors"]} == {"main"}

@@ -11,12 +11,12 @@ Range: {definition: "Distance flown in cruise at the target speed: V × cruise t
 Hover power (battery): {definition: "Power drawn from the cells in hover: sum of the motor powers (surrogate) plus chain losses and avionics, ± its standard deviation.", unit: W, symbol: P_h, model: MIC-MIS-TWO}
 Cruise power (battery): {definition: "Power drawn from the cells in cruise at the target speed: propeller, motor, chain and avionics included.", unit: W, symbol: P_c, model: MIC-MIS-TWO}
 Aerodynamic power: {definition: "Drag × speed at the target speed: PredimRC imposed-speed value plus the drag sources (times the drag factor).", unit: W, symbol: D·V, model: MIC-MIS-TWO}
-Margin motor power: {definition: "Worst 1 − P / P_max over the motors in hover and cruise (≥ 0 acceptable).", model: MIC-MIS-TWO}
-Margin motor current: {definition: "Worst 1 − I_motor / I_max over the motors in hover and cruise (≥ 0 acceptable).", model: MIC-MIS-TWO}
-Margin hover thrust within test data: {definition: "Worst 1 − T / T_max,test over the lift motors in hover, climb and transition: how far the operating thrust is from the largest thrust measured in the test table; negative means the surrogate extrapolates beyond the data (NaN without data). Data coverage, not control.", model: MIC-MIS-TWO}
-Margin thrust-to-weight (control): {definition: "(T/W reachable at full throttle by the lift motors, motor model at the nominal voltage, keeping the hover split) / T/W_min − 1: the control authority left in hover (≥ 0 acceptable).", model: MIC-MIS-TWO}
-Margin transition (tilting motors): {definition: "Worst min(power margin, current margin) of the motors during the transition, the tilting motors giving F / sin θ (NaN without transition).", model: MIC-MIS-TWO}
-Margin battery c: {definition: "1 − battery current / maximum continuous current (C rate) at the most demanding phase.", model: MIC-PROP-BAT}
+Margin motor power: {definition: "Worst 1 − P / P_max over the motors in hover, climb and cruise (≥ 0 acceptable). Tilt not included: the transition, tilting motors at F / sin θ, has its own margin (Margin transition).", model: MIC-MIS-TWO}
+Margin motor current: {definition: "Worst 1 − I_motor / I_max over the motors in hover, climb and cruise (≥ 0 acceptable). Tilt not included: see Margin transition.", model: MIC-MIS-TWO}
+Margin hover thrust within test data: {definition: "Worst 1 − T / T_max,test over the lift motors in hover, climb and transition (tilt included: the tilting motors at F / sin θ): how far the operating thrust is from the largest thrust measured in the test table; negative means the surrogate extrapolates beyond the data (NaN without data). Data coverage, not control.", model: MIC-MIS-TWO}
+Margin thrust-to-weight (control): {definition: "(T/W reachable at full throttle by the lift motors, motor model at the nominal voltage, keeping the hover split) / T/W_min − 1: the control authority left in hover (≥ 0 acceptable). Tilt not included: all motors vertical, and the full-throttle thrust comes from the motor model (current, power, voltage limits), not from the test tables, so it can be negative while every motor shows a positive power or current margin at its hover thrust. Per motor: the 'margin with T/W min (motor limits)' column of the hover table.", model: MIC-MIS-TWO}
+Margin transition (tilting motors): {definition: "Worst min(power margin, current margin) of the motors during the transition, the tilting motors giving F / sin θ (tilt included; NaN without transition). These motors are the transition rows of the hover table in Results.", model: MIC-MIS-TWO}
+Margin battery c: {definition: "1 − battery current / maximum continuous current (C rate) at the most demanding phase, transition included (tilt included).", model: MIC-PROP-BAT}
 Margin mass: {definition: "1 − total mass / maximum take-off mass (NaN when no maximum is set).", model: MIC-CFG-MASS}
 Margin voltage: {definition: "1 − motor voltage / (maximum duty × battery voltage), scenario mode.", model: MIC-MIS-SEG}
 Total mass: {definition: "Sum of the mass items, propulsion units and battery.", unit: kg, symbol: m, model: MIC-CFG-MASS}
@@ -38,8 +38,12 @@ power (W): {definition: "Electric power of the motor at its thrust, at the measu
 measured at: {definition: "Electrical point where the test power is measured: motor_input (ESC and cables added by the chain) or esc_input (table names its ESC).", model: MIC-PROP-CHAIN}
 motor current (A): {definition: "Motor (phase-side) current, from R·I² + (ω/Kv)·I − P = 0; larger than the supply current at part throttle.", unit: A, model: MIC-PROP-MOT}
 rpm: {definition: "Rotation speed of the propeller.", unit: rpm}
-power margin: {definition: "1 − P / P_max of the motor.", model: MIC-PROP-MOT}
-thrust margin: {definition: "1 − T / T_max of the tested pair (largest thrust of its table).", model: MIC-PROP-SUR}
+power margin: {definition: "1 − P / P_max of the motor at the thrust of its row (a transition row: tilting motor at F / sin θ). No safety factor: see the 'with T/W min' columns.", model: MIC-PROP-MOT}
+current margin: {definition: "1 − I_motor / I_max of the motor at the thrust of its row (a transition row: tilting motor at F / sin θ). No safety factor: see the 'with T/W min' columns.", model: MIC-PROP-MOT}
+thrust margin: {definition: "1 − T / T_max of the tested pair (largest thrust of its table), at the thrust of its row (a transition row: tilting motor at F / sin θ). No safety factor: see the 'with T/W min' columns.", model: MIC-PROP-SUR}
+thrust with T/W min: {definition: "Thrust the motor must deliver with the safety factor: T/W_min (Mission tab) × its share × m·g (a transition row: divided by sin θ).", unit: N (kg), model: MIC-MIS-TWO}
+margin with T/W min (motor limits): {definition: "T_full throttle / T_T/W min − 1: thrust left at full throttle (motor model at the nominal voltage: current, power and voltage limits) once the safety factor T/W_min is applied (≥ 0 acceptable). The worst hover row is the 'Margin thrust-to-weight (control)' tile.", model: MIC-MIS-TWO}
+margin with T/W min (test data): {definition: "1 − T_T/W min / T_max,test: the thrust with the safety factor T/W_min against the largest thrust measured for the pair; negative means that thrust is beyond the test data (NaN without data).", model: MIC-PROP-SUR}
 source: {definition: "Origin of the value: tested_pair (test data of this pair), untested_pair (predicted from similar pairs), physics_only (no data); or URL of a data source.", model: MIC-PROP-SUR}
 trusted: {definition: "The prediction is inside the trusted domain: σ_rel ≤ 5 % and thrust within the tested range.", model: MIC-PROP-SUR}
 why not: {definition: "Reason why a prediction is not trusted.", model: MIC-PROP-SUR}
@@ -191,7 +195,7 @@ gauge from: {definition: "entered (in the wiring inputs) or motor I_max (smalles
 efficiency: {definition: "Propeller × motor efficiency T·V / P_el (solid) and propeller efficiency T·V / P_shaft (dotted).", model: MIC-PROP-BEM}
 
 # --- power budget (MIC-MIS-BUDGET) ---------------------------------------------------------
-power sink: {definition: "Where the battery power goes: useful aerodynamic power (hover: ideal induced power Σ T^1.5/√(2ρA); cruise: D·V), propeller, motor, ESC, cables, battery internal resistance, avionics.", model: MIC-MIS-BUDGET}
+power sink: {definition: "Where the battery power goes: useful aerodynamic power (hover: ideal induced power Σ T^1.5/√(2ρA); cruise: D·V), propeller, motor, separate ESCs, 4-in-1 ESC board, cables, battery internal resistance, avionics.", model: MIC-MIS-BUDGET}
 hover (W): {definition: "Power of the sink in hover.", unit: W, model: MIC-MIS-BUDGET}
 hover (%): {definition: "Share of the battery chemical power taken by the sink in hover.", unit: "%", model: MIC-MIS-BUDGET}
 V1 (W): {definition: "Power of the sink in cruise at V1.", unit: W, model: MIC-MIS-BUDGET}

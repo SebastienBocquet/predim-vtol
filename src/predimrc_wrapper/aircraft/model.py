@@ -101,6 +101,7 @@ class AircraftModel:
         )
         self.drag_model = DragModel()
         self.battery = self._battery()
+        self._board_units: dict[str, PropulsionUnit] = {}
         self.units: dict[str, PropulsionUnit] = {
             name: self._unit(spec) for name, spec in project.propulsion_units.items()
         }
@@ -135,9 +136,14 @@ class AircraftModel:
             spec.chemistry, spec.n_series, spec.capacity_mah
         )
 
-    def _unit(self, spec: PropulsionSpec) -> PropulsionUnit:
+    def _unit(
+        self, spec: PropulsionSpec, esc_efficiency: float | None = None
+    ) -> PropulsionUnit:
+        motor = self.db.motor(spec.motor_id).model_parameters()
+        if spec.motor_mass_g is not None:
+            motor["mass_kg"] = spec.motor_mass_g / 1000.0
         return PropulsionUnit(
-            MotorModel.from_database(spec.motor_id, self.db),
+            MotorModel(**motor),
             MomentumPropeller(
                 diameter_m=spec.prop_diameter_in * INCH,
                 mass_kg=spec.prop_mass_g / 1000.0,
@@ -145,13 +151,22 @@ class AircraftModel:
                 static_ct=spec.static_ct,
                 cruise_efficiency=spec.cruise_efficiency,
             ),
-            esc_efficiency=spec.esc_efficiency,
-            esc_mass_kg=spec.esc_mass_g / 1000.0,
+            esc_efficiency=spec.esc_efficiency
+            if esc_efficiency is None
+            else esc_efficiency,
+            esc_mass_kg=(spec.esc_mass_g or 0.0) / 1000.0,
         )
 
     def unit_of(self, motor: MotorSlot) -> PropulsionUnit:
-        """The propulsion unit model of a motor."""
-        return self.units[motor.unit]
+        """The propulsion unit model of a motor, with the 4-in-1 efficiency when the board drives it."""
+        if not self.project.on_four_in_one(motor):
+            return self.units[motor.unit]
+        if motor.unit not in self._board_units:
+            self._board_units[motor.unit] = self._unit(
+                self.project.propulsion_units[motor.unit],
+                self.project.wiring.four_in_one_efficiency,
+            )
+        return self._board_units[motor.unit]
 
     def disc_area_m2(self, motor: MotorSlot) -> float:
         """Propeller disc area of a motor (m²)."""
@@ -165,15 +180,28 @@ class AircraftModel:
         p = self.project
         from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
 
+        four_in_one = (
+            [("lift propulsion", p.wiring.four_in_one_mass_g / 1000.0)]
+            if p.wiring is not None and p.wiring.lift_esc == "four_in_one"
+            else []
+        )
         return MassBudget().evaluate({
             "mass_items": [(i.category, i.mass_g / 1000.0) for i in p.mass_items]
             + [("wiring", wiring_mass_kg(p))],
             "propulsion_items": [
-                (ROLE_CATEGORY[m.role], self.units[m.unit].mass_kg) for m in p.motors
-            ],
+                (ROLE_CATEGORY[m.role], self._motor_mass_kg(m)) for m in p.motors
+            ]
+            + four_in_one,
             "battery_mass_kg": self.battery.p.mass_kg,
             "max_takeoff_mass_kg": p.max_takeoff_mass_kg,
         })
+
+    def _motor_mass_kg(self, motor: MotorSlot) -> float:
+        """Motor + propeller, + its ESC unless the 4-in-1 board drives it (kg)."""
+        unit = self.units[motor.unit]
+        if self.project.on_four_in_one(motor):
+            return unit.mass_kg - unit.p.esc_mass_kg
+        return unit.mass_kg
 
     # --- derived quantities --------------------------------------------------
 

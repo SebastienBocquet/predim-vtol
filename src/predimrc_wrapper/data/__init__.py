@@ -3,9 +3,11 @@
 from predimrc_wrapper.data.database import DatabaseError
 from predimrc_wrapper.data.database import MotorDatabase
 from predimrc_wrapper.data.database import MotorRecord
+from predimrc_wrapper.data.database import add_user_motor
 from predimrc_wrapper.data.database import default_database
 from predimrc_wrapper.data.propellers import PropellerDatabase
 from predimrc_wrapper.data.propellers import PropellerRecord
+from predimrc_wrapper.data.propellers import add_user_propeller
 from predimrc_wrapper.data.propellers import default_propellers
 from predimrc_wrapper.data.tests import TestDatabase
 from predimrc_wrapper.data.tests import ThrustTest
@@ -20,6 +22,8 @@ __all__ = [
     "PropellerRecord",
     "TestDatabase",
     "ThrustTest",
+    "add_user_motor",
+    "add_user_propeller",
     "default_database",
     "default_propellers",
     "default_tests",

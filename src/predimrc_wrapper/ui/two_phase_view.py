@@ -106,15 +106,42 @@ def hover_rows(r: TwoPhaseResult, point=None) -> list[dict]:
             "motor current (A)": round(m.motor_current_a, 2),
             "rpm": round(m.rpm),
             "power margin": round(m.power_margin, 2),
+            "current margin": round(m.current_margin, 2),
             "thrust margin": None
             if not np.isfinite(m.thrust_margin)
             else round(m.thrust_margin, 2),
+            "thrust with T/W min": units.thrust_text(m.safety_thrust_n),
+            "margin with T/W min (motor limits)": round(m.safety_margin, 2),
+            "margin with T/W min (test data)": None
+            if not np.isfinite(m.safety_test_margin)
+            else round(m.safety_test_margin, 2),
             "source": m.source,
             "trusted": m.trusted,
             "why not": m.reason,
         }
         for m in point.motors
     ]
+
+
+def hover_tilt_rows(
+    r: TwoPhaseResult, tilting: set[int], tilt_deg: float
+) -> list[dict]:
+    """Hover rows of every lift motor, then the transition rows of the tilting ones.
+
+    Args:
+        tilting: Indices in ``project.motors`` of the tilting motors.
+        tilt_deg: Transition tilt angle, shown in the phase column.
+    """
+    rows = [{"phase": "hover", **row} for row in hover_rows(r)]
+    if r.transition is not None:
+        rows.extend(
+            {"phase": f"transition, tilted {tilt_deg:g}°", **row}
+            for m, row in zip(
+                r.transition.motors, hover_rows(r, r.transition), strict=True
+            )
+            if m.index in tilting
+        )
+    return rows
 
 
 def cruise_rows(r: TwoPhaseResult) -> list[dict]:

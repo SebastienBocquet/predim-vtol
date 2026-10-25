@@ -1,7 +1,8 @@
 """Cables: resistance, AWG table and default lengths from the geometry (INC2-004).
 
 Positions follow the designer's rules (2026-10-14): the main cable starts downstream of
-the battery (its rear end); lift ESCs are one 4-in-1 board or separate ESCs; ESC
+the battery (its rear end); lift ESCs are one 4-in-1 board or separate ESCs, the cruise
+motors on the 4-in-1 board or on separate ESCs (``cruise_on_four_in_one``); ESC
 positions in % of the fuselage length (cruise ESC, 4-in-1 board, every ESC of a
 quadplane) or in % of the arm length (separate lift ESCs of a multicopter / tricopter).
 """
@@ -253,14 +254,15 @@ def default_layout(project: Project) -> WiringLayout:
     )
     branches = []
     for i, m in enumerate(project.motors):
-        if m.role == "cruise":
+        on_board = project.on_four_in_one(m)
+        if on_board:
+            ex, ey, origin = distribution, 0.0, "4-in-1 ESC at % of the fuselage"
+        elif m.role == "cruise":
             ex, ey, origin = (
                 at_fuselage(spec.cruise_esc_position_pct),
                 0.0,
                 "cruise ESC at % of the fuselage",
             )
-        elif four_in_one:
-            ex, ey, origin = distribution, 0.0, "4-in-1 ESC at % of the fuselage"
         elif wing_borne:
             ex, ey, origin = (
                 at_fuselage(spec.lift_esc_position_pct),
@@ -271,7 +273,7 @@ def default_layout(project: Project) -> WiringLayout:
             f = spec.lift_esc_position_pct / 100.0
             ex, ey, origin = f * m.x_mm, f * m.y_mm, "separate ESC at % of the arm"
         phase = path_length_mm(phase_path(project, i, ex, ey))
-        if four_in_one and m.role != "cruise":
+        if on_board:
             dc = 0.0
         elif wing_borne:
             dc = float(abs(ex - distribution) + abs(ey))  # along the fuselage

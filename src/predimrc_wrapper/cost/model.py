@@ -9,8 +9,9 @@ project (``cost.overrides``, in euros):
   only by its diameter and pitch is priced as the cheapest database propeller of the same
   diameter (status "estimate");
 - ESCs: separate ESCs, the cheapest rating ≥ 1.25 × I_max of the motor; with a 4-in-1 lift
-  ESC, one board whose rating ≥ 1.25 × the largest I_max of the lift motors, plus a separate
-  ESC per cruise motor;
+  ESC, one board whose rating ≥ 1.25 × the largest I_max of the motors it drives (the lift
+  motors, and the cruise motors when ``cruise_on_four_in_one``), plus a separate ESC per
+  other motor;
 - battery: price per Wh of the chemistry × nominal energy;
 - cables: main (2 conductors), DC (2 per ESC), phase (3 per motor), price per metre of the
   gauge, lengths and gauges of the power chain;
@@ -188,7 +189,7 @@ def cost(
     separate = [
         ESC_MARGIN * i
         for i, m in zip(i_max, project.motors, strict=True)
-        if not (four_in_one and m.role != "cruise")
+        if not project.on_four_in_one(m)
     ]
     chosen: dict[str, tuple[int, object]] = {}
     for need in separate:
@@ -199,7 +200,9 @@ def cost(
         priced("ESCs", name, n, "esc", esc)
     if four_in_one:
         need = ESC_MARGIN * max(
-            i for i, m in zip(i_max, project.motors, strict=True) if m.role != "cruise"
+            i
+            for i, m in zip(i_max, project.motors, strict=True)
+            if project.on_four_in_one(m)
         )
         esc = prices.esc(need, four_in_one=True)
         priced(

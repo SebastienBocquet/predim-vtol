@@ -51,6 +51,8 @@ def _displayed_labels() -> set[str]:
         for row in tpv.kpi_rows(r):
             labels.update(x[0] for x in row)
         rows(tpv.hover_rows(r)), rows(tpv.cruise_rows(r)), rows(tpv.chain_rows(r))
+        tilting = {i for i, m in enumerate(p.motors) if m.role == "tilt"}
+        rows(tpv.hover_tilt_rows(r, tilting, p.mission.transition_tilt_deg))
         for pair, motors in hv.pairs(r).items():
             fig = hv.pair_figure(r, pair)
             labels.update({fig.layout.xaxis.title.text, fig.layout.yaxis.title.text})
@@ -164,7 +166,9 @@ def test_power_chain_after_motors_removed():
     next(b for b in at.button if b.label == "Run").click().run()
     app = at.session_state["app"]
     app.data["motors"] = app.data["motors"][:3]
-    app.data.setdefault("wiring", {})["lift_esc"] = "four_in_one"
+    app.data.setdefault("wiring", {}).update(
+        lift_esc="four_in_one", four_in_one_mass_g=15.0
+    )
     app.generation += 1
     at.run()
     assert not at.exception, at.exception
@@ -239,3 +243,101 @@ def test_first_tab_mission_and_battery_after_feedback_2026_10_19():
     keys = [str(n.key) for n in at.number_input]
     assert any(k.endswith("battery.capacity_mah") for k in keys)
     assert not any(k.endswith("battery.mass_g") for k in keys)
+
+
+def test_hover_tilt_rows_add_the_tilting_motors_in_transition():
+    """Results hover table: every lift motor in hover, then only the tilting ones tilted."""
+    p = Project.template("tiltrotor").with_overrides({
+        "test_data": [{"kind": "hover", "battery_power_w": 280.0}]
+    })
+    r = evaluate_two_phase(p)
+    assert r.transition is not None
+    tilting = {i for i, m in enumerate(p.motors) if m.role == "tilt"}
+    rows = tpv.hover_tilt_rows(r, tilting, p.mission.transition_tilt_deg)
+    hover = [row for row in rows if row["phase"] == "hover"]
+    tilted = [row for row in rows if row["phase"] != "hover"]
+    assert len(hover) == len(r.hover.motors)
+    assert {row["motor"] - 1 for row in tilted} == tilting
+    by_motor = {row["motor"]: row for row in hover}
+    for row in tilted:
+        assert row["power (W)"] > by_motor[row["motor"]]["power (W)"]
+
+
+def test_custom_motor_added_and_chosen_for_a_unit_type(tmp_path, monkeypatch):
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    default_database.cache_clear()
+    try:
+        at = AppTest.from_file(str(APP), default_timeout=300).run()
+        app = at.session_state["app"]
+        unit = next(iter(app.data["propulsion_units"]))
+
+        def widget(kind, name):
+            return next(
+                w
+                for w in getattr(at, kind)
+                if str(w.key).endswith(f"custom_motor.{name}")
+            )
+
+        widget("text_input", "id").set_value("custom-2216-880kv")
+        widget("text_input", "manufacturer").set_value("Me")
+        widget("text_input", "range").set_value("custom")
+        widget("text_input", "source").set_value("own measurement")
+        widget("selectbox", "use_for").set_value(unit)
+        next(b for b in at.button if b.label == "Add the motor").click().run()
+        assert not at.exception, at.exception
+        assert "custom-2216-880kv" in default_database().records
+        assert (tmp_path / "motors.yaml").is_file()
+        data = at.session_state["app"].data
+        assert data["propulsion_units"][unit]["motor_id"] == "custom-2216-880kv"
+    finally:
+        default_database.cache_clear()
+
+
+def test_typed_test_rows_drop_empty_and_fill_power():
+    import pandas as pd  # noqa: PLC0415
+
+    nan = float("nan")
+    frame = pd.DataFrame(
+        [[50, nan, 2.0, nan, 300, nan], [nan] * 6, [100, 14.0, 8.0, 115.0, 800, nan]],
+        columns=[
+            "throttle_pct",
+            "voltage_v",
+            "current_a",
+            "power_w",
+            "thrust_g",
+            "rpm",
+        ],
+    )
+    columns, rows = hv.typed_test_rows(frame, 15.0)
+    assert columns == ["throttle_pct", "voltage_v", "current_a", "power_w", "thrust_g"]
+    assert rows == [[50.0, None, 2.0, 30.0, 300.0], [100.0, 14.0, 8.0, 115.0, 800.0]]
+
+
+def test_propeller_and_test_forms_of_the_hover_tab(tmp_path, monkeypatch):
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    from predimrc_wrapper.data import default_propellers  # noqa: PLC0415
+    from predimrc_wrapper.data import default_tests  # noqa: PLC0415
+
+    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    caches = (default_database, default_propellers, default_tests)
+    for c in caches:
+        c.cache_clear()
+    try:
+        at = AppTest.from_file(str(APP), default_timeout=300).run()
+        at.text_input(key="propeller_add.id").set_value("my-10x5")
+        at.number_input(key="propeller_add.p").set_value(5.0)
+        next(b for b in at.button if b.label == "Add the propeller").click().run()
+        assert not at.exception, at.exception
+        assert default_propellers().propeller("my-10x5").pitch_in == 5.0
+        assert "my-10x5" in at.selectbox(key="test_add.propeller").options
+        # The table is empty: the test is refused with a message, nothing is written.
+        at.button(key="test_add.go").click().run()
+        assert not at.exception, at.exception
+        assert any("missing" in e.value for e in at.error)
+        assert not (tmp_path / "thrust_tests").exists()
+    finally:
+        for c in caches:
+            c.cache_clear()

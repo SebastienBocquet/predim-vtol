@@ -8,7 +8,7 @@ Post-processing of a ``TwoPhaseResult``, no new physics:
 - motor: copper and no-load losses I²R_m + I₀·U_emf, U_emf = rpm / K_v (MIC-PROP-MOT); in
   cruise, motor input − shaft power;
 - propeller: shaft − useful (hover shaft = motor input − motor losses);
-- ESC, main / DC / phase cables, battery internal resistance: the segments of the power
+- separate ESCs, 4-in-1 ESC board, main / DC / phase cables, battery internal resistance: the segments of the power
   chain (MIC-PROP-CHAIN), the ESC loss included even when it is inside the test data;
 - avionics.
 
@@ -38,6 +38,7 @@ SINKS = (
     "propeller",
     "motor",
     "ESC",
+    "4-in-1 ESC",
     "main cable",
     "DC cables",
     "phase cables",
@@ -64,16 +65,16 @@ class PhaseBudget:
 
 
 def _chain_sinks(chain: ChainResult) -> dict[str, float]:
-    out = dict.fromkeys(
-        ("ESC", "main cable", "DC cables", "phase cables", "battery internal"), 0.0
-    )
+    out = dict.fromkeys(("main cable", "DC cables", "phase cables", "battery internal"), 0.0)
     for s in chain.segments:
         if s.name == "battery internal resistance":
             out["battery internal"] += s.loss_w
         elif s.name.startswith("main cable"):
             out["main cable"] += s.loss_w
+        elif s.name.endswith(": 4-in-1 ESC"):
+            out["4-in-1 ESC"] = out.get("4-in-1 ESC", 0.0) + s.loss_w
         elif s.name.endswith(": ESC"):
-            out["ESC"] += s.loss_w
+            out["ESC"] = out.get("ESC", 0.0) + s.loss_w
         elif s.name.endswith(": DC cable"):
             out["DC cables"] += s.loss_w
         elif s.name.endswith(": phase cables"):

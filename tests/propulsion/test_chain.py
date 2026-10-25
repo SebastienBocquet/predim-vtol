@@ -37,7 +37,7 @@ def test_tricopter_default_lengths():
         assert b.phase_length_mm == pytest.approx(150.0, abs=0.1)
     four = default_layout(
         Project.template("tricopter").with_overrides({
-            "wiring": {"lift_esc": "four_in_one"}
+            "wiring": {"lift_esc": "four_in_one", "four_in_one_mass_g": 15.0}
         })
     )
     assert all(

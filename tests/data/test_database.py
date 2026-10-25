@@ -6,6 +6,7 @@ import pytest
 
 from predimrc_wrapper.data import DatabaseError
 from predimrc_wrapper.data import MotorDatabase
+from predimrc_wrapper.data import add_user_motor
 from predimrc_wrapper.data import default_database
 
 
@@ -37,3 +38,55 @@ def test_entry_without_source_rejected(tmp_path):
     )
     with pytest.raises(DatabaseError, match="missing source"):
         MotorDatabase.load(path)
+
+
+CUSTOM = {
+    "id": "custom-2216-880kv",
+    "manufacturer": "Me",
+    "range": "custom",
+    "role": "lift",
+    "kv": 880,
+    "rm_mohm": 90,
+    "i0_a": 0.4,
+    "i_max_a": 20,
+    "p_max_w": 240,
+    "mass_g": 70,
+    "source": "own measurement",
+    "retrieved": "2026-10-25",
+    "status": "estimated",
+}
+
+
+@pytest.fixture
+def user_data(tmp_path, monkeypatch):
+    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    default_database.cache_clear()
+    yield tmp_path
+    default_database.cache_clear()
+
+
+def test_user_motor_added_and_merged(user_data):
+    record = add_user_motor(CUSTOM)
+    assert record.r_m == pytest.approx(0.09)
+    assert (user_data / "motors.yaml").is_file()
+    db = default_database()
+    assert db.motor("custom-2216-880kv").mass_kg == pytest.approx(0.07)
+    assert "custom-2216-880kv" in db.ids("lift")
+    assert "tmotor-mn2212-780kv" in db.records
+
+
+def test_user_motor_duplicate_or_incomplete_rejected(user_data):
+    add_user_motor(CUSTOM)
+    with pytest.raises(DatabaseError, match="already exists"):
+        add_user_motor(CUSTOM)
+    with pytest.raises(DatabaseError, match="already exists"):
+        add_user_motor({**CUSTOM, "id": "tmotor-mn2212-780kv"})
+    with pytest.raises(DatabaseError, match="missing kv"):
+        add_user_motor({**CUSTOM, "id": "other", "kv": None})
+
+
+def test_user_motor_provenance_optional(user_data):
+    computed = ("id", "role", "kv", "rm_mohm", "i0_a", "i_max_a", "p_max_w", "mass_g")
+    record = add_user_motor({k: CUSTOM[k] for k in computed})
+    assert (record.source, record.status) == ("user entry", "estimated")
+    assert default_database().motor(CUSTOM["id"]).kv == 880

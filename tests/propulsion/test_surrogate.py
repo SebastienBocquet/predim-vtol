@@ -17,8 +17,8 @@ from predimrc_wrapper.propulsion.surrogate import physics_mean
 
 def test_shipped_data_meet_the_guarantee():
     report = default_fit().validate()
-    assert report.n_points == 84
-    assert report.n_pairs == 8
+    assert report.n_points == 144
+    assert report.n_pairs == 17
     assert report.loo_mean_rel_err <= 0.03
     assert 0.90 <= report.loo_coverage_95 <= 0.99
     assert report.lopo_mean_rel_err <= 0.05

@@ -22,6 +22,9 @@ TERMS = """
   it is the 4-in-1 board; otherwise the wing spar station on the fuselage (winged aircraft) or the frame centre
   (multicopter).
 - **DC cables**: distribution point → each separate ESC (2 conductors per ESC). None with a 4-in-1 board.
+- **4-in-1 ESC**: one board for the lift motors, and for the cruise motor when *cruise on four in one* is set
+  (no separate cruise ESC: its mass and loss go to the board), 4 motors at most. Its mass and efficiency are entered
+  here; separate ESCs take the ESC mass and efficiency of their unit type.
 - **Phase cables**: ESC → motor (3 conductors). They carry the motor current, larger than the battery-side current at
   part throttle (the ESC lowers the voltage seen by the motor).
 - **Gauge (AWG)**: when not entered, the smallest wire whose current rating is at least 1.25 × the maximum current

@@ -1,4 +1,7 @@
-"""MVP motor database: loading and validation (REQ-DATA-001, REQ-DATA-003)."""
+"""Motor database: loading and validation (REQ-DATA-001, REQ-DATA-003).
+
+The shipped motors are merged with the user ones of ``<user data>/motors.yaml``.
+"""
 
 from __future__ import annotations
 
@@ -8,8 +11,14 @@ from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
 
 import yaml
+
+from predimrc_wrapper.data.user import user_data_dir
+
+USER_FILE = "motors.yaml"
+"""File of the user motors in the user data folder."""
 
 REQUIRED = (
     "id",
@@ -26,6 +35,15 @@ REQUIRED = (
     "retrieved",
     "status",
 )
+
+USER_DEFAULTS = {
+    "manufacturer": "",
+    "range": "",
+    "source": "user entry",
+    "retrieved": "",
+    "status": "estimated",
+}
+"""Values of the fields a user motor may leave out: no computation uses them."""
 
 
 class DatabaseError(ValueError):
@@ -70,9 +88,11 @@ class MotorRecord:
         }
 
 
-def _parse(raw: dict, origin: str) -> MotorRecord:
+def _parse(raw: dict, origin: str, user: bool = False) -> MotorRecord:
+    if user:
+        raw = {**USER_DEFAULTS, **{k: v for k, v in raw.items() if v not in (None, "")}}
     for key in REQUIRED:
-        if raw.get(key) in (None, ""):
+        if raw.get(key) in (None, "") and not (user and key in USER_DEFAULTS):
             msg = f"{origin}: {raw.get('id', '?')}: missing {key}"
             raise DatabaseError(msg)
     if raw["status"] not in ("verified", "estimated"):
@@ -100,7 +120,7 @@ def _parse(raw: dict, origin: str) -> MotorRecord:
 
 
 class MotorDatabase:
-    """The motors available to the projects.
+    """The motors available to the projects (shipped file merged with the user one).
 
     Args:
         records: The motors, by id.
@@ -111,24 +131,31 @@ class MotorDatabase:
 
     @classmethod
     def load(cls, path: Path | None = None) -> MotorDatabase:
-        """Load the shipped database, or another YAML file."""
+        """Load the shipped file then ``<user data>/motors.yaml``, or another YAML file."""
+        texts = []  # (origin, text, user file)
         if path is None:
-            text = (
+            texts.append((
+                "motors_mvp.yaml",
                 files("predimrc_wrapper.data")
                 .joinpath("motors_mvp.yaml")
-                .read_text(encoding="utf-8")
-            )
-            origin = "motors_mvp.yaml"
+                .read_text(encoding="utf-8"),
+                False,
+            ))
+            user = user_data_dir() / USER_FILE
+            if user.is_file():
+                texts.append((str(user), user.read_text(encoding="utf-8"), True))
         else:
-            text = Path(path).read_text(encoding="utf-8")
-            origin = str(path)
-        records = {}
-        for raw in yaml.safe_load(text) or []:
-            record = _parse(raw, origin)
-            if record.id in records:
-                msg = f"{origin}: duplicate id {record.id}"
-                raise DatabaseError(msg)
-            records[record.id] = record
+            texts.append((str(path), Path(path).read_text(encoding="utf-8"), False))
+        records: dict[str, MotorRecord] = {}
+        for origin, text, is_user in texts:
+            seen = set()
+            for raw in yaml.safe_load(text) or []:
+                record = _parse(raw, origin, user=is_user)
+                if record.id in seen:
+                    msg = f"{origin}: duplicate id {record.id}"
+                    raise DatabaseError(msg)
+                seen.add(record.id)
+                records[record.id] = record  # a user motor overrides a shipped one
         return cls(records)
 
     def motor(self, motor_id: str) -> MotorRecord:
@@ -153,5 +180,38 @@ class MotorDatabase:
 
 @cache
 def default_database() -> MotorDatabase:
-    """Return the shipped database (cached)."""
+    """Return the shipped and user motors (cached)."""
     return MotorDatabase.load()
+
+
+def add_user_motor(raw: dict[str, Any], path: Path | None = None) -> MotorRecord:
+    """Append a motor to the user file (``<user data>/motors.yaml`` by default).
+
+    Args:
+        raw: The motor in the units of the YAML files (``rm_mohm``, ``mass_g``...); the
+            fields of ``USER_DEFAULTS`` may be left out.
+        path: The user file.
+
+    Raises:
+        DatabaseError: When the motor is incomplete or its id already exists.
+    """
+    target = Path(path) if path is not None else user_data_dir() / USER_FILE
+    raw = {k: v for k, v in raw.items() if v not in (None, "")}
+    record = _parse(raw, "new motor", user=True)
+    existing = (
+        yaml.safe_load(target.read_text(encoding="utf-8")) or []
+        if target.is_file()
+        else []
+    )
+    if record.id in default_database().records or any(
+        m.get("id") == record.id for m in existing
+    ):
+        msg = f"The motor id '{record.id}' already exists"
+        raise DatabaseError(msg)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        yaml.safe_dump([*existing, raw], sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+    default_database.cache_clear()
+    return record

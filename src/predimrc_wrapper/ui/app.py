@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-import contextlib
 import sys
 import traceback
+from datetime import date
 from pathlib import Path
 
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 import yaml
@@ -32,10 +33,20 @@ from predimrc_wrapper.aircraft.project import WiringSpec
 from predimrc_wrapper.api import evaluate_two_phase
 from predimrc_wrapper.api import profiles_dir
 from predimrc_wrapper.calibration import __doc__ as calibration_doc
+from predimrc_wrapper.data import DatabaseError
+from predimrc_wrapper.data import add_user_motor
+from predimrc_wrapper.data import add_user_propeller
 from predimrc_wrapper.data import default_database
 from predimrc_wrapper.data import default_propellers
 from predimrc_wrapper.data import default_tests
+from predimrc_wrapper.data import user_data_dir
+from predimrc_wrapper.data.database import USER_FILE as USER_MOTOR_FILE
+from predimrc_wrapper.data.importers import add_user_test
+from predimrc_wrapper.data.importers import csv_table
 from predimrc_wrapper.data.prices import default_prices
+from predimrc_wrapper.data.propellers import USER_FILE as USER_PROPELLER_FILE
+from predimrc_wrapper.data.tests import COLUMNS as TEST_COLUMNS
+from predimrc_wrapper.data.tests import USER_FOLDER as USER_TEST_FOLDER
 from predimrc_wrapper.mission.power_budget import budget_rows
 from predimrc_wrapper.mission.power_budget import power_budget
 from predimrc_wrapper.settings import Settings
@@ -59,32 +70,11 @@ from predimrc_wrapper.ui import test_data_view as tdv
 from predimrc_wrapper.ui import two_phase_view as tpv
 from predimrc_wrapper.ui import units as un
 from predimrc_wrapper.ui.help import HelpRegistry
+from predimrc_wrapper.ui.session import backend_for
 
 st.set_page_config(page_title="PredimRC pre-sizing", layout="wide")
 HELP = HelpRegistry.default()
 forms.HELP = HELP.tooltip
-
-
-@st.cache_resource
-def predimrc_session(profile: str, folder: str):
-    """One PredimRC backend per profile and folder for the whole GUI: Excel in its own thread
-    (each rerun runs in a new thread, COM objects stay in theirs), behind the HDF5 cache."""
-    from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
-
-    return open_backend(profile, folder)
-
-
-def backend_for(project: Project):
-    """The PredimRC session of a quadplane, reopened when Excel was closed or disconnected."""
-    if project.architecture != "quadplane":
-        return None
-    session = predimrc_session(project.aero.profile, str(profiles_dir()))
-    if not session.is_alive():
-        with contextlib.suppress(Exception):
-            session.close()
-        predimrc_session.clear()
-        session = predimrc_session(project.aero.profile, str(profiles_dir()))
-    return session
 
 
 def table(rows: list[dict] | dict, **kwargs) -> None:
@@ -161,10 +151,13 @@ with st.sidebar:
         app.load(yaml.safe_load(upload.getvalue()), Path(upload.name))
         st.rerun()
     all_templates = user_templates.all_templates()
+    if "template.select" in st.session_state:
+        # A template just saved becomes the configuration (same data: nothing reloaded).
+        st.session_state["configuration"] = st.session_state.pop("template.select")
     if st.session_state.get("configuration") not in (None, *all_templates):
         st.session_state["configuration"] = None
     st.selectbox(
-        "Configuration (loads its template)",
+        "Start from a template",
         list(all_templates),
         format_func=all_templates.get,
         key="configuration",
@@ -180,19 +173,42 @@ with st.sidebar:
         st.caption(
             "A template is a complete project file: geometry, propulsion unit types, motors with "
             "their positions and tilt mask, booms, battery, masses, drag sources, wiring, mission, "
-            "sizing, test data. Saved templates appear in the Configuration list."
+            "sizing, test data. Saved templates appear in the list 'Start from a template' above, as "
+            "starting points for new projects. Not to be confused with **Save project file** "
+            "(bottom of the sidebar), which writes the project you are editing to a YAML file "
+            "of your choice, to reopen with 'Open a project file'."
+        )
+        configuration = st.session_state.get("configuration") or ""
+        default_template = (
+            configuration.removeprefix(user_templates.USER)
+            if configuration.startswith(user_templates.USER)
+            else data.get("name", "")
         )
         template_name = st.text_input(
             "Template name",
-            app.data.get("name", ""),
-            key=f"{app.generation}:template.name",
+            default_template,
+            key=f"{gen}:template.name:{default_template}",
+            help="Pre-filled with the current user template, else the project name.",
         )
-        overwrite = st.checkbox("Replace if it exists", key="template.overwrite")
-        if st.button("Save as template", key="template.save"):
+        try:
+            existing = user_templates.user_path(template_name)
+        except ValueError:
+            existing = None
+        exists = existing is not None and existing.exists()
+        if st.button(
+            f"Update template '{existing.stem}'" if exists else "Save as new template",
+            key="template.save",
+            help="Replaces the saved template with the current project."
+            if exists
+            else None,
+        ):
             try:
-                path = user_templates.save_user(app.data, template_name, overwrite)
-                # Rerun so that the Configuration list above shows the new template.
+                path = user_templates.save_user(
+                    app.data, template_name, overwrite=exists
+                )
+                # Rerun so that the template list above shows the new template.
                 st.session_state["template.saved"] = str(path)
+                st.session_state["template.select"] = user_templates.USER + path.stem
                 st.rerun()
             except (ValueError, FileExistsError) as error:
                 st.error(str(error))
@@ -323,10 +339,10 @@ with tabs[config_label]:
     left, right = st.columns([3, 2])
     with left:
         data["name"] = st.text_input(
-            "Configuration name *",
+            "Project name *",
             data.get("name", ""),
             key=f"{gen}:name",
-            help="Name of the configuration (title of this tab, project name).",
+            help="Name of the project (title of this tab, default file name).",
         )
         st.caption(
             f"Architecture **{architecture}** ({TEMPLATES.get(st.session_state.get('configuration'), 'project file')})."
@@ -410,9 +426,10 @@ with tabs[config_label]:
                 for m in motors_in
             ]
             layout_version = st.session_state.setdefault("layout_version", 0)
+            motors_key = f"{gen}:motors:{layout_version}"
             edited = st.data_editor(
-                rows,
-                key=f"{gen}:motors:{layout_version}",
+                forms.editor_base(st, motors_key, gen, lambda: rows),
+                key=motors_key,
                 num_rows="dynamic",
                 hide_index=False,
                 width="stretch",
@@ -570,7 +587,8 @@ with tabs[config_label]:
             "A propulsion unit type is one **motor + propeller + ESC** combination. Each motor of "
             "the table below uses one type, so the motors can differ (e.g. `front` with 12 in "
             "propellers, `rear` with 10 in). Add a type to give some motors another motor or "
-            "propeller; a type can be removed once no motor uses it."
+            "propeller. A type can be renamed (its motors follow) or removed (its motors take "
+            "the type you choose)."
         )
         only_in_range = bool(ranges) and st.checkbox(
             "Offer only the motors in the power range",
@@ -589,11 +607,17 @@ with tabs[config_label]:
                 None,
                 *default_propellers().ids(),
             ]
-        used = {m.get("unit") for m in data.get("motors") or []}
         columns = st.columns(max(1, min(3, len(units))))
         for i, name in enumerate(list(units)):
             with columns[i % len(columns)], st.container(border=True):
                 st.markdown(f"**{name}**")
+                motor_before = units[name].get("motor_id")
+                if units[name].get("motor_mass_g") is None and motor_before in db.ids():
+                    # Pre-filled with the database mass, editable (e.g. weighed motor).
+                    units[name] = {
+                        **units[name],
+                        "motor_mass_g": round(1000 * db.motor(motor_before).mass_kg, 1),
+                    }
                 units[name] = forms.render_model(
                     st,
                     PropulsionSpec,
@@ -603,12 +627,60 @@ with tabs[config_label]:
                     choices,
                     gen,
                 )
-                if name not in used and st.button(
-                    f"Remove '{name}'", key=f"{gen}:remove_unit.{name}"
-                ):
-                    units.pop(name)
+                motor_after = units[name].get("motor_id")
+                if motor_after != motor_before and motor_after in db.ids():
+                    # Another motor: its database mass replaces the pre-filled one.
+                    units[name]["motor_mass_g"] = round(
+                        1000 * db.motor(motor_after).mass_kg, 1
+                    )
                     data["propulsion_units"] = units
+                    app.generation += 1
                     st.rerun()
+                with st.expander(f"Rename or remove '{name}'"):
+                    new_name = st.text_input(
+                        "New name", name, key=f"{gen}:rename_unit.{name}"
+                    )
+                    others = [u for u in units if u != name]
+                    n_users = sum(
+                        m.get("unit") == name for m in data.get("motors") or []
+                    )
+                    replacement = (
+                        st.selectbox(
+                            f"Type of its {n_users} motor(s) once removed",
+                            others,
+                            key=f"{gen}:replace_unit.{name}",
+                        )
+                        if n_users and others
+                        else None
+                    )
+                    c1, c2 = st.columns(2)
+                    action = (
+                        "rename"
+                        if c1.button("Rename", key=f"{gen}:rename_unit_go.{name}")
+                        else "remove"
+                        if c2.button(
+                            "Remove",
+                            key=f"{gen}:remove_unit.{name}",
+                            disabled=not others,
+                            help=None if others else "The last type cannot be removed.",
+                        )
+                        else None
+                    )
+                    if action:
+                        data["propulsion_units"] = units
+                        try:
+                            if action == "rename":
+                                ui_state.rename_unit(data, name, new_name)
+                            else:
+                                ui_state.remove_unit(data, name, replacement)
+                        except ValueError as error:
+                            st.error(str(error))
+                        else:
+                            # The motors table shows the new names.
+                            st.session_state["layout_version"] = (
+                                st.session_state.get("layout_version", 0) + 1
+                            )
+                            st.rerun()
         c1, c2 = st.columns([3, 1])
         new_unit = c1.text_input(
             "Add a propulsion unit type: its name",
@@ -626,6 +698,121 @@ with tabs[config_label]:
             data["propulsion_units"] = units
             st.rerun()
         data["propulsion_units"] = units
+
+        with st.expander("Add a custom motor to the database"):
+            st.caption(
+                f"Saved in `{user_data_dir() / USER_MOTOR_FILE}`, merged with the shipped motors "
+                "and offered in the motor lists of the propulsion unit types (untick 'Offer only "
+                "the motors in the power range' if it is outside the range). Values from the data "
+                "sheet, in its units. Only the fields marked * are used by the computations."
+            )
+            with st.form(f"{gen}:custom_motor", clear_on_submit=False):
+                c1, c2, c3 = st.columns(3)
+                motor_id = c1.text_input(
+                    "id *",
+                    key=f"{gen}:custom_motor.id",
+                    placeholder="e.g. sunnysky-x2216-880kv",
+                )
+                manufacturer = c2.text_input(
+                    "Manufacturer", key=f"{gen}:custom_motor.manufacturer"
+                )
+                motor_range = c3.text_input(
+                    "Product line (range)",
+                    key=f"{gen}:custom_motor.range",
+                    placeholder="e.g. MN, AT",
+                )
+                c1, c2, c3 = st.columns(3)
+                role = c1.selectbox(
+                    "Role (data sheet)",
+                    ["lift", "cruise"],
+                    key=f"{gen}:custom_motor.role",
+                )
+                kv = c2.number_input(
+                    "Kv (rpm/V) *",
+                    key=f"{gen}:custom_motor.kv",
+                    min_value=1.0,
+                    value=900.0,
+                )
+                rm_mohm = c3.number_input(
+                    "Rm (mΩ) *",
+                    key=f"{gen}:custom_motor.rm_mohm",
+                    min_value=0.1,
+                    value=100.0,
+                )
+                c1, c2, c3 = st.columns(3)
+                i0_a = c1.number_input(
+                    "I0 (A) *",
+                    key=f"{gen}:custom_motor.i0_a",
+                    min_value=0.01,
+                    value=0.5,
+                )
+                i_max_a = c2.number_input(
+                    "Imax (A) *",
+                    key=f"{gen}:custom_motor.i_max_a",
+                    min_value=0.1,
+                    value=15.0,
+                )
+                p_max_w = c3.number_input(
+                    "Pmax (W) *",
+                    key=f"{gen}:custom_motor.p_max_w",
+                    min_value=1.0,
+                    value=200.0,
+                )
+                c1, c2, c3 = st.columns(3)
+                mass_g = c1.number_input(
+                    "Mass (g) *",
+                    key=f"{gen}:custom_motor.mass_g",
+                    min_value=0.1,
+                    value=60.0,
+                )
+                status = c2.selectbox(
+                    "Status",
+                    ["estimated", "verified"],
+                    key=f"{gen}:custom_motor.status",
+                    help="verified: copied from the source; estimated: otherwise.",
+                )
+                use_for = c3.selectbox(
+                    "Use it for the type",
+                    ["(none)", *units],
+                    key=f"{gen}:custom_motor.use_for",
+                    help="Optional.",
+                )
+                source = st.text_input(
+                    "Source",
+                    key=f"{gen}:custom_motor.source",
+                    placeholder="URL of the data sheet, or 'own measurement' (default: user entry)",
+                )
+                notes = st.text_input("Notes", key=f"{gen}:custom_motor.notes")
+                if st.form_submit_button("Add the motor"):
+                    try:
+                        add_user_motor({
+                            "id": motor_id.strip(),
+                            "manufacturer": manufacturer.strip(),
+                            "range": motor_range.strip(),
+                            "role": role,
+                            "kv": kv,
+                            "rm_mohm": rm_mohm,
+                            "i0_a": i0_a,
+                            "i_max_a": i_max_a,
+                            "p_max_w": p_max_w,
+                            "mass_g": mass_g,
+                            "source": source.strip(),
+                            "retrieved": date.today(),
+                            "status": status,
+                            "notes": notes.strip(),
+                        })
+                    except DatabaseError as error:
+                        st.error(str(error))
+                    else:
+                        if use_for in units:
+                            units[use_for] = {
+                                **units[use_for],
+                                "motor_id": motor_id.strip(),
+                                "motor_mass_g": mass_g,
+                            }
+                            data["propulsion_units"] = units
+                        app.generation += 1
+                        st.rerun()
 
         with st.expander("Motor pre-selection from a target mass range"):
             st.markdown(r"""
@@ -736,13 +923,12 @@ with tabs["Masses and battery"]:
             st, BatterySpec, battery, "battery", errors, {}, gen, skip=("mode", hidden)
         )
         # The other quantity is kept (hidden) so that switching back restores it.
-        if checked.project is not None:
-            st.info(mv.battery_text(AircraftModel(checked.project)))
         data["battery"] = {
             **({hidden: battery[hidden]} if battery.get(hidden) is not None else {}),
             **out,
             "mode": mode,
         }
+        battery_info = st.empty()
         info = Project.model_fields["max_takeoff_mass_kg"]
         data["max_takeoff_mass_kg"] = forms.render_field(
             st,
@@ -759,8 +945,11 @@ with tabs["Masses and battery"]:
         data["mass_items"] = forms.render_items(
             st, MassItem, data.get("mass_items") or [], "mass_items", errors, gen
         )
-        if checked.project is not None:
-            mass = AircraftModel(checked.project).mass
+        # Validated again here: the masses follow the edits of this very run, without Run.
+        current = ui_state.check(data)
+        if current.project is not None:
+            battery_info.info(mv.battery_text(AircraftModel(current.project)))
+            mass = AircraftModel(current.project).mass
             fig = go.Figure(
                 go.Bar(
                     x=[1000 * v for v in mass["breakdown"].values()],
@@ -776,7 +965,9 @@ with tabs["Masses and battery"]:
             )
             st.plotly_chart(fig, width="stretch")
             st.markdown("**Mass recap by component**")
-            table(mv.mass_rows(AircraftModel(checked.project)))
+            table(mv.mass_rows(AircraftModel(current.project)))
+        else:
+            st.info("The mass recap is drawn once the project is valid.")
 
 with tabs["Mission"]:
     left, right = st.columns(2)
@@ -979,7 +1170,9 @@ with tabs["Power chain"]:
             )
         )
         skip = ("overrides",) + (
-            ("cruise_esc_position_pct",) if architecture == "multicopter" else ()
+            ("cruise_esc_position_pct", "cruise_on_four_in_one")
+            if architecture == "multicopter"
+            else ()
         )
         wiring = forms.render_model(
             st,
@@ -1115,6 +1308,170 @@ with tabs["Hover"]:
             }
             for t in default_tests().records.values()
         ])
+    with st.expander("Add a propeller to the database (for a test or a unit type)"):
+        st.caption(
+            f"Saved in `{user_data_dir() / USER_PROPELLER_FILE}`, merged with the shipped "
+            "propellers. Only the fields marked * are used by the computations."
+        )
+        with st.form("propeller_add"):
+            c1, c2, c3, c4 = st.columns(4)
+            prop_id = c1.text_input(
+                "id *", key="propeller_add.id", placeholder="e.g. apc-10x4.5mr"
+            )
+            prop_d = c2.number_input(
+                "Diameter (in) *", min_value=1.0, value=10.0, key="propeller_add.d"
+            )
+            prop_p = c3.number_input(
+                "Pitch (in) *", min_value=0.5, value=4.5, key="propeller_add.p"
+            )
+            prop_blades = c4.number_input(
+                "Blades *", min_value=2, value=2, step=1, key="propeller_add.blades"
+            )
+            c1, c2, c3, c4 = st.columns(4)
+            prop_manufacturer = c1.text_input(
+                "Manufacturer", key="propeller_add.manufacturer"
+            )
+            prop_name = c2.text_input(
+                "Name", key="propeller_add.name", placeholder="default: the id"
+            )
+            prop_mass = c3.number_input(
+                "Mass (g)", min_value=0.0, value=None, key="propeller_add.mass"
+            )
+            prop_status = c4.selectbox(
+                "Status", ["estimated", "verified"], key="propeller_add.status"
+            )
+            prop_source = st.text_input(
+                "Source",
+                key="propeller_add.source",
+                placeholder="URL of the data sheet (default: user entry)",
+            )
+            if st.form_submit_button("Add the propeller"):
+                try:
+                    add_user_propeller({
+                        "id": prop_id.strip(),
+                        "manufacturer": prop_manufacturer.strip(),
+                        "name": prop_name.strip(),
+                        "diameter_in": prop_d,
+                        "pitch_in": prop_p,
+                        "n_blades": int(prop_blades),
+                        "mass_g": prop_mass or None,
+                        "source": prop_source.strip(),
+                        "retrieved": date.today(),
+                        "status": prop_status,
+                    })
+                except DatabaseError as error:
+                    st.error(str(error))
+                else:
+                    st.session_state["propeller_add.done"] = prop_id.strip()
+                    st.rerun()
+        if done := st.session_state.pop("propeller_add.done", None):
+            st.success(f"Propeller '{done}' added.")
+    with st.expander("Add a thrust–power test (fitted by the surrogate)"):
+        st.caption(
+            f"Saved in `{user_data_dir() / USER_TEST_FOLDER}`. The surrogate is fitted again on "
+            "the shipped and user tests at the next Run, and the hover powers of this motor + "
+            "propeller pair then follow the test (and those of similar pairs too). Motor or "
+            "propeller missing: add it first (Configuration tab for a motor, above for a "
+            "propeller). Rows: one per throttle step; power empty = voltage × current."
+        )
+        c1, c2, c3 = st.columns(3)
+        test_motor = c1.selectbox("Motor *", db.ids(), key="test_add.motor")
+        test_prop = c2.selectbox(
+            "Propeller *", default_propellers().ids(), key="test_add.propeller"
+        )
+        test_voltage = c3.number_input(
+            "Voltage of the table (V) *",
+            min_value=0.1,
+            value=14.8,
+            key="test_add.voltage",
+            help="Nominal voltage; the voltage column, when filled, gives each row's.",
+        )
+        c1, c2, c3 = st.columns(3)
+        test_measured_at = c1.selectbox(
+            "Power measured at",
+            ["motor_input", "esc_input"],
+            key="test_add.measured_at",
+            help="esc_input: the ESC loss is inside the power (the table names an ESC).",
+        )
+        default_test_id = f"{test_motor}__{test_prop}__{test_voltage:g}v"
+        test_id = c2.text_input(
+            "id", key="test_add.id", placeholder=f"default: {default_test_id}"
+        )
+        test_status = c3.selectbox(
+            "Status", ["estimated", "verified"], key="test_add.status"
+        )
+        c1, c2 = st.columns(2)
+        test_source = c1.text_input(
+            "Source",
+            key="test_add.source",
+            placeholder="URL of the table, or 'own bench' (default: user entry)",
+        )
+        test_esc = c2.text_input("ESC", key="test_add.esc", placeholder="optional")
+        upload = st.file_uploader(
+            "CSV (optional): fills the table below",
+            type="csv",
+            key="test_add.csv",
+            help="First line = column names among "
+            + ", ".join(TEST_COLUMNS)
+            + " (also throttle, thrust_n).",
+        )
+        if upload is not None:
+            try:
+                csv_columns, csv_rows = csv_table(upload.getvalue().decode("utf-8"))
+            except ValueError as error:
+                st.error(f"Unreadable CSV: {error}")
+                csv_columns, csv_rows = [], []
+        else:
+            csv_columns, csv_rows = [], []
+        edit_columns = [c for c in TEST_COLUMNS if c != "torque_nm"]
+        frame = pd.DataFrame(
+            [
+                [
+                    r[csv_columns.index(c)] if c in csv_columns else None
+                    for c in edit_columns
+                ]
+                for r in csv_rows
+            ]
+            or [[None] * len(edit_columns)] * 5,
+            columns=edit_columns,
+            dtype=float,
+        )
+        edited = st.data_editor(
+            frame,
+            num_rows="dynamic",
+            key=f"test_add.rows.{upload.file_id if upload is not None else 'manual'}",
+            column_config={
+                "throttle_pct": st.column_config.NumberColumn("throttle (%)"),
+                "voltage_v": st.column_config.NumberColumn("voltage (V)"),
+                "current_a": st.column_config.NumberColumn("current (A) *"),
+                "power_w": st.column_config.NumberColumn("power (W)"),
+                "thrust_g": st.column_config.NumberColumn("thrust (g) *"),
+                "rpm": st.column_config.NumberColumn("rpm"),
+            },
+        )
+        if st.button("Add the test", key="test_add.go"):
+            columns, rows = hv.typed_test_rows(edited, test_voltage)
+            try:
+                add_user_test({
+                    "id": test_id.strip() or default_test_id,
+                    "motor_id": test_motor,
+                    "propeller_id": test_prop,
+                    "esc": test_esc.strip() or None,
+                    "measured_at": test_measured_at,
+                    "voltage_v": test_voltage,
+                    "source": test_source.strip(),
+                    "retrieved": date.today(),
+                    "status": test_status,
+                    "columns": columns,
+                    "rows": rows,
+                })
+            except DatabaseError as error:
+                st.error(str(error))
+            else:
+                st.session_state["test_add.done"] = test_id.strip() or default_test_id
+                st.rerun()
+        if done := st.session_state.pop("test_add.done", None):
+            st.success(f"Test '{done}' added: press Run to use it.")
 
 with tabs["Propeller sizing"]:
     if two is not None and app.outdated:
@@ -1350,8 +1707,15 @@ with st.sidebar:
         if app.source_path
         else f"{data.get('name', 'project')}.yaml"
     )
-    target = st.text_input("Save as", default_name, key=f"{gen}:save_as")
-    if st.button("Save", disabled=checked.project is None):
+    st.markdown("**Project file**")
+    target = st.text_input(
+        "File name",
+        default_name,
+        key=f"{gen}:save_as",
+        help="YAML file of the project being edited, reopened with 'Open a project file'. "
+        "To add it to the list 'Start from a template' instead, use 'Save as template' above.",
+    )
+    if st.button("Save project file", disabled=checked.project is None):
         st.success(f"Saved {ui_state.save_project(data, target).resolve()}")
     if checked.project is not None:
         st.download_button(
@@ -1431,11 +1795,36 @@ with tabs["Results"]:
             f"Front / rear thrust ratio **{tpv.fmt(two.hover.front_rear_ratio, '.2f')}** — data behind each "
             "power: Hover tab (test points, surrogate), Cruise tab (PredimRC), Power chain tab (losses)."
         )
-        left, right = st.columns(2)
-        with left:
-            table(tpv.hover_rows(two))
-        with right:
-            table(tpv.cruise_rows(two))
+        mission = checked.project.mission if checked.project is not None else None
+        tilting = {
+            i
+            for i, m in enumerate(checked.project.motors if mission else [])
+            if m.role == "tilt"
+        }
+        st.markdown(
+            "**Hover**"
+            + (
+                f" — then the tilting motors at {mission.transition_tilt_deg:g}° at the start "
+                "of the transition (T = F / sin θ)"
+                if two.transition is not None and tilting
+                else ""
+            )
+        )
+        if mission is not None:
+            st.caption(
+                "**Margins without safety factor**: power, current and thrust margin, at the "
+                "thrust of the row. **Margins with the safety factor T/W min = "
+                f"{mission.min_thrust_to_weight:g}** (Mission tab): the 'with T/W min' columns, "
+                "at the thrust of the row × T/W min (download factor removed); they must stay "
+                "≥ 0, and the worst hover row is the 'Margin thrust-to-weight' tile."
+            )
+        table(
+            tpv.hover_tilt_rows(two, tilting, mission.transition_tilt_deg)
+            if mission is not None
+            else tpv.hover_rows(two)
+        )
+        st.markdown("**Cruise**")
+        table(tpv.cruise_rows(two))
         if checked.project is not None and not app.outdated:
             st.subheader("Where the battery power goes (power budget)")
             st.caption(
@@ -1483,7 +1872,12 @@ with tabs["Cost and reliability"]:
             {"key": k, "price": v} for k, v in (spec.get("overrides") or {}).items()
         ]
         edited = st.data_editor(
-            rows or [{"key": None, "price": None}],
+            forms.editor_base(
+                st,
+                f"{gen}:cost.overrides",
+                gen,
+                lambda: rows or [{"key": None, "price": None}],
+            ),
             key=f"{gen}:cost.overrides",
             num_rows="dynamic",
             width="stretch",

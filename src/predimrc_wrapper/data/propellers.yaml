@@ -49,3 +49,53 @@
   retrieved: 2026-10-14
   status: verified
   notes: "APC series (E, SF...) not stated on the test page."
+- id: tmotor-8x2.7cf
+  manufacturer: T-Motor
+  name: T-MOTOR 8x2.7CF
+  diameter_in: 8
+  pitch_in: 2.7
+  n_blades: 2
+  source: "T-Motor MT2216 test table (CSV supplied by the user, 2026-10-25)"
+  retrieved: 2026-10-25
+  status: verified
+  notes: "Carbon fibre (CF)."
+- id: tmotor-9x3cf
+  manufacturer: T-Motor
+  name: T-MOTOR 9x3CF
+  diameter_in: 9
+  pitch_in: 3
+  n_blades: 2
+  source: "T-Motor MT2216 test table (CSV supplied by the user, 2026-10-25)"
+  retrieved: 2026-10-25
+  status: verified
+  notes: "Carbon fibre (CF)."
+- id: tmotor-10x3.3cf
+  manufacturer: T-Motor
+  name: T-MOTOR 10x3.3CF
+  diameter_in: 10
+  pitch_in: 3.3
+  n_blades: 2
+  source: "T-Motor MT2216 test table (CSV supplied by the user, 2026-10-25)"
+  retrieved: 2026-10-25
+  status: verified
+  notes: "Carbon fibre (CF)."
+- id: tmotor-11x3.7cf
+  manufacturer: T-Motor
+  name: T-MOTOR 11x3.7CF
+  diameter_in: 11
+  pitch_in: 3.7
+  n_blades: 2
+  source: "T-Motor MT2216 test table (CSV supplied by the user, 2026-10-25)"
+  retrieved: 2026-10-25
+  status: verified
+  notes: "Carbon fibre (CF)."
+- id: tmotor-12x4cf
+  manufacturer: T-Motor
+  name: T-MOTOR 12x4CF
+  diameter_in: 12
+  pitch_in: 4
+  n_blades: 2
+  source: "T-Motor MT2216 test table (CSV supplied by the user, 2026-10-25)"
+  retrieved: 2026-10-25
+  status: verified
+  notes: "Carbon fibre (CF)."

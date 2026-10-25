@@ -7,6 +7,7 @@ connector: I = P_bus / U_bus, loss I²·(2R_main + R_conn); battery terminal pow
 P_bus + main loss; battery internal loss from MIC-PROP-BAT. U_bus = U_t − I·(2R_main +
 R_conn), solved by fixed point. Data measured at the ESC input (``esc_input``): P_esc,in
 = P_data + phase loss / η_esc, the ESC loss (1 − η_esc)·P_esc,in being inside the data.
+η_esc is the constant efficiency of the separate ESC (unit type) or of the 4-in-1 board.
 """
 
 from __future__ import annotations
@@ -201,7 +202,6 @@ class PowerChain(Model):
         layout = default_layout(project)
         overrides = {o.motor_index: o for o in spec.overrides}
         main_awg, gauges = default_gauges(project)
-        four_in_one = spec.lift_esc == "four_in_one"
         branches = []
         for b, m, (dc_awg, phase_awg) in zip(
             layout.branches, project.motors, gauges, strict=False
@@ -222,8 +222,8 @@ class PowerChain(Model):
                     dc_awg=dc_awg,
                     phase_length_mm=phase,
                     phase_awg=phase_awg,
-                    esc_efficiency=project.propulsion_units[m.unit].esc_efficiency,
-                    four_in_one=four_in_one and m.role != "cruise",
+                    esc_efficiency=project.esc_efficiency(m),
+                    four_in_one=project.on_four_in_one(m),
                 )
             )
         return cls(
@@ -270,7 +270,7 @@ class PowerChain(Model):
                         f"2·ρL/A·I², {b.dc_length_mm:.0f} mm AWG{b.dc_awg}",
                     ),
                     SegmentLoss(
-                        f"{b.name}: ESC",
+                        f"{b.name}: {'4-in-1 ESC' if b.four_in_one else 'ESC'}",
                         p_esc_in,
                         (1 - b.esc_efficiency) * p_esc_in,
                         f"constant efficiency {b.esc_efficiency:.2f} (MVP)",

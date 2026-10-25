@@ -10,6 +10,18 @@ versions from git tags (setuptools-scm).
   workbook cleanly" / "Could not quit Excel cleanly"): Streamlit runs each rerun in a new thread
   and COM objects only work in theirs. The PredimRC session now lives in its own thread
   (`ExcelThreadBackend`) and is kept between Runs.
+- GUI tables (mass items, test data, wiring overrides, motors, cost overrides): a value often
+  had to be entered several times, the editor getting its own edited rows back at each rerun.
+  It now keeps the table it was first given (`forms.editor_base`).
+- Masses and battery tab: the mass breakdown, the mass recap and the battery text follow the
+  edits at once, without Run.
+- Sidebar: "Save as template" pre-fills the current user template (else the configuration
+  name), says "Update template '<name>'" when that template exists (the "Replace if it exists"
+  box is removed) and selects the saved template in the template list. The project
+  "Save as" becomes "Project file" / "Save project file", each section saying how it differs
+  from the other.
+- "Configuration" named two things: the template list becomes "Start from a template" and
+  the "Configuration name" field (the project name) becomes "Project name".
 - PredimRC evaluation 1.4 s → 0.25 s: raw COM writes on cached sheets (1 ms per cell instead of
   20 ms through xlwings), unchanged inputs not written again, outputs read in three block reads.
 - Rotor model 7× faster (a quadplane Run 11.7 s → 4.8 s, then 0.7 s once the propeller
@@ -17,6 +29,32 @@ versions from git tags (setuptools-scm).
   each, nested) are replaced by a bracketed regula falsi (Illinois); same results to 1e-9.
 
 ### Added
+- Custom motors: the motor database merges the user file `<user data>/motors.yaml`
+  (`$PREDIMRC_USER_DATA`, else `~/.predimrc_wrapper/data`) with the shipped motors, as for
+  the propellers. Configuration tab, "Add a custom motor to the database": a form that saves
+  the motor there (`add_user_motor`) and can set it as the motor of a propulsion unit type;
+  the motor is then offered in the motor lists of the unit types. Only the fields used by the
+  computations are required for a user motor (id, role, Kv, Rm, I0, Imax, Pmax, mass);
+  manufacturer, product line, source, date and status are optional.
+- Hover tab, under the test data: "Add a propeller to the database" (user file
+  `<user data>/propellers.yaml`, `add_user_propeller`) and "Add a thrust–power test" (motor,
+  propeller, voltage, table typed or filled from a CSV; written in `<user data>/thrust_tests/`
+  by `add_user_test`, which checks that the motor and the propeller exist). The surrogate is
+  fitted again on the shipped and user tests at the next Run (cache keyed by the test data
+  hash). An empty power is voltage × current. For user propellers and tests too, the fields
+  no computation uses (manufacturer, name, bench, source, date, status) are optional.
+- `csv_table`: the CSV reading of `import_csv`, from a text.
+- Propulsion unit types can be renamed (the motors follow) or removed, their motors
+  taking the type chosen (a type used by motors could not be removed).
+- Results tab: the hover table also lists the tilting motors at the transition tilt
+  (T = F / sin θ), with a phase column and the motor current margin; the hover and cruise
+  tables are stacked instead of side by side. The margin descriptions say whether the tilt is
+  included (transition, hover thrust within test data, battery C) or not (thrust-to-weight,
+  motor power, motor current).
+- Results tab, hover table: margins with the safety factor T/W min (Mission tab), per motor:
+  thrust with T/W min, margin with T/W min against the motor limits (its worst hover row is
+  the thrust-to-weight tile) and against the test data. A caption separates them from the
+  margins without safety factor.
 - Cruise tab: longitudinal stability read from PredimRC (centrage, foyer, marge statique,
   volume de stab, calage stab, Vé longi.) with the PredimRC descriptions of each quantity.
 - Persistent cache of the PredimRC evaluations: GEMSEO discipline with an HDF5 cache
@@ -55,6 +93,18 @@ versions from git tags (setuptools-scm).
   (MIC-REL); KPIs in Results; outputs and objectives for exploration and optimisation.
 
 ### Changed
+- 4-in-1 ESC: the power chain is consistent with the board. New wiring options
+  `cruise_on_four_in_one` (the cruise motors driven by the board, no separate cruise ESC) and
+  `four_in_one_mass_g` (board mass, required with a 4-in-1) and `four_in_one_efficiency`
+  (constant-efficiency ESC model, default 0.95, for every channel of the board: chain, hover
+  and cruise powers, ESC-input test data). A board drives 4 motors at most, an error
+  otherwise. The board mass appears in the
+  Masses tab and the mass budget, and replaces the ESC mass of the motors it drives; its loss
+  is a new "4-in-1 ESC" bar of the power budget (the ESC bar keeps the separate ESCs only);
+  wiring, cost and reliability follow the cruise option.
+- **Breaking**: the ESC mass of a propulsion unit type (`esc_mass_g`) has no default (was
+  30 g); it is required only for the types with separate ESCs, an error naming the types
+  otherwise. Format-1 projects keep 30 g on migration.
 - First tab: motor layout in a collapsed box under the wing geometry; the layout generator is
   removed. Battery defined by its mass or its capacity, only the matching field shown.
 - The GUI keeps only the two-phase flight time; the scenario mode stays in the Python API.

@@ -153,6 +153,11 @@ class PropulsionSpec(_Strict):
     """A propulsion unit type: motor, propeller and ESC. Motors reference it by name."""
 
     motor_id: str = req(description="Motor id in the database")
+    motor_mass_g: float | None = opt(
+        None,
+        gt=0,
+        description="Motor mass (g); empty: the mass of the motor database",
+    )
     propeller_id: str | None = opt(
         None,
         description="Propeller id in the database (diameter and pitch must match it)",
@@ -162,7 +167,11 @@ class PropulsionSpec(_Strict):
         None, gt=0, le=40, description="Propeller pitch (in), used by the pitch study"
     )
     prop_mass_g: float = opt(25.0, gt=0, description="Propeller mass (g)")
-    esc_mass_g: float = opt(30.0, ge=0, description="ESC mass (g)")
+    esc_mass_g: float | None = opt(
+        None,
+        ge=0,
+        description="Mass of one separate ESC (g); needed when this unit has separate ESCs",
+    )
     esc_efficiency: float = adv(0.95, gt=0, le=1, description="ESC efficiency")
     figure_of_merit: float = adv(0.65, gt=0, lt=1, description="Hover figure of merit")
     static_ct: float = adv(0.10, gt=0, description="Static thrust coefficient")
@@ -569,6 +578,10 @@ class BranchOverride(_Strict):
     )
 
 
+FOUR_IN_ONE_CHANNELS = 4
+"""Motors one 4-in-1 ESC board can drive."""
+
+
 class WiringSpec(_Strict):
     """Power chain: battery, cables, ESCs (INC2-004). Lengths default from the geometry."""
 
@@ -591,6 +604,16 @@ class WiringSpec(_Strict):
     )
     cruise_esc_position_pct: float = opt(
         70.0, ge=0, le=100, description="Cruise ESC position (% of the fuselage length)"
+    )
+    cruise_on_four_in_one: bool = opt(
+        False,
+        description="The cruise motors are driven by the 4-in-1 board (no separate cruise ESC)",
+    )
+    four_in_one_mass_g: float | None = opt(
+        None, ge=0, description="Mass of the 4-in-1 ESC board (g); needed with a 4-in-1"
+    )
+    four_in_one_efficiency: float = adv(
+        0.95, gt=0, le=1, description="Efficiency of the 4-in-1 ESC board (every channel)"
     )
     main_awg: int | None = opt(
         None,
@@ -797,6 +820,19 @@ class Project(_Strict):
             f"C_d·A = {cd:g} ({origin}) × {self.body_frontal_area_dm2:g} dm²"
         )
 
+    def on_four_in_one(self, motor: MotorSlot) -> bool:
+        """The motor is driven by the 4-in-1 board (else by its own separate ESC)."""
+        spec = self.wiring
+        if spec is None or spec.lift_esc != "four_in_one":
+            return False
+        return motor.role != "cruise" or spec.cruise_on_four_in_one
+
+    def esc_efficiency(self, motor: MotorSlot) -> float:
+        """Efficiency of the ESC driving the motor: the 4-in-1 board or its unit type's ESC."""
+        if self.on_four_in_one(motor):
+            return self.wiring.four_in_one_efficiency
+        return self.propulsion_units[motor.unit].esc_efficiency
+
     def lift_motors(self) -> list[MotorSlot]:
         """Motors used in vertical flight (lift and tilt)."""
         return [m for m in self.motors if m.role in LIFT_ROLES]
@@ -839,7 +875,42 @@ class Project(_Strict):
                 msg = f"Unknown body shape '{self.body_shape}'. Known: {list(drag_shapes())}"
                 raise ValueError(msg)
         self._check_overlap()
+        self._check_escs()
         return self
+
+    def _check_escs(self) -> None:
+        """ESC masses entered (unit type for separate ESCs, board for a 4-in-1); board channels."""
+        missing = sorted({
+            m.unit
+            for m in self.motors
+            if not self.on_four_in_one(m)
+            and self.propulsion_units[m.unit].esc_mass_g is None
+        })
+        if missing:
+            msg = (
+                f"Separate ESCs need the ESC mass of the unit types {missing}: enter 'esc_mass_g' "
+                "or drive these motors with the 4-in-1 board (Power chain tab)."
+            )
+            raise ValueError(msg)
+        if (
+            self.wiring is not None
+            and self.wiring.lift_esc == "four_in_one"
+            and self.wiring.four_in_one_mass_g is None
+        ):
+            msg = "A 4-in-1 ESC needs its board mass: enter 'four_in_one_mass_g' (Power chain tab)."
+            raise ValueError(msg)
+        driven = [i + 1 for i, m in enumerate(self.motors) if self.on_four_in_one(m)]
+        if len(driven) > FOUR_IN_ONE_CHANNELS:
+            msg = (
+                f"The 4-in-1 ESC drives {len(driven)} motors ({', '.join(map(str, driven))}) but has "
+                f"{FOUR_IN_ONE_CHANNELS} channels: use separate ESCs"
+                + (
+                    " or a separate cruise ESC (untick 'cruise on four in one')."
+                    if self.wiring.cruise_on_four_in_one
+                    else "."
+                )
+            )
+            raise ValueError(msg)
 
     def overlaps(self) -> list[tuple[int, int, float, float]]:
         """Overlapping lift propeller discs: (motor i, motor j, centre distance, minimum distance) in mm."""
@@ -927,6 +998,17 @@ class Project(_Strict):
         data = copy.deepcopy(self.model_dump(mode="python"))
         for path, value in overrides.items():
             _set_path(data, path, value, _valid_paths(type(self)))
+            parts = path.split(".")
+            if (
+                len(parts) == 3
+                and parts[0] == "propulsion_units"
+                and parts[2] == "motor_id"
+                and parts[1] in self.propulsion_units
+                and value != self.propulsion_units[parts[1]].motor_id
+                and f"propulsion_units.{parts[1]}.motor_mass_g" not in overrides
+            ):
+                # Another motor: the mass of the database, not that of the former one.
+                data["propulsion_units"][parts[1]]["motor_mass_g"] = None
         return type(self).model_validate(data)
 
 
@@ -961,6 +1043,8 @@ def migrate_v1(data: dict[str, Any]) -> dict[str, Any]:
     else:
         motors = layouts.multirotor(n, layout["arm_length_mm"])
     data["propulsion_units"] = {k: v for k, v in units.items() if v}
+    for spec in data["propulsion_units"].values():  # format 1 had a 30 g ESC by default
+        spec.setdefault("esc_mass_g", 30.0)
     data["motors"] = motors
     data["format_version"] = FORMAT_VERSION
     return data
