@@ -86,6 +86,10 @@ class MotorHover:
     """Full-throttle thrust of the motor model at the nominal voltage (N)."""
     test_max_thrust_n: float = float("nan")
     """Largest thrust of the tested pair (N), NaN without data."""
+    safety_current_a: float = float("nan")
+    """Motor current at the thrust with the safety factor (A)."""
+    safety_current_margin: float = float("nan")
+    """1 − I_safety / I_max of the motor."""
 
     @property
     def safety_margin(self) -> float:
@@ -388,6 +392,14 @@ class TwoPhaseEvaluation(CompositeModel):
                 current = _motor_current(
                     motor_in, float(p.rpm[0]), record.kv, record.r_m
                 )
+                # Current at the thrust with the safety factor (static, no climb factor)
+                p_s = model.predict(safety, u_bus, ac.rho)
+                safety_in = k_h * float(p_s.power_w[0])
+                if measured_at == "esc_input":
+                    safety_in *= eta
+                safety_current = _motor_current(
+                    safety_in, float(p_s.rpm[0]), record.kv, record.r_m
+                )
                 t_max = max((t.max_thrust_n for t in pair_tests), default=float("nan"))
                 reason = str(p.reason[0]) + (
                     "" if pitch_known else "; propeller pitch not given"
@@ -425,6 +437,8 @@ class TwoPhaseEvaluation(CompositeModel):
                         safety,
                         full_throttle[slot.unit],
                         t_max,
+                        safety_current,
+                        1.0 - safety_current / record.i_max,
                     )
                 )
             chain = PowerChain.from_project(ac.project, ac.battery).evaluate({

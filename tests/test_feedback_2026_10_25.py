@@ -27,6 +27,8 @@ def test_hover_margins_with_the_safety_factor():
         assert m.safety_thrust_n == pytest.approx(n * m.thrust_n / download)
         if np.isfinite(m.test_max_thrust_n):
             assert m.safety_test_margin < m.thrust_margin
+        assert m.safety_current_a > m.motor_current_a
+        assert m.safety_current_margin < m.current_margin
     worst = min(m.safety_margin for m in r.hover.motors)
     assert worst == pytest.approx(r.margins["thrust_to_weight"], rel=1e-6)
 
@@ -43,6 +45,8 @@ def test_hover_rows_show_the_safety_columns():
         "thrust with T/W min",
         "margin with T/W min (motor limits)",
         "margin with T/W min (test data)",
+        "motor current with T/W min (A)",
+        "current margin with T/W min",
     } <= set(row)
 
 
@@ -215,3 +219,12 @@ def test_four_in_one_efficiency():
     separate = _four_in_one(False, efficiency=0.90)
     pusher = next(m for m in separate.motors if m.role == "cruise")
     assert separate.esc_efficiency(pusher) == separate.propulsion_units["cruise"].esc_efficiency
+
+
+def test_hover_calibration_out_of_the_model_range_is_a_clear_error():
+    """A mass in g typed as kg: the hover power is NaN, the error names the mass."""
+    p = Project.template("tricopter").with_overrides({
+        "calibration": {"hover": {"battery_power_w": 280.0, "mass_kg": 1870.0}}
+    })
+    with pytest.raises(ValueError, match=r"1870 kg.*check the mass, in kg"):
+        evaluate_two_phase(p)

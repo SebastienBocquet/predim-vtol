@@ -36,6 +36,7 @@ comes from the thrust–power test data through the surrogate, not from a figure
 
 from __future__ import annotations
 
+import math
 from dataclasses import asdict
 from dataclasses import dataclass
 from dataclasses import field
@@ -165,6 +166,13 @@ def calibrate_two_phase(
             return _two_phase_power(variant, point, speed, ref.mass_kg, backend)  # noqa: B023
 
         before = model(1.0)
+        if not math.isfinite(before):
+            mass = "the project mass" if ref.mass_kg is None else f"{ref.mass_kg:g} kg"
+            msg = (
+                f"calibration {point} point: the model gives no power at {mass}"
+                " (beyond the motors, propellers or battery); check the mass, in kg"
+            )
+            raise ValueError(msg)
         k, note = _solve(lambda k: model(k) - ref.battery_power_w, low, high)  # noqa: B023
         current = current.with_overrides({f"mission.{field_name}": base * k})
         report.points.append(

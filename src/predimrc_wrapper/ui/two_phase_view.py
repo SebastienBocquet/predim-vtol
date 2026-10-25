@@ -115,6 +115,8 @@ def hover_rows(r: TwoPhaseResult, point=None) -> list[dict]:
             "margin with T/W min (test data)": None
             if not np.isfinite(m.safety_test_margin)
             else round(m.safety_test_margin, 2),
+            "motor current with T/W min (A)": round(m.safety_current_a, 2),
+            "current margin with T/W min": round(m.safety_current_margin, 2),
             "source": m.source,
             "trusted": m.trusted,
             "why not": m.reason,

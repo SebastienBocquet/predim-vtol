@@ -6,6 +6,8 @@ versions from git tags (setuptools-scm).
 ## Unreleased
 
 ### Fixed
+- Two-phase calibration: a reference point the model cannot reach (e.g. a mass in g typed as
+  kg) failed with a SciPy "function value is NaN" error; it now names the point and the mass.
 - GUI: every Run of a winged configuration restarted Excel (~7 s, "Could not close the PredimRC
   workbook cleanly" / "Could not quit Excel cleanly"): Streamlit runs each rerun in a new thread
   and COM objects only work in theirs. The PredimRC session now lives in its own thread
@@ -53,7 +55,8 @@ versions from git tags (setuptools-scm).
   motor power, motor current).
 - Results tab, hover table: margins with the safety factor T/W min (Mission tab), per motor:
   thrust with T/W min, margin with T/W min against the motor limits (its worst hover row is
-  the thrust-to-weight tile) and against the test data. A caption separates them from the
+  the thrust-to-weight tile) and against the test data, motor current with T/W min and its
+  current margin (1 − I / I_max). A caption separates them from the
   margins without safety factor.
 - Cruise tab: longitudinal stability read from PredimRC (centrage, foyer, marge statique,
   volume de stab, calage stab, Vé longi.) with the PredimRC descriptions of each quantity.
