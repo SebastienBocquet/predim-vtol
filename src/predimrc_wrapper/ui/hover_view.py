@@ -177,7 +177,9 @@ def validation_rows() -> tuple[dict, list[dict]]:
     return summary, rows
 
 
-def typed_test_rows(frame: pd.DataFrame, voltage_v: float) -> tuple[list[str], list[list]]:
+def typed_test_rows(
+    frame: pd.DataFrame, voltage_v: float
+) -> tuple[list[str], list[list]]:
     """Columns and rows of a test from the table typed in the GUI.
 
     Empty rows are dropped, columns without any value too, and an empty power is the

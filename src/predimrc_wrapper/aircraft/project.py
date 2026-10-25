@@ -613,7 +613,10 @@ class WiringSpec(_Strict):
         None, ge=0, description="Mass of the 4-in-1 ESC board (g); needed with a 4-in-1"
     )
     four_in_one_efficiency: float = adv(
-        0.95, gt=0, le=1, description="Efficiency of the 4-in-1 ESC board (every channel)"
+        0.95,
+        gt=0,
+        le=1,
+        description="Efficiency of the 4-in-1 ESC board (every channel)",
     )
     main_awg: int | None = opt(
         None,

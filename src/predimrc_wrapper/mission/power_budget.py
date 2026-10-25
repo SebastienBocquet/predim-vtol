@@ -65,7 +65,9 @@ class PhaseBudget:
 
 
 def _chain_sinks(chain: ChainResult) -> dict[str, float]:
-    out = dict.fromkeys(("main cable", "DC cables", "phase cables", "battery internal"), 0.0)
+    out = dict.fromkeys(
+        ("main cable", "DC cables", "phase cables", "battery internal"), 0.0
+    )
     for s in chain.segments:
         if s.name == "battery internal resistance":
             out["battery internal"] += s.loss_w

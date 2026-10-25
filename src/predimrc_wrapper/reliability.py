@@ -171,7 +171,11 @@ def motor_out(aircraft: AircraftModel) -> Reliability:
     if project.wiring is not None and project.wiring.lift_esc == "four_in_one":
         single.append(
             "4-in-1 ESC (every lift motor"
-            + (" and the cruise motor)" if project.wiring.cruise_on_four_in_one else ")")
+            + (
+                " and the cruise motor)"
+                if project.wiring.cruise_on_four_in_one
+                else ")"
+            )
         )
     single += [
         f"motor {c.motor + 1} (its loss is not survivable)"

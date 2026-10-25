@@ -83,7 +83,12 @@ def _four_in_one(cruise_on_board: bool, efficiency: float = 0.95) -> Project:
     for m in data["motors"]:
         m["role"] = "lift"
     data["propulsion_units"]["cruise"] = dict(data["propulsion_units"]["rear"])
-    data["motors"].append({"unit": "cruise", "role": "cruise", "x_mm": 900.0, "y_mm": 0.0})
+    data["motors"].append({
+        "unit": "cruise",
+        "role": "cruise",
+        "x_mm": 900.0,
+        "y_mm": 0.0,
+    })
     data["wiring"] = {
         "lift_esc": "four_in_one",
         "four_in_one_mass_g": 40.0,
@@ -122,7 +127,9 @@ def test_four_in_one_mass_replaces_the_board_escs(cruise_on_board):
     from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
 
     delta = AircraftModel(board).total_mass_kg - AircraftModel(separate).total_mass_kg
-    cables = wiring_mass_kg(board) - wiring_mass_kg(separate)  # no DC cable on the board
+    cables = wiring_mass_kg(board) - wiring_mass_kg(
+        separate
+    )  # no DC cable on the board
     assert delta == pytest.approx((40.0 - removed) / 1000.0 + cables)
     rows = mass_rows(AircraftModel(board))
     assert sum(r["mass (g)"] for r in rows) == pytest.approx(
@@ -183,11 +190,17 @@ def test_motor_mass_of_the_unit_type_overrides_the_database():
     p = Project.template("tricopter")
     name = next(iter(p.propulsion_units))
     base = AircraftModel(p).units[name].motor.p.mass_kg
-    heavier = p.with_overrides({f"propulsion_units.{name}.motor_mass_g": 1000 * base + 10})
-    assert AircraftModel(heavier).units[name].motor.p.mass_kg == pytest.approx(base + 0.01)
+    heavier = p.with_overrides({
+        f"propulsion_units.{name}.motor_mass_g": 1000 * base + 10
+    })
+    assert AircraftModel(heavier).units[name].motor.p.mass_kg == pytest.approx(
+        base + 0.01
+    )
     assert AircraftModel(heavier).total_mass_kg > AircraftModel(p).total_mass_kg
     # Another motor in a study: its database mass, not the entered one.
-    other = heavier.with_overrides({f"propulsion_units.{name}.motor_id": "tmotor-mt2216-900kv"})
+    other = heavier.with_overrides({
+        f"propulsion_units.{name}.motor_id": "tmotor-mt2216-900kv"
+    })
     assert other.propulsion_units[name].motor_mass_g is None
     assert AircraftModel(other).units[name].motor.p.mass_kg == pytest.approx(0.075)
 
@@ -218,7 +231,10 @@ def test_four_in_one_efficiency():
     assert all(s.loss_w == pytest.approx(0.10 * s.power_in_w) for s in boards)
     separate = _four_in_one(False, efficiency=0.90)
     pusher = next(m for m in separate.motors if m.role == "cruise")
-    assert separate.esc_efficiency(pusher) == separate.propulsion_units["cruise"].esc_efficiency
+    assert (
+        separate.esc_efficiency(pusher)
+        == separate.propulsion_units["cruise"].esc_efficiency
+    )
 
 
 def test_hover_calibration_out_of_the_model_range_is_a_clear_error():
