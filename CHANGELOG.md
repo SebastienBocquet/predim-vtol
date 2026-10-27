@@ -54,12 +54,9 @@ versions from git tags (setuptools-scm).
   CG, tilt-rotor) or rear (behind the CG, tricopter rear rotor), and the maximum yaw tilt
   `yaw_tilt_max_deg` δ. Worst case: front, differential tilt about the transition axis, one
   side at θ − δ (vertical component sin(θ − δ)) and the other at θ + δ, both ways; rear,
-  lateral tilt, sin θ · cos δ. The thrust split is solved again
-  with the tilted motors (vertical components balancing the weight and the moments). Rows in
-  the hover table of Results, margin `yaw_tilt` (feasibility), `TwoPhaseResult.yaw_cases`.
-- Transition: the thrust split is solved again with the tilting motors at sin θ (vertical
-  components balancing the weight and the moments); unchanged with three lift rotors and a CG,
-  lower thrust on the tilting motors with redundant lift rotors.
+  lateral tilt, sin θ · cos δ; each motor keeps its hover vertical share F and gives
+  T = F / k. Rows in the hover table of Results, margin `yaw_tilt` (feasibility),
+  `TwoPhaseResult.yaw_cases`.
 - Stored runs (REQ-UI-013): Results tab, "Save run" stores the result with a copy of the
   project under `<studies folder>/runs/<date>-<name>/` (`project.yaml`, `summary.json`,
   `result.json`, `metadata.json`). New "Runs" page: filters (architecture, project, dates,

@@ -134,8 +134,7 @@ def hover_tilt_rows(
     yaw_tilt_deg: float = 0.0,
 ) -> list[dict]:
     """Hover rows of every lift motor, the transition rows of the tilting ones, then the
-    yaw worst-case rows: the yaw-tilting motors and those whose thrust the new split changes,
-    each at its worst case (largest thrust).
+    yaw worst-case rows of the yaw-tilting motors, each at its worst case (largest thrust).
 
     Args:
         tilting: Indices in ``project.motors`` of the tilting motors.
@@ -154,29 +153,27 @@ def hover_tilt_rows(
         )
     if not r.yaw_cases:
         return rows
-    reference = {m.index: m.thrust_n for m in (r.transition or r.hover).motors}
     transition = f"transition {tilt_deg:g}°, " if r.transition is not None else ""
     # Each motor at its worst case: the case of its largest thrust
     worst: dict[int, tuple] = {}
     for case in r.yaw_cases:
         for m, row in zip(case.point.motors, hover_rows(r, case.point), strict=True):
+            if m.index not in case.vertical:
+                continue
             if m.index not in worst or m.thrust_n > worst[m.index][0].thrust_n:
                 worst[m.index] = (m, row, case)
-    for index, (m, row, case) in sorted(worst.items()):
-        k = case.vertical.get(index)
+    for index, (_, row, case) in sorted(worst.items()):
         prefix = transition if index in tilting else ""
-        if k is None:
-            if np.isclose(m.thrust_n, reference[index], rtol=1e-9):
-                continue
-            label = "split solved again"
-        elif yaw_tilt == "front":
+        if yaw_tilt == "front":
             own = case.tilt_deg[index]
             others = sorted({f"{a:g}°" for a in case.tilt_deg.values() if a != own})
             label = f"{prefix}differential yaw ±{yaw_tilt_deg:g}°, tilted {own:g}°" + (
                 f", other side {', '.join(others)}" if others else ""
             )
         else:
-            label = f"{prefix}yaw {yaw_tilt_deg:g}° lateral, k = {k:.3f}"
+            label = (
+                f"{prefix}yaw {yaw_tilt_deg:g}° lateral, k = {case.vertical[index]:.3f}"
+            )
         rows.append({"phase": f"worst case yaw ({label})", **row})
     return rows
 

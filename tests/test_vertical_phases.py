@@ -176,7 +176,6 @@ def test_front_yaw_tilt_is_differential():
     for case in r.yaw_cases:
         assert set(case.vertical) == front
         assert sorted(case.tilt_deg.values()) == [theta - delta, theta + delta]
-        # Three rotors and a CG: the vertical forces are set by the balances
         for hover, worst in zip(r.hover.motors, case.point.motors, strict=True):
             k = case.vertical.get(hover.index, 1.0)
             assert worst.thrust_n == pytest.approx(hover.thrust_n / k, rel=1e-9)
@@ -234,22 +233,6 @@ def test_lateral_yaw_tilt_combines_with_the_transition_tilt():
     assert r.yaw_cases[0].vertical[rear] == pytest.approx(
         np.sin(np.radians(theta)) * np.cos(np.radians(delta))
     )
-
-
-def test_tilted_split_balances_the_vertical_forces_and_moments():
-    from predimrc_wrapper.aircraft.model import hover_thrust_split  # noqa: PLC0415
-
-    x = np.array([-0.2, -0.2, 0.2, 0.2])
-    y = np.array([0.2, -0.2, 0.2, -0.2])
-    area = np.ones(4)
-    k = np.array([np.cos(np.radians(20.0)), 1.0, 1.0, 1.0])
-    f = hover_thrust_split(x, y, area, (0.0, 0.0), k)
-    assert k @ f == pytest.approx(1.0)
-    assert (k * f) @ x == pytest.approx(0.0, abs=1e-12)
-    assert (k * f) @ y == pytest.approx(0.0, abs=1e-12)
-    # Redundant rotors: the tilted rotor's loss is shared, not carried by it alone
-    assert k[0] * f[0] < 0.25
-    assert f[0] < 0.25 / k[0]
 
 
 def test_without_yaw_tilt_no_worst_case():

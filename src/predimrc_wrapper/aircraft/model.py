@@ -39,34 +39,24 @@ def hover_thrust_split(
     y_m: np.ndarray,
     area_m2: np.ndarray,
     cg_m: tuple[float, float] | None = None,
-    vertical: np.ndarray | None = None,
 ) -> np.ndarray:
-    """Fractions of the hover thrust carried by each lift rotor (sum 1 without tilt).
+    """Fractions of the hover thrust carried by each lift rotor (sum 1).
 
     Minimises Σ T_i² / A_i (close to the minimum induced power) under the vertical force
     balance and, when the CG is given, the pitch and roll moment balances. Without CG the
     thrust is shared in proportion to the disc areas.
 
-    Args:
-        vertical: Vertical component k_i of a unit thrust of each rotor (tilted rotors):
-            the balances apply to k_i·T_i, so Σ k_i·f_i = 1. Without CG, the CG is then the
-            centroid of the disc areas.
-
     Raises:
         ProjectError: When a rotor would need a negative thrust (CG outside the rotors).
     """
     area = np.asarray(area_m2, dtype=float)
-    x_m, y_m = np.asarray(x_m, dtype=float), np.asarray(y_m, dtype=float)
     if cg_m is None:
-        if vertical is None:
-            return area / area.sum()
-        cg_m = (
-            float(np.average(x_m, weights=area)),
-            float(np.average(y_m, weights=area)),
-        )
-    m = np.vstack([np.ones_like(area), x_m, y_m])
-    if vertical is not None:
-        m = m * np.asarray(vertical, dtype=float)
+        return area / area.sum()
+    m = np.vstack([
+        np.ones_like(area),
+        np.asarray(x_m, dtype=float),
+        np.asarray(y_m, dtype=float),
+    ])
     b = np.array([1.0, cg_m[0], cg_m[1]])
     weighted = m * area
     lam = np.linalg.lstsq(weighted @ m.T, b, rcond=None)[0]
@@ -125,21 +115,13 @@ class AircraftModel:
         self.cruise_motors: list[MotorSlot] = (
             project.cruise_motors() if self.wing_borne else []
         )
-        self.hover_fractions = self.thrust_split()
-
-    def thrust_split(self, vertical: np.ndarray | None = None) -> np.ndarray:
-        """Hover thrust / weight of each lift motor (``hover_thrust_split``).
-
-        Args:
-            vertical: Vertical component of a unit thrust of each lift motor (tilt).
-        """
-        cg = self.project
-        return hover_thrust_split(
+        self.hover_fractions = hover_thrust_split(
             np.array([m.x_mm * MM for m in self.lift_motors]),
             np.array([m.y_mm * MM for m in self.lift_motors]),
             np.array([self.disc_area_m2(m) for m in self.lift_motors]),
-            None if cg.cg_x_mm is None else (cg.cg_x_mm * MM, cg.cg_y_mm * MM),
-            vertical,
+            None
+            if project.cg_x_mm is None
+            else (project.cg_x_mm * MM, project.cg_y_mm * MM),
         )
 
     # --- components ----------------------------------------------------------

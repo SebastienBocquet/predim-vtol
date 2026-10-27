@@ -1829,7 +1829,7 @@ with tabs["Results"]:
                     if mission.yaw_tilt == "front"
                     else "lateral, orthogonal to the transition tilt (sin θ · cos δ)"
                 )
-                + ", thrust split solved again"
+                + " (T = F / k)"
                 if two.yaw_cases
                 else ""
             )

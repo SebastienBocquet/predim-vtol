@@ -174,7 +174,7 @@ class PhaseResult:
 
 @dataclass
 class YawCase:
-    """One yaw worst case: the yaw-tilting motors at full yaw tilt, thrust split solved again."""
+    """One yaw worst case: the yaw-tilting motors at full yaw tilt."""
 
     vertical: dict[int, float]
     """Vertical component k of a unit thrust of each yaw-tilting motor (index in
@@ -358,13 +358,13 @@ class TwoPhaseEvaluation(CompositeModel):
     ) -> HoverResult:
         """Operating point of the lift motors carrying the weight.
 
-        With a tilted motor the thrust split is solved again (``hover_thrust_split``): the
-        vertical components k_i·T_i balance the weight and the pitch and roll moments.
+        A tilted motor keeps its hover share F_i of the vertical force (same weight and
+        moment balances) and gives T_i = F_i / k_i, k_i the vertical component of a unit thrust.
 
         Args:
             climb_speed_m_s: Vertical climb speed (momentum-theory power factor per rotor).
             tilt_deg: Tilt angle of the tilting motors from the horizontal (transition):
-                vertical component k = sin θ of their thrust.
+                k = sin θ.
             vertical: Vertical component k_i of a unit thrust per motor index in
                 ``project.motors`` (yaw worst case); it overrides ``tilt_deg``.
         """
@@ -387,16 +387,11 @@ class TwoPhaseEvaluation(CompositeModel):
             )
             for m in ac.lift_motors
         ]
-        fractions = (
-            ac.hover_fractions
-            if np.allclose(factors, 1.0, rtol=0.0, atol=1e-12)
-            else ac.thrust_split(np.array(factors))
-        )
         for _ in range(2):  # surrogate at the bus voltage under load, updated once
             motors = []
             for (i, slot), f, k in zip(
                 ((ac.project.motors.index(m), m) for m in ac.lift_motors),
-                fractions,
+                ac.hover_fractions,
                 factors,
                 strict=False,
             ):
@@ -407,8 +402,10 @@ class TwoPhaseEvaluation(CompositeModel):
                     diameter_in=d_in,
                     pitch_in=p_in,
                 )
-                thrust = f * weight
-                safety = self.p.min_thrust_to_weight * f * ac.total_mass_kg * GRAVITY
+                thrust = f * weight / k
+                safety = (
+                    self.p.min_thrust_to_weight * f * ac.total_mass_kg * GRAVITY / k
+                )
                 if slot.unit not in full_throttle:
                     full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(
                         ac.rho, ac.battery.open_circuit_voltage
@@ -446,7 +443,7 @@ class TwoPhaseEvaluation(CompositeModel):
                         i,
                         slot.unit,
                         thrust,
-                        float(k * f),
+                        float(f),
                         power,
                         k_h
                         * k_c
@@ -495,8 +492,8 @@ class TwoPhaseEvaluation(CompositeModel):
             ac.project.cg_x_mm
             if ac.project.cg_x_mm is not None
             else float(
-                sum(m.fraction * ac.project.motors[m.index].x_mm for m in motors)
-                / sum(m.fraction for m in motors)
+                sum(m.thrust_n * ac.project.motors[m.index].x_mm for m in motors)
+                / sum(m.thrust_n for m in motors)
             )
         )
         front = sum(
