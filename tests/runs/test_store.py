@@ -71,6 +71,7 @@ def test_save_list_load_rename_delete(stored, tmp_path):
 
 
 def test_collection_families_and_figures(stored):
+    pytest.importorskip("plotly")
     runs = stored.collection()
     assert list(runs.varying_inputs().index) == ["battery.n_series", "battery.mass_g"]
     families = runs.families(along="battery.mass_g")
@@ -140,6 +141,7 @@ def test_project_no_longer_loading_falls_back_to_stored_inputs(stored, tmp_path)
 @pytest.mark.parametrize("folder", sorted(p.name for p in FIXTURES.iterdir()))
 def test_stored_formats_still_load(folder):
     """Runs stored by earlier versions load, filter and plot (add one per format change)."""
+    pytest.importorskip("plotly")
     runs = load_runs(FIXTURES / folder)
     assert len(runs) >= 1
     assert runs.summaries["project_loadable"].all()

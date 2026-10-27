@@ -11,6 +11,7 @@ from predimrc_wrapper.aircraft import AircraftModel
 from predimrc_wrapper.aircraft import Project
 from predimrc_wrapper.api import evaluate_two_phase
 from tests.conftest import ROOT
+from tests.conftest import requires_excel
 
 APP = ROOT / "src" / "predimrc_wrapper" / "ui" / "app.py"
 
@@ -64,6 +65,7 @@ def test_editor_base_is_the_same_table_at_every_rerun():
 
 
 def test_template_name_is_prefilled_and_save_project_is_named():
+    pytest.importorskip("streamlit")
     from streamlit.testing.v1 import AppTest  # noqa: PLC0415
 
     at = AppTest.from_file(str(APP), default_timeout=300).run()
@@ -142,6 +144,7 @@ def test_four_in_one_mass_replaces_the_board_escs(cruise_on_board):
     assert any("4-in-1" in r["item"] for r in escs)
 
 
+@requires_excel
 @pytest.mark.parametrize("cruise_on_board", [False, True])
 def test_four_in_one_loss_bar(cruise_on_board):
     from predimrc_wrapper.mission.power_budget import power_budget  # noqa: PLC0415
@@ -219,6 +222,7 @@ def test_four_in_one_channels():
         project.with_overrides({"wiring": {**wiring, "cruise_on_four_in_one": True}})
 
 
+@requires_excel
 def test_four_in_one_efficiency():
     """The board channels use the board efficiency (constant-efficiency ESC model)."""
     p = _four_in_one(True, efficiency=0.90)

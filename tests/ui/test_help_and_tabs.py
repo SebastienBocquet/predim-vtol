@@ -30,6 +30,7 @@ from predimrc_wrapper.ui.help import HelpRegistry  # noqa: E402
 from predimrc_wrapper.ui.help import model_entries  # noqa: E402
 from predimrc_wrapper.ui.help import schema_entries  # noqa: E402
 from tests.conftest import ROOT  # noqa: E402
+from tests.conftest import requires_excel  # noqa: E402
 from tests.helpers import ParabolicAero  # noqa: E402
 
 APP = ROOT / "src" / "predimrc_wrapper" / "ui" / "app.py"
@@ -264,6 +265,7 @@ def test_first_tab_mission_and_battery_after_feedback_2026_10_19():
     assert not any(k.endswith("battery.mass_g") for k in keys)
 
 
+@requires_excel
 def test_hover_tilt_rows_add_the_tilting_motors_in_transition():
     """Results hover table: every lift motor in hover, then only the tilting ones tilted."""
     p = Project.template("tiltrotor").with_overrides({
