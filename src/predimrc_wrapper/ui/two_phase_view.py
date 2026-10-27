@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from predimrc_wrapper.ui import units
+
 if TYPE_CHECKING:
     from predimrc_wrapper.mission.two_phase import TwoPhaseResult
 
@@ -23,7 +25,7 @@ def kpi_rows(r: TwoPhaseResult) -> list[list[tuple[str, str, bool]]]:
         [
             (
                 f"V{c.index}",
-                fmt(c.v_m_s, ".1f", "m/s") + f" ({c.v_m_s * 3.6:.0f} km/h)",
+                units.speed_text(c.v_m_s, 1),
                 False,
             ),
             (
@@ -45,7 +47,7 @@ def kpi_rows(r: TwoPhaseResult) -> list[list[tuple[str, str, bool]]]:
     ]
     rows.append([
         (
-            f"Margin {k.replace('_', ' ')}",
+            margin_label(k),
             fmt(v, "+.2f"),
             bool(np.isfinite(v) and v < 0),
         )
@@ -54,13 +56,49 @@ def kpi_rows(r: TwoPhaseResult) -> list[list[tuple[str, str, bool]]]:
     return rows
 
 
-def hover_rows(r: TwoPhaseResult) -> list[dict]:
+MARGIN_LABELS = {
+    "hover_thrust": "Margin hover thrust within test data",
+    "thrust_to_weight": "Margin thrust-to-weight (control)",
+    "transition": "Margin transition (tilting motors)",
+}
+
+
+def margin_label(key: str) -> str:
+    return MARGIN_LABELS.get(key, f"Margin {key.replace('_', ' ')}")
+
+
+def phase_rows(r: TwoPhaseResult) -> list[dict]:
+    """Vertical phases then the cruise to the reserve at V1: duration, power, energy."""
+    rows = [
+        {
+            "phase": p.name,
+            "duration (s)": round(p.duration_s, 1),
+            "battery power (W)": round(p.battery_power_w, 1),
+            "energy (Wh)": round(p.energy_j / 3600.0, 2),
+        }
+        for p in r.phases
+    ]
+    rows.extend(
+        {
+            "phase": f"cruise at V{c.index} (until the reserve)",
+            "duration (s)": round(c.time_s, 1),
+            "battery power (W)": round(c.battery_power_w, 1),
+            "energy (Wh)": round(c.battery_power_w * c.time_s / 3600.0, 2),
+        }
+        for c in r.cruise
+    )
+    return rows
+
+
+def hover_rows(r: TwoPhaseResult, point=None) -> list[dict]:
+    """One row per lift motor of an operating point (hover by default, or climb, transition)."""
+    point = point or r.hover
     return [
         {
             "motor": m.index + 1,
             "unit": m.unit,
             "pair (data)": m.pair,
-            "thrust (g)": round(m.thrust_n / 9.81 * 1000),
+            "thrust": units.thrust_text(m.thrust_n),
             "share (%)": round(100 * m.fraction, 1),
             "power (W)": round(m.power_w, 1),
             "± σ (W)": round(m.power_sd_w, 1),
@@ -68,15 +106,44 @@ def hover_rows(r: TwoPhaseResult) -> list[dict]:
             "motor current (A)": round(m.motor_current_a, 2),
             "rpm": round(m.rpm),
             "power margin": round(m.power_margin, 2),
+            "current margin": round(m.current_margin, 2),
             "thrust margin": None
             if not np.isfinite(m.thrust_margin)
             else round(m.thrust_margin, 2),
+            "thrust with T/W min": units.thrust_text(m.safety_thrust_n),
+            "margin with T/W min (motor limits)": round(m.safety_margin, 2),
+            "margin with T/W min (test data)": None
+            if not np.isfinite(m.safety_test_margin)
+            else round(m.safety_test_margin, 2),
+            "motor current with T/W min (A)": round(m.safety_current_a, 2),
+            "current margin with T/W min": round(m.safety_current_margin, 2),
             "source": m.source,
             "trusted": m.trusted,
             "why not": m.reason,
         }
-        for m in r.hover.motors
+        for m in point.motors
     ]
+
+
+def hover_tilt_rows(
+    r: TwoPhaseResult, tilting: set[int], tilt_deg: float
+) -> list[dict]:
+    """Hover rows of every lift motor, then the transition rows of the tilting ones.
+
+    Args:
+        tilting: Indices in ``project.motors`` of the tilting motors.
+        tilt_deg: Transition tilt angle, shown in the phase column.
+    """
+    rows = [{"phase": "hover", **row} for row in hover_rows(r)]
+    if r.transition is not None:
+        rows.extend(
+            {"phase": f"transition, tilted {tilt_deg:g}°", **row}
+            for m, row in zip(
+                r.transition.motors, hover_rows(r, r.transition), strict=True
+            )
+            if m.index in tilting
+        )
+    return rows
 
 
 def cruise_rows(r: TwoPhaseResult) -> list[dict]:
@@ -85,7 +152,7 @@ def cruise_rows(r: TwoPhaseResult) -> list[dict]:
         if not c.motors:
             rows.append({
                 "V": c.index,
-                "speed (m/s)": round(c.v_m_s, 2),
+                "speed (km/h)": round(units.kmh(c.v_m_s), 1),
                 "aero power (W)": round(c.aero_power_w, 1),
                 "battery power (W)": round(c.battery_power_w, 1),
                 "model": c.source,
@@ -93,9 +160,9 @@ def cruise_rows(r: TwoPhaseResult) -> list[dict]:
         rows.extend(
             {
                 "V": c.index,
-                "speed (m/s)": round(c.v_m_s, 2),
+                "speed (km/h)": round(units.kmh(c.v_m_s), 1),
                 "motor": m.index + 1,
-                "thrust (N)": round(m.thrust_n, 2),
+                "thrust": units.thrust_text(m.thrust_n),
                 "rpm": round(m.rpm),
                 "prop efficiency": round(m.prop_efficiency, 3),
                 "motor input (W)": round(m.motor_input_w, 1),

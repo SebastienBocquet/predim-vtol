@@ -1,0 +1,23 @@
+# Drag coefficients of boom sections, referred to the frontal area t·L of a member normal
+# to the flow (t: thickness seen by the flow, L: length). Used by the cross-flow model of
+# the diagonal booms (aircraft/booms.py, MIC-CFG-DRAG): D = ½ρV²·C_d·sin²θ·(t·L·sin θ).
+#
+# Values: S. F. Hoerner, Fluid-Dynamic Drag, 1965 (self-published), typical values at the
+# Reynolds numbers of RC booms (subcritical, Re = V·t/ν ≈ 1e4 to 5e4). Round: chapter 3,
+# circular cylinder normal to the flow, subcritical. Square: chapter 3, square prism with a
+# flat face to the flow (sharp edges). Profiled: chapter 6, streamline section of thickness
+# ratio t/c ≈ 0.25, C_d on the frontal area t·L (low-Re value, larger than the high-Re
+# 0.06). Read on the figures, rounded: typical values, not a measurement of the boom.
+sections:
+  round:
+    label: round tube
+    cd: 1.2
+    source: "Hoerner, Fluid-Dynamic Drag (1965), ch. 3: circular cylinder normal to the flow, subcritical Re, C_d ≈ 1.2"
+  square:
+    label: square tube, flat face to the flow
+    cd: 2.0
+    source: "Hoerner, Fluid-Dynamic Drag (1965), ch. 3: square prism, flat face to the flow, sharp edges, C_d ≈ 2.0"
+  profiled:
+    label: profiled (streamlined) section
+    cd: 0.1
+    source: "Hoerner, Fluid-Dynamic Drag (1965), ch. 6: streamline section t/c ≈ 0.25, low Re, C_d ≈ 0.1 on t·L"

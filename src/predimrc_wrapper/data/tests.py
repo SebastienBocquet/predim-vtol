@@ -21,6 +21,9 @@ from predimrc_wrapper.core.units import GRAVITY
 from predimrc_wrapper.data.database import DatabaseError
 from predimrc_wrapper.data.user import user_data_dir
 
+USER_FOLDER = "thrust_tests"
+"""Folder of the user tests in the user data folder."""
+
 REQUIRED = (
     "id",
     "motor_id",
@@ -43,6 +46,13 @@ COLUMNS = (
     "torque_nm",
 )
 MANDATORY_COLUMNS = ("current_a", "power_w", "thrust_g")
+USER_DEFAULTS = {
+    "bench": "user",
+    "source": "user entry",
+    "retrieved": "",
+    "status": "estimated",
+}
+"""Values of the fields a user test may leave out: no computation uses them."""
 
 
 @dataclass(frozen=True)
@@ -83,10 +93,15 @@ class ThrustTest:
         return float(np.nanmax(self.thrust_n))
 
 
-def parse_test(raw: dict, origin: str) -> ThrustTest:
-    """Validate a test mapping (file content) and convert it to SI."""
+def parse_test(raw: dict, origin: str, user: bool = False) -> ThrustTest:
+    """Validate a test mapping (file content) and convert it to SI.
+
+    A user test (``user``) may leave out the fields of ``USER_DEFAULTS``.
+    """
+    if user:
+        raw = {**USER_DEFAULTS, **{k: v for k, v in raw.items() if v not in (None, "")}}
     for key in REQUIRED:
-        if raw.get(key) in (None, "", []):
+        if raw.get(key) in (None, "", []) and not (user and key in USER_DEFAULTS):
             msg = f"{origin}: {raw.get('id', '?')}: missing {key}"
             raise DatabaseError(msg)
     if raw["status"] not in ("verified", "estimated"):
@@ -178,26 +193,26 @@ class TestDatabase:
         if folders is None:
             shipped = files("predimrc_wrapper.data").joinpath("thrust_tests")
             sources = [
-                (f.name, f.read_text(encoding="utf-8"))
+                (f.name, f.read_text(encoding="utf-8"), False)
                 for f in sorted(shipped.iterdir(), key=lambda f: f.name)
                 if f.name.endswith(".yaml")
             ]
-            user = user_data_dir() / "thrust_tests"
+            user = user_data_dir() / USER_FOLDER
             if user.is_dir():
                 sources += [
-                    (str(p), p.read_text(encoding="utf-8"))
+                    (str(p), p.read_text(encoding="utf-8"), True)
                     for p in sorted(user.glob("*.yaml"))
                 ]
         else:
             sources = [
-                (str(p), p.read_text(encoding="utf-8"))
+                (str(p), p.read_text(encoding="utf-8"), False)
                 for d in folders
                 for p in sorted(Path(d).glob("*.yaml"))
             ]
         tests, warnings = {}, []
         digest = hashlib.sha256()
-        for origin, text in sources:
-            test = parse_test(yaml.safe_load(text), origin)
+        for origin, text, is_user in sources:
+            test = parse_test(yaml.safe_load(text), origin, user=is_user)
             if test.id in tests:
                 warnings.append(
                     f"{origin} overrides the test {test.id} of {tests[test.id].origin}"

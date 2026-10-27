@@ -8,6 +8,7 @@ from datetime import date
 from functools import cache
 from importlib.resources import files
 from pathlib import Path
+from typing import Any
 
 import yaml
 
@@ -25,6 +26,17 @@ REQUIRED = (
     "retrieved",
     "status",
 )
+
+USER_FILE = "propellers.yaml"
+"""File of the user propellers in the user data folder."""
+
+USER_DEFAULTS = {
+    "manufacturer": "",
+    "source": "user entry",
+    "retrieved": "",
+    "status": "estimated",
+}
+"""Values of the fields a user propeller may leave out (the name defaults to the id)."""
 
 
 @dataclass(frozen=True)
@@ -45,9 +57,15 @@ class PropellerRecord:
     notes: str = ""
 
 
-def _parse(raw: dict, origin: str) -> PropellerRecord:
+def _parse(raw: dict, origin: str, user: bool = False) -> PropellerRecord:
+    if user:
+        raw = {
+            **USER_DEFAULTS,
+            "name": raw.get("id"),
+            **{k: v for k, v in raw.items() if v not in (None, "")},
+        }
     for key in REQUIRED:
-        if raw.get(key) in (None, ""):
+        if raw.get(key) in (None, "") and not (user and key in USER_DEFAULTS):
             msg = f"{origin}: {raw.get('id', '?')}: missing {key}"
             raise DatabaseError(msg)
     if raw["status"] not in ("verified", "estimated"):
@@ -83,23 +101,26 @@ class PropellerDatabase:
     @classmethod
     def load(cls, paths: list[Path] | None = None) -> PropellerDatabase:
         """Load the shipped file then ``<user data>/propellers.yaml`` (or the given files, in order)."""
-        texts = []
+        texts = []  # (origin, text, user file)
         if paths is None:
             texts.append((
                 "propellers.yaml",
                 files("predimrc_wrapper.data")
                 .joinpath("propellers.yaml")
                 .read_text(encoding="utf-8"),
+                False,
             ))
-            user = user_data_dir() / "propellers.yaml"
+            user = user_data_dir() / USER_FILE
             if user.is_file():
-                texts.append((str(user), user.read_text(encoding="utf-8")))
+                texts.append((str(user), user.read_text(encoding="utf-8"), True))
         else:
-            texts = [(str(p), Path(p).read_text(encoding="utf-8")) for p in paths]
+            texts = [
+                (str(p), Path(p).read_text(encoding="utf-8"), False) for p in paths
+            ]
         records: dict[str, PropellerRecord] = {}
-        for origin, text in texts:
+        for origin, text, is_user in texts:
             for raw in yaml.safe_load(text) or []:
-                record = _parse(raw, origin)
+                record = _parse(raw, origin, user=is_user)
                 records[record.id] = record  # a later file overrides an earlier one
         return cls(records)
 
@@ -129,3 +150,38 @@ class PropellerDatabase:
 def default_propellers() -> PropellerDatabase:
     """The shipped and user propellers (cached)."""
     return PropellerDatabase.load()
+
+
+def add_user_propeller(
+    raw: dict[str, Any], path: Path | None = None
+) -> PropellerRecord:
+    """Append a propeller to the user file (``<user data>/propellers.yaml`` by default).
+
+    Args:
+        raw: The propeller in the units of the YAML files (inches); the fields of
+            ``USER_DEFAULTS`` and the name may be left out.
+        path: The user file.
+
+    Raises:
+        DatabaseError: When the propeller is incomplete or its id already exists.
+    """
+    target = Path(path) if path is not None else user_data_dir() / USER_FILE
+    raw = {k: v for k, v in raw.items() if v not in (None, "")}
+    record = _parse(raw, "new propeller", user=True)
+    existing = (
+        yaml.safe_load(target.read_text(encoding="utf-8")) or []
+        if target.is_file()
+        else []
+    )
+    if record.id in default_propellers().records or any(
+        p.get("id") == record.id for p in existing
+    ):
+        msg = f"The propeller id '{record.id}' already exists"
+        raise DatabaseError(msg)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(
+        yaml.safe_dump([*existing, raw], sort_keys=False, allow_unicode=True),
+        encoding="utf-8",
+    )
+    default_propellers.cache_clear()
+    return record

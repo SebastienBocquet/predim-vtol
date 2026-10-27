@@ -57,16 +57,26 @@
   diameter and pitch, else an untested pair (D, P) — pitch 0.4·D when not given
   (flagged untrusted).
 - Cruise (wing-borne): aerodynamic power at V_k from the PredimRC imposed-speed block +
-  drag sources (`aircraft/cruise.py`); thrust shared by disc area among cruise and tilt
+  drag sources (`aircraft/cruise.py`), read at the trimmed wing C_z (stabiliser lift
+  included, from the polar rows) by a parabola on the block nodes up to the last C_z of the
+  polar; beyond (stall edge), the polar value, with a warning; thrust shared by disc area among cruise and tilt
   motors; MIC-PROP-BEM at the unit pitch (constant η_c when no pitch, flagged); motor
   constants MIC-PROP-MOT; chain. Multicopter: MVP forward-flight model (MIC-MIS-SEG) at
   the best-endurance and best-range speeds.
 - Energy: E_avail = (1 − r)·E_nom, r = 20 % of the nominal energy (designer, 2026-10-15);
   powers drawn from the cells (chemical power).
-- t_c,k = (E_avail − P_h·t_h) / P_c,k; flight time t_h + t_c,k; range V_k·t_c,k;
-  σ_t from the surrogate σ of the hover power (motor errors fully correlated).
-- Margins: motor power and current (hover and cruise), hover thrust versus the tested
-  maximum, lift T/W (MVP physics), battery C-rate, take-off mass.
+- Vertical phases (INC3-006): climb to the transition altitude h at v_c (each rotor at its
+  hover thrust, power × k_c = v_c/(2v_h) + √((v_c/(2v_h))² + 1), v_h = √(T/(2ρA)), momentum
+  theory); hover t_h; transition t_tr of a winged aircraft (tilting motors at the tilt angle
+  θ: T_i = F_i / sin θ, no wing lift; without tilting motor, at hover power); descent from h
+  at v_d at hover power. Calibration factor k_h on every vertical point.
+- t_c,k = (E_avail − Σ P_j·t_j) / P_c,k over the vertical phases j; flight time Σ t_j + t_c,k;
+  range V_k·t_c,k; σ_t from the surrogate σ of the vertical powers (motor errors fully
+  correlated).
+- Margins: motor power and current (hover, climb and cruise), transition (worst power or
+  current margin of the motors during the transition), hover thrust versus the tested
+  maximum (data coverage, every vertical point), lift T/W (control, MVP physics), battery
+  C-rate (every point), take-off mass.
 
 ### Model limitations
 

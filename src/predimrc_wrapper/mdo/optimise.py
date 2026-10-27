@@ -52,13 +52,20 @@ OBJECTIVES = {
     "flight_time_v2": True,
     "range_v1": True,
     "range_v2": True,
+    "cost_purchase": False,
+    "cost_per_hour": False,
+    "motor_out_tw": True,
 }
-"""Objectives offered, with whether they are maximised (``*_v1``, ``*_v2``: two-phase mode)."""
+"""Objectives offered, with whether they are maximised (``*_v1``, ``*_v2`` and the cost and
+reliability outputs: two-phase mode)."""
+
+TWO_PHASE_ONLY = ("cost_purchase", "cost_per_hour", "motor_out_tw")
 
 
 def mode_of(objective: str) -> str:
     """The discipline mode giving an objective."""
-    return "two_phase" if objective.endswith(("_v1", "_v2")) else "scenario"
+    two_phase = objective.endswith(("_v1", "_v2")) or objective in TWO_PHASE_ONLY
+    return "two_phase" if two_phase else "scenario"
 
 
 ALGORITHMS = ("SLSQP", "NLOPT_COBYLA", "COBYQA", "NLOPT_SLSQP")

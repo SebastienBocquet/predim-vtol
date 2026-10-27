@@ -10,9 +10,7 @@ working directory): ``<root>/<YYYYMMDD-HHMMSS>-<kind>-<slug>/`` with ``study.yam
 from __future__ import annotations
 
 import csv
-import hashlib
 import json
-import re
 import shutil
 from dataclasses import asdict
 from dataclasses import dataclass
@@ -22,6 +20,12 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+
+from predimrc_wrapper.provenance import data_changes
+from predimrc_wrapper.provenance import reproducibility_metadata
+from predimrc_wrapper.provenance import slug
+
+__all__ = ["Study", "StudyDefinition", "StudyStore", "reproducibility_metadata"]
 
 STUDY_FILE = "study.yaml"
 
@@ -67,41 +71,6 @@ class Study:
     @property
     def name(self) -> str:
         return self.definition.name
-
-
-def reproducibility_metadata(
-    project: Any, seconds: float = float("nan")
-) -> dict[str, Any]:
-    """Tool version, data hashes, PredimRC profile and workbook hash, date."""
-    from importlib.resources import files  # noqa: PLC0415
-
-    from predimrc_wrapper import __version__  # noqa: PLC0415
-    from predimrc_wrapper.data import default_tests  # noqa: PLC0415
-
-    motors = files("predimrc_wrapper.data").joinpath("motors_mvp.yaml").read_bytes()
-    meta = {
-        "tool_version": __version__,
-        "date": datetime.now().isoformat(timespec="seconds"),
-        "seconds": seconds,
-        "test_data_hash": default_tests().hash(),
-        "motor_database_hash": hashlib.sha256(motors).hexdigest()[:16],
-    }
-    if getattr(project, "aero", None) is not None:
-        from predimrc_wrapper.api import profiles_dir  # noqa: PLC0415
-        from predimrc_wrapper.predimrc_wrapper import workbook_path  # noqa: PLC0415
-
-        meta["predimrc_profile"] = project.aero.profile
-        try:
-            meta["predimrc_workbook_hash"] = hashlib.sha256(
-                workbook_path(profiles_dir(), project.aero.profile).read_bytes()
-            ).hexdigest()[:16]
-        except FileNotFoundError:
-            meta["predimrc_workbook_hash"] = None
-    return meta
-
-
-def _slug(text: str) -> str:
-    return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:40] or "study"
 
 
 def _write_points(path: Path, points: list[dict[str, Any]]) -> None:
@@ -154,7 +123,9 @@ class StudyStore:
     def save(self, study: Study) -> Path:
         """Write a new study folder (never overwrites)."""
         self.root.mkdir(parents=True, exist_ok=True)
-        base = f"{datetime.now():%Y%m%d-%H%M%S}-{study.definition.kind}-{_slug(study.name)}"
+        base = (
+            f"{datetime.now():%Y%m%d-%H%M%S}-{study.definition.kind}-{slug(study.name)}"
+        )
         target, k = self.root / base, 2
         while target.exists():
             target, k = self.root / f"{base}-{k}", k + 1
@@ -233,9 +204,5 @@ class StudyStore:
 
     @staticmethod
     def data_changed(study: Study) -> bool:
-        """The test data or the motor database changed since the study."""
-        now = reproducibility_metadata(None)
-        return any(
-            study.metadata.get(k) not in (None, now[k])
-            for k in ("test_data_hash", "motor_database_hash")
-        )
+        """Reference data changed since the study (see :func:`.data_changes`)."""
+        return bool(data_changes(study.metadata))

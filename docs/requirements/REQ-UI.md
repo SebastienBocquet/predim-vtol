@@ -112,6 +112,33 @@
   forward-flight rotor model (no PredimRC). The calibration section explains why one
   factor per point and when it applies (scenario mode).
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Inspection.
 - **Satisfied by:** INC3-002
+
+### REQ-UI-012 — The masses are recapitulated with their origin
+
+- **Statement:** The Masses and battery tab shall list every mass of the budget — user items,
+  motors, propellers, ESCs, cables, battery — with count, unit mass, total and where it comes
+  from (entered, data sheet, computed), adding up to the total mass; next to the battery
+  definition it gives the derived quantity (capacity from the mass or mass from the
+  capacity) with the specific energy of the chemistry.
+- **Priority:** Should
+- **Status:** Implemented (2026-10-19)
+- **Verification:** Test — the recap adds up to the total mass for every template.
+- **Satisfied by:** INC3-006
+
+### REQ-UI-013 — Runs are stored and compared
+
+- **Statement:** The user shall be able to store the result of a Run with a name and a copy
+  of the project, then list the stored runs, filter them by architecture, project name,
+  date, name and a query on their inputs and outputs, and compare a selection: inputs that
+  differ, table of outputs, relative differences to a reference run, figures superposing the
+  runs, families of runs differing by one input. A run computed with other reference data
+  or another tool version is flagged, and a run whose project format changed remains
+  comparable.
+- **Priority:** Should
+- **Status:** Implemented (2026-10-26)
+- **Verification:** Test — `tests/runs` (filters, families, provenance, migration of the
+  stored projects, runs stored by earlier versions) and the GUI test Save run / Runs page.
+- **Satisfied by:** INC3-007

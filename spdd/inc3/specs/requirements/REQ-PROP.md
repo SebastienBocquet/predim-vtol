@@ -7,7 +7,7 @@
   versus pitch chart, and the **lift motors** (lift-only units) sized in hover, shown
   apart. A lift-only unit is never presented as a cruise motor.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** App test — for a quadplane 4+1 the cruise section lists only the
   pusher unit.
 - **Satisfied by:** INC2-009, INC3-002
@@ -19,6 +19,6 @@
   separate) or of the motor list after a Run never fails: the hover currents of an
   outdated result are not used.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** App test — Run, switch to a 4-in-1 ESC, the tab renders.
 - **Satisfied by:** INC2-004, INC3-002, INC3-003

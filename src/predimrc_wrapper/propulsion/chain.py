@@ -7,6 +7,7 @@ connector: I = P_bus / U_bus, loss I²·(2R_main + R_conn); battery terminal pow
 P_bus + main loss; battery internal loss from MIC-PROP-BAT. U_bus = U_t − I·(2R_main +
 R_conn), solved by fixed point. Data measured at the ESC input (``esc_input``): P_esc,in
 = P_data + phase loss / η_esc, the ESC loss (1 − η_esc)·P_esc,in being inside the data.
+η_esc is the constant efficiency of the separate ESC (unit type) or of the 4-in-1 board.
 """
 
 from __future__ import annotations
@@ -23,7 +24,7 @@ from predimrc_wrapper.core import Param
 from predimrc_wrapper.core import Port
 from predimrc_wrapper.core import params
 from predimrc_wrapper.core import ports
-from predimrc_wrapper.propulsion.wiring import awg_for_current
+from predimrc_wrapper.propulsion.wiring import default_gauges
 from predimrc_wrapper.propulsion.wiring import default_layout
 from predimrc_wrapper.propulsion.wiring import resistance_ohm
 
@@ -157,7 +158,7 @@ class PowerChain(Model):
             "—",
             "AWG",
             "main cable gauge",
-            origin="project or current",
+            origin="project or motor maximum current",
             source="project",
         ),
         Param(
@@ -193,19 +194,17 @@ class PowerChain(Model):
         cls,
         project: Project,
         battery: BatteryModel,
-        hover_currents_a: list[float] | None = None,
     ) -> PowerChain:
-        """Chain of a project; gauges not entered are chosen from the hover currents (default 10 A)."""
+        """Chain of a project; gauges not entered are sized for the motor maximum current."""
         from predimrc_wrapper.aircraft.project import WiringSpec  # noqa: PLC0415
 
         spec = project.wiring or WiringSpec()
         layout = default_layout(project)
         overrides = {o.motor_index: o for o in spec.overrides}
-        currents = hover_currents_a or [10.0] * len(project.motors)
-        four_in_one = spec.lift_esc == "four_in_one"
+        main_awg, gauges = default_gauges(project)
         branches = []
-        for b, m, current in zip(
-            layout.branches, project.motors, currents, strict=False
+        for b, m, (dc_awg, phase_awg) in zip(
+            layout.branches, project.motors, gauges, strict=False
         ):
             o = overrides.get(b.motor_index)
             dc = (
@@ -220,17 +219,17 @@ class PowerChain(Model):
                 BranchSpec(
                     name=f"motor {b.motor_index + 1} ({m.unit})",
                     dc_length_mm=dc,
-                    dc_awg=spec.dc_awg or awg_for_current(current),
+                    dc_awg=dc_awg,
                     phase_length_mm=phase,
-                    phase_awg=spec.phase_awg or awg_for_current(current),
-                    esc_efficiency=project.propulsion_units[m.unit].esc_efficiency,
-                    four_in_one=four_in_one and m.role != "cruise",
+                    phase_awg=phase_awg,
+                    esc_efficiency=project.esc_efficiency(m),
+                    four_in_one=project.on_four_in_one(m),
                 )
             )
         return cls(
             branches=branches,
             main_length_mm=layout.main_length_mm,
-            main_awg=spec.main_awg or awg_for_current(sum(currents)),
+            main_awg=main_awg,
             connector_mohm=spec.connector_mohm,
             wire_temperature_c=spec.wire_temperature_c,
             battery=battery,
@@ -271,7 +270,7 @@ class PowerChain(Model):
                         f"2·ρL/A·I², {b.dc_length_mm:.0f} mm AWG{b.dc_awg}",
                     ),
                     SegmentLoss(
-                        f"{b.name}: ESC",
+                        f"{b.name}: {'4-in-1 ESC' if b.four_in_one else 'ESC'}",
                         p_esc_in,
                         (1 - b.esc_efficiency) * p_esc_in,
                         f"constant efficiency {b.esc_efficiency:.2f} (MVP)",

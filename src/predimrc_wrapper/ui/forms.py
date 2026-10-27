@@ -50,8 +50,20 @@ def field_badge(info: FieldInfo, value: Any = _UNSET) -> str:
     return "default" if value is _UNSET or value == info.default else "entered"
 
 
+KMH_PER_M_S = 3.6
+
+
+def is_airspeed(name: str) -> bool:
+    """Airspeeds (``*speed*_m_s`` fields, not vertical) are shown and entered in km/h (REQ-NFR-002)."""
+    return name.endswith("_m_s") and "speed" in name and "vertical" not in name
+
+
+def _display_label(label: str, name: str) -> str:
+    return label.replace("(m/s)", "(km/h)") if is_airspeed(name) else label
+
+
 def field_label(name: str, info: FieldInfo, value: Any = _UNSET) -> str:
-    label = info.description or name.replace("_", " ")
+    label = _display_label(info.description or name.replace("_", " "), name)
     badge = field_badge(info, value)
     if badge == "required":
         return f"{label} *"
@@ -149,7 +161,7 @@ def _column_config(
     config = {}
     for name, info in item_cls.model_fields.items():
         ann, _ = unwrap_optional(info.annotation)
-        label = info.description or name
+        label = _display_label(info.description or name, name)
         tip = _help(f"{path}.0.{name}", info.description)
         if options and name in options:
             config[name] = st.column_config.SelectboxColumn(
@@ -170,6 +182,22 @@ def _column_config(
     return config
 
 
+def editor_base(st, key: str, generation: int, build) -> Any:
+    """The table first given to the data editor ``key``, the same at every rerun.
+
+    The editor keeps its edits as changes to the table it was first given: giving it the
+    edited rows back at the next rerun applies them twice or drops them (a value then had to
+    be entered several times). Data changed elsewhere must come with a new key.
+    """
+    bases = st.session_state.setdefault("_editor_bases", {})
+    if key not in bases:
+        # Tables of the previous projects are forgotten.
+        for old in [k for k in bases if not k.startswith(f"{generation}:")]:
+            del bases[old]
+        bases[key] = build()
+    return bases[key]
+
+
 def render_items(
     st,
     item_cls: type[BaseModel],
@@ -183,7 +211,36 @@ def render_items(
     """A list of models edited as one table; ``options`` gives the choices of text columns."""
     import pandas as pd  # noqa: PLC0415
 
+    key = _key(path, generation) + key_suffix
     columns = list(item_cls.model_fields)
+    scaled = {n: KMH_PER_M_S for n in columns if is_airspeed(n)}
+    st.caption(
+        "Add a row with ＋ at the bottom; delete rows by ticking them in the left column, then the bin icon "
+        "at the top right of the table."
+    )
+    edited = st.data_editor(
+        editor_base(
+            st,
+            key,
+            generation,
+            lambda: _items_frame(pd, item_cls, values, columns, scaled),
+        ),
+        key=key,
+        num_rows="dynamic",
+        hide_index=False,
+        column_config=_column_config(st, item_cls, options, path),
+        width="stretch",
+    )
+    _show_errors(st, path, errors, prefix=True)
+    records = edited.to_dict("records")
+    for r in records:
+        for name, factor in scaled.items():
+            if not _empty(r.get(name)):
+                r[name] = float(r[name]) / factor
+    return rows_to_items(records, item_cls)
+
+
+def _items_frame(pd, item_cls, values, columns, scaled):
     frame = pd.DataFrame(
         [{c: v.get(c) for c in columns} for v in values], columns=columns
     )
@@ -191,20 +248,9 @@ def render_items(
         ann, _ = unwrap_optional(info.annotation)
         if not (ann in (int, float, bool) or get_origin(ann) is Literal):
             frame[name] = frame[name].map(lambda v: None if _empty(v) else str(v))
-    st.caption(
-        "Add a row with ＋ at the bottom; delete rows by ticking them in the left column, then the bin icon "
-        "at the top right of the table."
-    )
-    edited = st.data_editor(
-        frame,
-        key=_key(path, generation) + key_suffix,
-        num_rows="dynamic",
-        hide_index=False,
-        column_config=_column_config(st, item_cls, options, path),
-        width="stretch",
-    )
-    _show_errors(st, path, errors, prefix=True)
-    return rows_to_items(edited.to_dict("records"), item_cls)
+        elif name in scaled:
+            frame[name] = frame[name].astype(float) * scaled[name]
+    return frame
 
 
 def _render_panels(
@@ -267,16 +313,25 @@ def render_field(
     elif ann in (int, float):
         low, high = bounds(info)
         cast = int if ann is int else float
+        airspeed = ann is float and is_airspeed(name)
+
+        def shown(v):
+            if v is None:
+                return None
+            return cast(v) * KMH_PER_M_S if airspeed else cast(v)
+
         out = st.number_input(
             label,
-            value=None if value is None else cast(value),
-            min_value=None if low is None else cast(low),
-            max_value=None if high is None else cast(high),
+            value=shown(value),
+            min_value=shown(low),
+            max_value=shown(high),
             step=1 if ann is int else None,
             key=key,
             placeholder="not set" if optional else "required",
             help=tip,
         )
+        if out is not None and airspeed:
+            out /= KMH_PER_M_S
     else:
         out = st.text_input(
             label, value="" if value is None else str(value), key=key, help=tip

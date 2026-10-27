@@ -1,0 +1,117 @@
+format_version: 2
+name: tricopter
+architecture: multicopter
+body_shape: Non profilé
+body_frontal_area_dm2: 2.5
+propulsion_units:
+  front:
+    motor_id: tmotor-mn2806-650kv
+    prop_diameter_in: 12.0
+    prop_pitch_in: 4.0
+    prop_mass_g: 20.0
+    esc_mass_g: 20.0
+    esc_efficiency: 0.95
+    figure_of_merit: 0.65
+    static_ct: 0.1
+    cruise_efficiency: 0.7
+  rear:
+    motor_id: tmotor-mn2212-780kv
+    prop_diameter_in: 10.0
+    prop_pitch_in: 4.5
+    prop_mass_g: 15.0
+    esc_mass_g: 20.0
+    esc_efficiency: 0.95
+    figure_of_merit: 0.65
+    static_ct: 0.1
+    cruise_efficiency: 0.7
+motors:
+- unit: front
+  role: lift
+  x_mm: -150.0
+  y_mm: 259.8
+- unit: front
+  role: lift
+  x_mm: -150.0
+  y_mm: -259.8
+- unit: rear
+  role: lift
+  x_mm: 300.0
+  y_mm: 0.0
+cg_x_mm: 0.0
+cg_y_mm: 0.0
+battery:
+  chemistry: lipo
+  n_series: 4
+  mode: mass
+  mass_g: 450.0
+mass_items:
+- name: frame
+  category: airframe
+  mass_g: 561.7
+- name: tail servo and tilt mechanism
+  category: airframe
+  mass_g: 100.0
+- name: camera
+  category: payload
+  mass_g: 300.0
+- name: flight controller, GPS, receiver
+  category: avionics
+  mass_g: 148.0
+drag_sources: []
+environment:
+  altitude_m: 0.0
+  delta_isa_k: 0.0
+mission:
+  reserve_fraction: 0.2
+  hover_time_s: 60.0
+  transition_altitude_m: 30.0
+  vertical_climb_speed_m_s: 2.0
+  vertical_descent_speed_m_s: 1.5
+  transition_time_s: 15.0
+  transition_tilt_deg: 60.0
+  min_thrust_to_weight: 1.5
+  avionics_power_w: 5.0
+  transition_factor: 1.0
+  stall_margin: 1.2
+  speed_step: 0.25
+  drag_factor: 1.0
+  hover_power_factor: 1.0
+scenarios:
+  hover_90s:
+    segments:
+    - kind: vertical_climb
+      altitude_change_m: 30.0
+      vertical_speed_m_s: 2.0
+      speed: optimal_range
+      until_reserve: false
+    - kind: hover
+      duration_s: 90.0
+      vertical_speed_m_s: 1.5
+      speed: optimal_range
+      until_reserve: false
+    - kind: cruise
+      vertical_speed_m_s: 1.5
+      speed: optimal_range
+      until_reserve: true
+    - kind: vertical_descent
+      altitude_change_m: -30.0
+      vertical_speed_m_s: 1.5
+      speed: optimal_range
+      until_reserve: false
+sizing:
+  target_mass_kg:
+  - 1.7
+  - 2.0
+  reference_mass_kg: 1.87
+  reference_hover_power_w: 280.0
+  mass_exponent: 1.0
+  headroom: 1.3
+  cruise_max_speed_m_s: 25.0
+  cruise_lift_to_drag: 8.0
+  cruise_overall_efficiency: 0.5
+calibration:
+  hover:
+    battery_power_w: 280.0
+    mass_kg: 1.87
+  cruise_parameter: auto
+test_data: []

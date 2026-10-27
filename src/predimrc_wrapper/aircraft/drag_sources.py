@@ -128,16 +128,22 @@ def source_cds(
             "kind": "stopped_rotor",
             "count": n,
             "n_blades": source.n_blades,
+            "blade_position": source.blade_position,
             "blade_chord_m": source.blade_chord_mm * MM,
             "radius_m": source.radius_mm * MM,
         })
+        cd = model.blade_cd(source.blade_position)
         return CdsResult(
             source.name,
             "stopped_rotor",
             cds,
-            "stopped rotor: blade planform drag",
-            f"n·B·c̄·R·C_d,b, C_d,b = {model.p.blade_cd}",
-            "generic, blades aligned with the flow",
+            f"stopped rotor: blade planform drag, blades {source.blade_position}",
+            f"n·B·c̄·R·C_d,b, C_d,b = {cd:g}",
+            {
+                "aligned": "blades along the flow: skin friction only",
+                "crosswind": "blades across the flow: sections at their pitch angle (worst case)",
+                "random": "random stop: mean of the aligned and crosswind coefficients",
+            }[source.blade_position],
             area_from="user",
         )
     if source.kind == "cds":

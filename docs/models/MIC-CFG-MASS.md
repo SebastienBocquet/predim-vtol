@@ -47,8 +47,13 @@ None.
 
 ### Modelling choices
 
-- m = Σ m_i + Σ_motors (m_m + m_p + m_esc)_j + m_b, one propulsion unit per motor; a
-  tilting motor counts once (category "tilt propulsion").
+- m = Σ m_i + Σ_motors (m_m + m_p + m_esc)_j + m_wiring + m_b, one propulsion unit per
+  motor; a tilting motor counts once (category "tilt propulsion").
+- m_wiring (category "wiring", INC3-006): every cable of the power chain (main 2, DC 2,
+  phase 3 conductors) × its length × the mass per metre of one silicone-insulated conductor
+  of its gauge: copper (8.96 g/cm³ × AWG area) + silicone (1.2 g/cm³) wall linear in the
+  gauge through two published wires (Pimoroni dual silicone wire, 20 AWG 1.8 mm OD 14.2 g/m,
+  14 AWG 3.5 mm OD 56.3 g/m per pair; reproduced to 2 %).
 - margin_mass = 1 − m / m_max.
 
 ### Model limitations

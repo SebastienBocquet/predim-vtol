@@ -149,7 +149,7 @@ def test_gui_save_api_load_round_trip(tmp_path):
 
 def test_outdated_flag():
     app = state.AppState(state.load_template("multicopter"))
-    app.result, app.result_key = object(), state.project_key(app.data)
+    app.two_phase, app.result_key = object(), state.project_key(app.data)
     assert not app.outdated
     app.data["battery"]["mass_g"] = 999
     assert app.outdated
@@ -218,16 +218,14 @@ def test_configuration_switch_updates_the_tabs():
     assert labels[1:] == [
         "Masses and battery",
         "Mission",
-        "Hover",
         "Cruise",
         "Drag",
+        "Hover",
         "Power chain",
         "Propeller sizing",
         "Test data",
         "Results",
-        "Exploration",
-        "Optimisation",
-        "Studies",
+        "Cost and reliability",
     ]
     assert any("does not use PredimRC" in i.value for i in at.info)
     at.selectbox(key="configuration").set_value("quadplane").run()

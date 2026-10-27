@@ -7,21 +7,25 @@
   y dimension lines with their values per motor, propeller discs, overlapping discs in
   red; booms drawn with their layout and section.
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — one x and one y dimension per motor.
 - **Satisfied by:** INC2-001, INC2-006, INC3-003
 
 ### REQ-UI-008 — Tabs follow the designer's workflow (changed)
 
-- **Statement:** Pre-sizing page tabs: Aircraft configuration (name, template, geometry
-  of wing / stabiliser / fuselage, PredimRC folder and profile, booms, motors and tilt
-  mask, CG), Masses and battery, Mission, Cruise, Drag, Hover, Power chain, Propeller
-  sizing, Test data, Results, Cost and reliability. Exploration, Optimisation and Studies
-  move to their own sidebar page "Studies", next to Pre-sizing, MIC cards and Glossary.
+- **Statement:** Pre-sizing page tabs: Aircraft configuration, Masses and battery, Mission,
+  Cruise, Drag, Hover, Power chain, Propeller sizing, Test data, Results, Cost and
+  reliability. The aircraft configuration tab gives, in this order: the PredimRC folder and
+  profile, a collapsed box "Wing, stabiliser and fuselage", a collapsed box "Motor layout"
+  (motor table with positions and roles, tilt mask), the booms, the CG (with the PredimRC
+  CG, REQ-AERO-012), the propulsion unit types, the motor pre-selection. No layout generator.
+  The Mission tab gives only the two-phase flight time (hover time, target speeds, reserve,
+  environment): the scenario mode of the MVP solver stays in the Python API, not in the GUI.
+  Exploration, Optimisation and Studies are on their own sidebar page "Studies".
 - **Priority:** Must
-- **Status:** Proposed
-- **Verification:** App test — tab list and sidebar pages.
-- **Satisfied by:** INC2-009, INC3-002, INC3-003, INC3-004
+- **Status:** Implemented (2026-10-19)
+- **Verification:** App test — tab list, boxes order, no scenario mode, sidebar pages.
+- **Satisfied by:** INC2-009, INC3-002, INC3-003, INC3-004, INC3-005
 
 ### REQ-UI-010 — Every quantity is defined by a help in the GUI (changed)
 
@@ -29,7 +33,7 @@
   they are added ("Add a propulsion unit type": one motor + propeller + ESC combination,
   referenced by each motor; removable when no motor uses it).
 - **Priority:** Must
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — help coverage stays complete.
 - **Satisfied by:** INC2-009, INC3-003
 
@@ -42,6 +46,18 @@
   forward-flight rotor model (no PredimRC). The calibration section explains why one
   factor per point and when it applies (scenario mode).
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Inspection.
 - **Satisfied by:** INC3-002
+
+### REQ-UI-012 — The masses are recapitulated with their origin
+
+- **Statement:** The Masses and battery tab shall list every mass of the budget — user items,
+  motors, propellers, ESCs, cables, battery — with count, unit mass, total and where it comes
+  from (entered, data sheet, computed), adding up to the total mass; next to the battery
+  definition it gives the derived quantity (capacity from the mass or mass from the
+  capacity) with the specific energy of the chemistry.
+- **Priority:** Should
+- **Status:** Implemented (2026-10-19)
+- **Verification:** Test — the recap adds up to the total mass for every template.
+- **Satisfied by:** INC3-006

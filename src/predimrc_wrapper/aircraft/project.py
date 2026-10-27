@@ -153,6 +153,11 @@ class PropulsionSpec(_Strict):
     """A propulsion unit type: motor, propeller and ESC. Motors reference it by name."""
 
     motor_id: str = req(description="Motor id in the database")
+    motor_mass_g: float | None = opt(
+        None,
+        gt=0,
+        description="Motor mass (g); empty: the mass of the motor database",
+    )
     propeller_id: str | None = opt(
         None,
         description="Propeller id in the database (diameter and pitch must match it)",
@@ -162,7 +167,11 @@ class PropulsionSpec(_Strict):
         None, gt=0, le=40, description="Propeller pitch (in), used by the pitch study"
     )
     prop_mass_g: float = opt(25.0, gt=0, description="Propeller mass (g)")
-    esc_mass_g: float = opt(30.0, ge=0, description="ESC mass (g)")
+    esc_mass_g: float | None = opt(
+        None,
+        ge=0,
+        description="Mass of one separate ESC (g); needed when this unit has separate ESCs",
+    )
     esc_efficiency: float = adv(0.95, gt=0, le=1, description="ESC efficiency")
     figure_of_merit: float = adv(0.65, gt=0, lt=1, description="Hover figure of merit")
     static_ct: float = adv(0.10, gt=0, description="Static thrust coefficient")
@@ -209,6 +218,87 @@ class MotorSlot(_Strict):
         description="Station, aft-positive from the reference: wing root LE or frame centre (mm)"
     )
     y_mm: float = req(description="Lateral position, right-positive (mm)")
+    spin: Literal["cw", "ccw"] | None = adv(
+        None,
+        description="Propeller rotation seen from above (yaw balance of the motor-out check); alternating around the frame when not set",
+    )
+
+
+class BoomSpec(_Strict):
+    """Booms carrying the lift motors, set in the configuration tab (REQ-CFG-014)."""
+
+    layout: Literal["parallel", "diagonal"] = req(
+        description=(
+            "parallel: booms along the flow carrying the off-centreline lift motors (quadplane); "
+            "diagonal: one straight boom per lift motor from an anchor under the fuselage"
+        )
+    )
+    section: Literal["round", "square", "profiled"] = opt(
+        "round",
+        description="Boom section: round tube, square tube, profiled (streamlined)",
+    )
+    thickness_mm: float = opt(
+        16.0,
+        gt=0,
+        description="Boom thickness seen by the flow (mm): diameter, side or profile thickness",
+    )
+    chord_mm: float | None = opt(
+        None,
+        gt=0,
+        description="Chord of a profiled section (mm); 4 × thickness when not set",
+    )
+    anchor_x_mm: float | None = opt(
+        None,
+        description="Diagonal booms: anchor station (mm); wing quarter chord or frame centre when not set",
+    )
+    anchor_half_width_mm: float | None = opt(
+        None,
+        ge=0,
+        description="Diagonal booms: half distance between the left and right anchors (mm); fuselage half width when not set",
+    )
+    anchor_z_mm: float | None = opt(
+        None,
+        description="Diagonal booms: anchor height (mm, up-positive); under the fuselage (or 0 for a frame) when not set",
+    )
+    motor_z_mm: float = opt(0.0, description="Height of the motors on the booms (mm)")
+
+
+class CostSpec(_Strict):
+    """Prices entered and wear assumptions (REQ-COST-001, REQ-COST-002)."""
+
+    frame: float = opt(
+        0.0,
+        ge=0,
+        description="Frame price: airframe, booms, fuselage (EUR)",
+    )
+    avionics: float = opt(
+        0.0, ge=0, description="Avionics price: flight controller, GPS, receiver (EUR)"
+    )
+    overrides: dict[str, float] = opt(
+        {},
+        description=(
+            "Prices replacing the database (EUR): keys motor:<id>, propeller:<id>, esc, esc4in1, "
+            "battery_per_wh, cable:<awg>"
+        ),
+    )
+    usd_per_eur: float | None = adv(
+        None,
+        gt=0,
+        description="Exchange rate (USD per EUR) of the database prices; ECB rate of the price list when not set",
+    )
+    battery_cycles: int | None = opt(
+        None,
+        gt=0,
+        description="Battery cycle life (cycles); 300 for LiPo, 500 for Li-ion when not set",
+    )
+    motor_life_h: float = opt(
+        1000.0, gt=0, description="Motor life before replacement (flight hours)"
+    )
+    propeller_flights: int = opt(
+        200,
+        gt=0,
+        description="Flights between propeller replacements (wear, small damage)",
+    )
 
 
 class BatterySpec(_Strict):
@@ -216,7 +306,13 @@ class BatterySpec(_Strict):
 
     chemistry: Literal["lipo", "li-ion"] = req(description="Cell chemistry")
     n_series: int = req(ge=1, le=14, description="Cells in series")
-    mode: Literal["mass", "capacity"] = opt("mass", description="Given quantity")
+    mode: Literal["mass", "capacity"] = opt(
+        "mass",
+        description=(
+            "Battery defined by: its mass (the capacity follows from the specific energy of the "
+            "chemistry) or its capacity (the mass follows)"
+        ),
+    )
     mass_g: float | None = opt(None, gt=0, description="Pack mass (g), mass mode")
     capacity_mah: float | None = opt(
         None, gt=0, description="Pack capacity (mAh), capacity mode"
@@ -254,6 +350,10 @@ class DragSource(_Strict):
     diameter_mm: float | None = opt(None, gt=0, description="Boom diameter (mm)")
     length_mm: float | None = opt(None, gt=0, description="Boom exposed length (mm)")
     n_blades: int = opt(2, ge=1, description="Blades per stopped rotor")
+    blade_position: Literal["aligned", "random", "crosswind"] = opt(
+        "random",
+        description="Position of the stopped blades: along the flow (best), random stop, across the flow (worst)",
+    )
     blade_chord_mm: float | None = opt(None, gt=0, description="Mean blade chord (mm)")
     radius_mm: float | None = opt(None, gt=0, description="Rotor radius (mm)")
     cds_m2: float | None = opt(None, ge=0, description="Drag area CdS (m²), kind cds")
@@ -325,11 +425,41 @@ class MissionSettings(_Strict):
         ge=0,
         le=0.5,
         description=(
-            "Energy reserve: fraction of the nominal energy (two-phase flight time), of the usable energy (scenario mode)"
+            "Energy reserve: fraction of the nominal energy kept at landing (two-phase flight time; "
+            "of the usable energy in the scenario mode of the Python API)"
         ),
     )
     hover_time_s: float = opt(
-        90.0, ge=0, description="Hover time of the two-phase flight time (s)"
+        60.0,
+        ge=0,
+        description="Hover time at the transition altitude, before the transition (s)",
+    )
+    transition_altitude_m: float = opt(
+        30.0,
+        ge=0,
+        description="Transition altitude (m): vertical climb to it, vertical descent from it",
+    )
+    vertical_climb_speed_m_s: float = opt(
+        2.0, gt=0, description="Vertical climb speed to the transition altitude (m/s)"
+    )
+    vertical_descent_speed_m_s: float = opt(
+        1.5,
+        gt=0,
+        description="Vertical descent speed from the transition altitude (m/s)",
+    )
+    transition_time_s: float = opt(
+        15.0,
+        ge=0,
+        description="Duration of the transition from hover to cruise (s), winged aircraft",
+    )
+    transition_tilt_deg: float = opt(
+        60.0,
+        gt=0,
+        le=90,
+        description=(
+            "Tilt angle of the tilting motors during the transition, from the horizontal (°): "
+            "90° = vertical; a tilting motor gives T·sin θ vertically"
+        ),
     )
     target_speeds_m_s: list[float] | None = opt(
         None,
@@ -361,6 +491,11 @@ class MissionSettings(_Strict):
         1.0,
         gt=0,
         description="Multiplier of the total cruise drag (set by the calibration)",
+    )
+    hover_power_factor: float = adv(
+        1.0,
+        gt=0,
+        description="Multiplier of the hover motor powers read in the test data (set by the calibration)",
     )
 
 
@@ -447,6 +582,10 @@ class BranchOverride(_Strict):
     )
 
 
+FOUR_IN_ONE_CHANNELS = 4
+"""Motors one 4-in-1 ESC board can drive."""
+
+
 class WiringSpec(_Strict):
     """Power chain: battery, cables, ESCs (INC2-004). Lengths default from the geometry."""
 
@@ -469,6 +608,19 @@ class WiringSpec(_Strict):
     )
     cruise_esc_position_pct: float = opt(
         70.0, ge=0, le=100, description="Cruise ESC position (% of the fuselage length)"
+    )
+    cruise_on_four_in_one: bool = opt(
+        False,
+        description="The cruise motors are driven by the 4-in-1 board (no separate cruise ESC)",
+    )
+    four_in_one_mass_g: float | None = opt(
+        None, ge=0, description="Mass of the 4-in-1 ESC board (g); needed with a 4-in-1"
+    )
+    four_in_one_efficiency: float = adv(
+        0.95,
+        gt=0,
+        le=1,
+        description="Efficiency of the 4-in-1 ESC board (every channel)",
     )
     main_awg: int | None = opt(
         None,
@@ -533,9 +685,12 @@ class CalibrationSpec(_Strict):
 
     hover: HoverReference | None = opt(None, description="Hover reference point")
     cruise: CruiseReference | None = opt(None, description="Cruise reference point")
-    cruise_parameter: Literal["auto", "propeller_efficiency", "drag"] = opt(
+    cruise_parameter: Literal["auto", "propeller_efficiency", "drag"] = adv(
         "auto",
-        description="Factor set by the cruise point (auto: propeller efficiency if wing-borne, else drag)",
+        description=(
+            "Factor set by the cruise point in the scenario mode (auto: propeller efficiency if "
+            "wing-borne, else drag); the two-phase calibration always sets the drag factor"
+        ),
     )
 
 
@@ -622,6 +777,13 @@ class Project(_Strict):
     wiring: WiringSpec | None = opt(
         None, description="Power chain: battery, cables, ESCs (defaults when not set)"
     )
+    booms: BoomSpec | None = opt(
+        None,
+        description="Booms carrying the lift motors: layout and section (drag and cable paths)",
+    )
+    cost: CostSpec | None = opt(
+        None, description="Prices entered and wear assumptions (defaults when not set)"
+    )
 
     @model_validator(mode="before")
     @classmethod
@@ -665,6 +827,19 @@ class Project(_Strict):
             f"C_d·A = {cd:g} ({origin}) × {self.body_frontal_area_dm2:g} dm²"
         )
 
+    def on_four_in_one(self, motor: MotorSlot) -> bool:
+        """The motor is driven by the 4-in-1 board (else by its own separate ESC)."""
+        spec = self.wiring
+        if spec is None or spec.lift_esc != "four_in_one":
+            return False
+        return motor.role != "cruise" or spec.cruise_on_four_in_one
+
+    def esc_efficiency(self, motor: MotorSlot) -> float:
+        """Efficiency of the ESC driving the motor: the 4-in-1 board or its unit type's ESC."""
+        if self.on_four_in_one(motor):
+            return self.wiring.four_in_one_efficiency
+        return self.propulsion_units[motor.unit].esc_efficiency
+
     def lift_motors(self) -> list[MotorSlot]:
         """Motors used in vertical flight (lift and tilt)."""
         return [m for m in self.motors if m.role in LIFT_ROLES]
@@ -707,22 +882,78 @@ class Project(_Strict):
                 msg = f"Unknown body shape '{self.body_shape}'. Known: {list(drag_shapes())}"
                 raise ValueError(msg)
         self._check_overlap()
+        self._check_escs()
         return self
 
-    def _check_overlap(self) -> None:
-        """Lift propeller discs must not overlap (one motor per arm end)."""
-        lift = self.lift_motors()
-        for i, a in enumerate(lift):
-            for b in lift[i + 1 :]:
+    def _check_escs(self) -> None:
+        """ESC masses entered (unit type for separate ESCs, board for a 4-in-1); board channels."""
+        missing = sorted({
+            m.unit
+            for m in self.motors
+            if not self.on_four_in_one(m)
+            and self.propulsion_units[m.unit].esc_mass_g is None
+        })
+        if missing:
+            msg = (
+                f"Separate ESCs need the ESC mass of the unit types {missing}: enter 'esc_mass_g' "
+                "or drive these motors with the 4-in-1 board (Power chain tab)."
+            )
+            raise ValueError(msg)
+        if (
+            self.wiring is not None
+            and self.wiring.lift_esc == "four_in_one"
+            and self.wiring.four_in_one_mass_g is None
+        ):
+            msg = "A 4-in-1 ESC needs its board mass: enter 'four_in_one_mass_g' (Power chain tab)."
+            raise ValueError(msg)
+        driven = [i + 1 for i, m in enumerate(self.motors) if self.on_four_in_one(m)]
+        if len(driven) > FOUR_IN_ONE_CHANNELS:
+            msg = (
+                f"The 4-in-1 ESC drives {len(driven)} motors ({', '.join(map(str, driven))}) but has "
+                f"{FOUR_IN_ONE_CHANNELS} channels: use separate ESCs"
+                + (
+                    " or a separate cruise ESC (untick 'cruise on four in one')."
+                    if self.wiring.cruise_on_four_in_one
+                    else "."
+                )
+            )
+            raise ValueError(msg)
+
+    def overlaps(self) -> list[tuple[int, int, float, float]]:
+        """Overlapping lift propeller discs: (motor i, motor j, centre distance, minimum distance) in mm."""
+        lift = [(i, m) for i, m in enumerate(self.motors) if m.role in LIFT_ROLES]
+        out = []
+        for k, (i, a) in enumerate(lift):
+            for j, b in lift[k + 1 :]:
                 ra = self.propulsion_units[a.unit].prop_diameter_in * 25.4 / 2
                 rb = self.propulsion_units[b.unit].prop_diameter_in * 25.4 / 2
                 gap = ((a.x_mm - b.x_mm) ** 2 + (a.y_mm - b.y_mm) ** 2) ** 0.5
                 if gap < ra + rb - 1e-6:
-                    msg = (
-                        f"Propellers of the motors at ({a.x_mm:g}, {a.y_mm:g}) and ({b.x_mm:g}, {b.y_mm:g}) mm "
-                        f"overlap: {gap:.0f} mm between centres < {ra + rb:.0f} mm."
-                    )
-                    raise ValueError(msg)
+                    out.append((i, j, gap, ra + rb))
+        return out
+
+    def _check_overlap(self) -> None:
+        """Lift propeller discs must not overlap (one motor per arm end)."""
+        found = self.overlaps()
+        if not found:
+            return
+        i, j, gap, minimum = found[0]
+        a, b = self.motors[i], self.motors[j]
+        da = self.propulsion_units[a.unit].prop_diameter_in
+        db = self.propulsion_units[b.unit].prop_diameter_in
+        msg = (
+            f"The propellers of motor {i + 1} ({da:g} in, at x = {a.x_mm:g}, y = {a.y_mm:g} mm) "
+            f"and motor {j + 1} ({db:g} in, at x = {b.x_mm:g}, y = {b.y_mm:g} mm) overlap: their centres are "
+            f"{gap:.0f} mm apart, they need at least {minimum:.0f} mm (sum of the two propeller radii). "
+            f"Move the motors {minimum - gap:.0f} mm further apart (longer arms or booms) or use smaller "
+            "propellers."
+            + (
+                f" {len(found) - 1} other pair(s) overlap too."
+                if len(found) > 1
+                else ""
+            )
+        )
+        raise ValueError(msg)
 
     # --- I/O -----------------------------------------------------------------
 
@@ -735,7 +966,11 @@ class Project(_Strict):
 
     @classmethod
     def template(cls, name: str) -> Project:
-        """Load a template project shipped with the tool (names in ``TEMPLATES``)."""
+        """Load a template: shipped (names in ``TEMPLATES``) or user (``user:<name>``)."""
+        from predimrc_wrapper.aircraft import templates  # noqa: PLC0415
+
+        if name.startswith(templates.USER):
+            return cls.model_validate(templates.load_user(name))
         text = (
             files("predimrc_wrapper.templates")
             .joinpath(f"{name}.yaml")
@@ -770,6 +1005,17 @@ class Project(_Strict):
         data = copy.deepcopy(self.model_dump(mode="python"))
         for path, value in overrides.items():
             _set_path(data, path, value, _valid_paths(type(self)))
+            parts = path.split(".")
+            if (
+                len(parts) == 3
+                and parts[0] == "propulsion_units"
+                and parts[2] == "motor_id"
+                and parts[1] in self.propulsion_units
+                and value != self.propulsion_units[parts[1]].motor_id
+                and f"propulsion_units.{parts[1]}.motor_mass_g" not in overrides
+            ):
+                # Another motor: the mass of the database, not that of the former one.
+                data["propulsion_units"][parts[1]]["motor_mass_g"] = None
         return type(self).model_validate(data)
 
 
@@ -777,7 +1023,7 @@ TEMPLATES = {
     "multicopter": "Quadcopter X (no wing)",
     "tricopter": "Tricopter (no wing)",
     "quadplane": "Quadplane 4+1 (wing, 4 lift + 1 pusher)",
-    "tiltrotor": "Tricopter with wing (2 tilting front motors + 1 rear lift)",
+    "tiltrotor": "Tricopter with wing (tilting motors chosen by the tilt mask)",
 }
 """Shipped templates: file name → configuration label."""
 
@@ -804,6 +1050,8 @@ def migrate_v1(data: dict[str, Any]) -> dict[str, Any]:
     else:
         motors = layouts.multirotor(n, layout["arm_length_mm"])
     data["propulsion_units"] = {k: v for k, v in units.items() if v}
+    for spec in data["propulsion_units"].values():  # format 1 had a 30 g ESC by default
+        spec.setdefault("esc_mass_g", 30.0)
     data["motors"] = motors
     data["format_version"] = FORMAT_VERSION
     return data
@@ -910,8 +1158,10 @@ __all__ = [
     "TEMPLATES",
     "AeroSpec",
     "BatterySpec",
+    "BoomSpec",
     "BranchOverride",
     "CalibrationSpec",
+    "CostSpec",
     "CruiseReference",
     "DragSource",
     "EnvironmentSpec",

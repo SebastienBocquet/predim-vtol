@@ -117,7 +117,11 @@
   The tool writes into PredimRC the flight altitude and temperature (`3-Geometrie!T29`,
   `T30`; density read back in `U30`) and the target speeds V_x 1, V_x 2 (`AB29`, `AB30`);
   the aerodynamic power at each target speed equals the PredimRC "vitesse imposée"
-  value at the trimmed C_z = 2mg / (ρSV²) within 1e-6 relative.
+  value at the trimmed wing C_z within 1e-6 relative. The trimmed wing C_z includes the
+  stabiliser lift (linear relation between the wing C_z and 2mg / (ρSV²) on the PredimRC
+  polar rows); the block is read by a parabola on its nodes up to the last C_z of the
+  polar. Beyond them (stall edge) the polar value is used, with a warning; a warning is
+  also given when the interpolated curve and the block differ by more than 3 %.
 - **Rationale:** The designer trusts PredimRC; any difference must come only from what
   the tool adds (drag sources, density), and be visible.
 - **Priority:** Must
@@ -125,3 +129,20 @@
 - **Verification:** Test (slow) — reference case, tool curve versus the PredimRC sheet
   cells; Test — with drag sources, the difference equals ½ρV³·ΣCdS exactly.
 - **Satisfied by:** INC2-005
+
+## Added by increment 3 (2026-10-18)
+
+### REQ-AERO-012 — The CG entered is checked against the PredimRC CG
+
+- **Statement:** For a winged aircraft, after a Run, the aircraft configuration tab shall show
+  next to the CG entered the CG given by PredimRC for the static margin entered (mm from the
+  wing root leading edge, `3-Geometrie!D30`, with the neutral point `D31` and the MAC), and a
+  warning when both differ by more than 2 % of the MAC, giving the static margin the CG
+  entered would have; a button copies the PredimRC CG into the project.
+- **Rationale:** The CG sets the thrust split in hover and the static margin of the wing;
+  both must describe the same aircraft (feedback of 2026-10-19).
+- **Priority:** Should
+- **Status:** Implemented (2026-10-19)
+- **Verification:** Test — the PredimRC MAC and MAC leading edge equal the ones computed from
+  the wing panels (same reference as the motor stations); warning levels of the check.
+- **Satisfied by:** INC3-005

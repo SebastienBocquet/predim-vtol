@@ -2,7 +2,8 @@
 
 File ``~/.predimrc_wrapper/settings.yaml`` (or ``$PREDIMRC_SETTINGS``); environment
 variables override it: ``$PREDIMRC_PROFILES`` (PredimRC folder), ``$PREDIMRC_STUDIES``
-(studies root), ``$PREDIMRC_USER_DATA`` (user data folder).
+(studies root), ``$PREDIMRC_USER_DATA`` (user data folder), ``$PREDIMRC_TEMPLATES`` (user
+templates folder), ``$PREDIMRC_CACHE`` (cache file of the PredimRC evaluations).
 """
 
 from __future__ import annotations
@@ -31,6 +32,10 @@ class Settings:
     """Folder of the PredimRC workbooks ``PredimRC_<profile>.xls``."""
     studies_root: str = "."
     """Root folder of the stored studies (default: current working directory)."""
+    templates_folder: str = ""
+    """Folder of the user templates (default ``~/.predimrc_wrapper/templates``)."""
+    predimrc_cache: str = ""
+    """HDF5 cache of the PredimRC evaluations (default ``~/.predimrc_wrapper/predimrc_cache.h5``)."""
 
     @classmethod
     def load(cls) -> Settings:
@@ -44,6 +49,10 @@ class Settings:
             settings.predimrc_folder = os.environ["PREDIMRC_PROFILES"]
         if "PREDIMRC_STUDIES" in os.environ:
             settings.studies_root = os.environ["PREDIMRC_STUDIES"]
+        if "PREDIMRC_TEMPLATES" in os.environ:
+            settings.templates_folder = os.environ["PREDIMRC_TEMPLATES"]
+        if "PREDIMRC_CACHE" in os.environ:
+            settings.predimrc_cache = os.environ["PREDIMRC_CACHE"]
         return settings
 
     def save(self) -> Path:
@@ -63,3 +72,9 @@ def available_profiles() -> list[str]:
     from predimrc_wrapper.predimrc_wrapper import discover_profiles  # noqa: PLC0415
 
     return sorted(discover_profiles(predimrc_folder()))
+
+
+def templates_folder() -> Path:
+    """Folder of the user templates of the settings."""
+    folder = Settings.load().templates_folder
+    return Path(folder) if folder else Path.home() / ".predimrc_wrapper" / "templates"

@@ -81,3 +81,35 @@
   retrieved: 2026-10-12
   status: verified
   notes: "Long shaft. T-Motor bench test: APC 8x6 prop."
+- id: tmotor-mt2216-1100kv
+  manufacturer: T-Motor
+  range: MT
+  role: lift
+  kv: 1100
+  rm_mohm: 93
+  i0_a: 0.3
+  i0_test_voltage_v: 10
+  i_max_a: 25
+  p_max_w: 380
+  mass_g: 75
+  cells: "3-4S"
+  source: "T-Motor MT2216 KV1100 data sheet (supplied by the user, 2026-10-25)"
+  retrieved: 2026-10-25
+  status: verified
+  notes: "12N14P, stator 22x16 mm, shaft 4 mm, 27.5x34 mm. Max efficiency current 4-15 A (>74 %). Above the 250 W scope of this file (380 W)."
+- id: tmotor-mt2216-900kv
+  manufacturer: T-Motor
+  range: MT
+  role: lift
+  kv: 900
+  rm_mohm: 135
+  i0_a: 0.4
+  i0_test_voltage_v: 10
+  i_max_a: 20
+  p_max_w: 280
+  mass_g: 75
+  cells: "2-4S"
+  source: https://myhelis.com/t-motor-900-kv-v2-mt2216-v2-0.html
+  retrieved: 2026-10-25
+  status: estimated
+  notes: "Read in search results only (the reseller pages refused the robot; no T-Motor page reached). 12N14P. Listings disagree: Rm 135 mΩ (XHeli, HobbyPartz, MyHelis) or 113 mΩ (fpvmodel); Pmax 280 W (MyHelis, V2.0) or 210 W (XHeli, V1). To check against the T-Motor data sheet."

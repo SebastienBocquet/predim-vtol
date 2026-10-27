@@ -49,7 +49,7 @@ class AppState:
 
     @property
     def outdated(self) -> bool:
-        return self.result is not None and self.result_key != project_key(self.data)
+        return self.two_phase is not None and self.result_key != project_key(self.data)
 
 
 @dataclass
@@ -113,8 +113,11 @@ def save_project(data: dict[str, Any], path: str | Path) -> Path:
 
 
 def project_key(data: dict[str, Any]) -> str:
+    """Hash of the project data; empty top-level values (None, {}) do not count (the forms set
+    them while a page is drawn, the page removes them at its end)."""
+    kept = {k: v for k, v in data.items() if v is not None and v != {}}
     return hashlib.sha1(
-        json.dumps(data, sort_keys=True, default=str).encode()
+        json.dumps(kept, sort_keys=True, default=str).encode()
     ).hexdigest()
 
 
@@ -137,3 +140,48 @@ def excel_available(profile: str = "SD7003") -> str | None:
     except FileNotFoundError as error:
         return f"{error} Set the PredimRC folder in the settings."
     return None
+
+
+def rename_unit(data: dict[str, Any], old: str, new: str) -> None:
+    """Rename a propulsion unit type, in place, and the motors using it.
+
+    Raises:
+        ValueError: The new name is empty or already used.
+    """
+    new = new.strip()
+    units = data["propulsion_units"]
+    if not new:
+        msg = "The new name is empty."
+        raise ValueError(msg)
+    if new != old and new in units:
+        msg = f"A propulsion unit type '{new}' exists already."
+        raise ValueError(msg)
+    data["propulsion_units"] = {
+        (new if name == old else name): spec for name, spec in units.items()
+    }
+    for motor in data.get("motors") or []:
+        if motor.get("unit") == old:
+            motor["unit"] = new
+
+
+def remove_unit(
+    data: dict[str, Any], name: str, replacement: str | None = None
+) -> None:
+    """Remove a propulsion unit type, in place; its motors take the ``replacement`` type.
+
+    Raises:
+        ValueError: It is the last type, or motors use it and no other type replaces it.
+    """
+    units = data["propulsion_units"]
+    if len(units) == 1:
+        msg = "The last propulsion unit type cannot be removed."
+        raise ValueError(msg)
+    users = [m for m in data.get("motors") or [] if m.get("unit") == name]
+    if users and (
+        replacement is None or replacement == name or replacement not in units
+    ):
+        msg = f"{len(users)} motor(s) use '{name}': choose the type replacing it."
+        raise ValueError(msg)
+    for motor in users:
+        motor["unit"] = replacement
+    data["propulsion_units"] = {k: v for k, v in units.items() if k != name}

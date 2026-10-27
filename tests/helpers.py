@@ -56,6 +56,8 @@ class ParabolicAero:
             aspect_ratio=9.83,
             aspect_ratio_el=11.05,
             rho=self.rho,
+            cg_mm=66.4,
+            neutral_point_mm=75.6,
         )
 
     def close(self) -> None:

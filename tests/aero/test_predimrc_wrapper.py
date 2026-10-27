@@ -38,6 +38,11 @@ def test_reference_case(predimrc, reference_case):
     assert result.span_total == pytest.approx(1825.0, rel=5e-3)
     assert result.aspect_ratio == pytest.approx(9.831, rel=5e-3)
     assert result.cg == pytest.approx(30.1, rel=5e-3)
+    assert result.static_margin == pytest.approx(5.0)
+    assert result.foyer - result.cg == pytest.approx(result.static_margin)
+    assert result.tail_volume == pytest.approx(0.4203, rel=5e-3)
+    assert result.stab_incidence_deg == pytest.approx(0.511, abs=0.01)
+    assert result.longitudinal_dihedral_deg == pytest.approx(1.245, abs=0.01)
     assert result.vx.size > 5
     np.testing.assert_allclose(result.drag_n * result.vx, result.power_required_w)
     assert result.v_min < result.v_min_power < result.v_max_finesse

@@ -3,9 +3,12 @@
 The curve is the PredimRC level-flight polar (power column of Calculs1) plus the tool's
 drag sources at the PredimRC density (the flight altitude and temperature are written into
 PredimRC). The power at the target speeds V₁ (minimum power) and V₂ (maximum L/D) is read
-in the PredimRC "Performances à vitesse imposée" blocks at the trimmed C_z = 2mg/(ρSV²),
-so that it is PredimRC's own value at that speed; the gap to the interpolated curve is
-reported (coarse polar grid).
+in the PredimRC "Performances à vitesse imposée" blocks at the trimmed wing C_z, so that it
+is PredimRC's own value at that speed. The trimmed wing C_z comes from the polar itself: its
+rows are in equilibrium with the stabiliser lift, so the wing C_z is a linear function of
+2mg/(ρSV²). The block is read by a parabola on its nodes up to the last C_z of the polar;
+beyond them (near the stall edge) the polar value is used and a warning is given, as when
+the interpolated curve and the block disagree by more than ``CURVE_GAP_TOLERANCE``.
 """
 
 from __future__ import annotations
@@ -25,6 +28,9 @@ if TYPE_CHECKING:
 ISO_TOLERANCE = 1e-6
 """Relative tolerance of the iso-model checks."""
 
+CURVE_GAP_TOLERANCE = 0.03
+"""Relative gap between the interpolated curve and the block above which a warning is given."""
+
 
 @dataclass
 class CruiseCurve:
@@ -41,6 +47,30 @@ class CruiseCurve:
     mass_kg: float
     cds_sources_m2: float
     wing_area_m2: float
+    cz_wing: np.ndarray = field(default_factory=lambda: np.empty(0))
+    """Wing C_z of each polar point (PredimRC column B)."""
+
+    def wing_cz(self, v_m_s: float) -> float:
+        """Trimmed wing C_z at a speed, the stabiliser lift included.
+
+        PredimRC solves ½ρV²(S·Cz_wing + S_s·Cz_stab) = mg on each polar row, Cz_stab being
+        linear in Cz_wing (pitch equilibrium): Cz_wing is linear in 2mg/(ρSV²), fitted on the
+        rows. Without polar C_z, the wing alone: 2mg/(ρSV²).
+        """
+        cz_lift = (
+            2.0 * self.mass_kg * GRAVITY / (self.rho * self.wing_area_m2 * v_m_s**2)
+        )
+        ok = np.isfinite(self.cz_wing)
+        if ok.sum() < 2:
+            return float(cz_lift)
+        ref = (
+            2.0
+            * self.mass_kg
+            * GRAVITY
+            / (self.rho * self.wing_area_m2 * self.v_m_s**2)
+        )
+        slope, offset = np.polyfit(ref[ok], self.cz_wing[ok], 1)
+        return float(slope * cz_lift + offset)
 
     @property
     def drag_total_n(self) -> np.ndarray:
@@ -66,12 +96,15 @@ class TargetPoint:
     index: int
     v_m_s: float
     cz_trim: float
+    """Trimmed wing C_z, the stabiliser lift included."""
     drag_predimrc_n: float
     power_predimrc_w: float
     drag_sources_n: float
     drag_factor: float
     curve_power_w: float
     """Total power interpolated on the curve at the same speed (W), for information."""
+    source: str = "block"
+    """``block`` (imposed-speed block) or ``polar`` (no usable block value: curve value)."""
 
     @property
     def drag_n(self) -> float:
@@ -99,6 +132,8 @@ class IsoCheck:
     """Interpolated curve versus block at each target speed (information)."""
     imposed_speeds_kmh: list[float] = field(default_factory=list)
     """Vx 1, Vx 2 read back from the PredimRC blocks (km/h)."""
+    warnings: list[str] = field(default_factory=list)
+    """Target points read on the polar (stall edge) or far from the curve."""
 
     @property
     def available(self) -> bool:
@@ -136,6 +171,7 @@ def cruise_curve(
         mass_kg=aircraft.total_mass_kg,
         cds_sources_m2=cds,
         wing_area_m2=r.total_surface / 100.0,
+        cz_wing=np.asarray(r.cz, dtype=float),
     )
 
 
@@ -153,16 +189,27 @@ def target_points(
     speeds_m_s = (vx_kmh[0] / 3.6, vx_kmh[1] / 3.6)
     results = aircraft.aero.results(aircraft.total_mass_kg, vx_kmh)
     curve = cruise_curve(aircraft, vx_kmh)
-    points, devs, gaps, read_back = [], [], [], []
+    cz_polar = curve.cz_wing[np.isfinite(curve.cz_wing)]
+    cz_max = float(cz_polar.max()) if len(cz_polar) else None
+    points, devs, gaps, read_back, warnings = [], [], [], [], []
     for k, v in ((1, speeds_m_s[0]), (2, speeds_m_s[1])):
         block = results.imposed.get(k)
-        cz = 2.0 * curve.mass_kg * GRAVITY / (curve.rho * curve.wing_area_m2 * v**2)
-        if block is None:
-            drag_p = float(np.interp(v, curve.v_m_s, curve.drag_predimrc_n))
-            power_p, read_back_v = drag_p * v, float("nan")
-        else:
-            drag_p, power_p = block.at_cz(cz)
+        cz = curve.wing_cz(v)
+        drag_p = power_p = read_back_v = float("nan")
+        if block is not None:
+            drag_p, power_p = block.at_cz(cz, cz_max)
             read_back_v = 3.6 * block.vx_m_s
+        source = "block"
+        if not np.isfinite(power_p):
+            source = "polar"
+            drag_p = float(np.interp(v, curve.v_m_s, curve.drag_predimrc_n))
+            power_p = drag_p * v
+            if block is not None:
+                warnings.append(
+                    f"V{k}: trimmed Cz {cz:.3f} beyond the last usable node of the "
+                    f"imposed-speed block (Cz max of the polar {cz_max:.3f}, stall edge): "
+                    "power read on the polar"
+                )
         point = TargetPoint(
             k,
             v,
@@ -172,15 +219,22 @@ def target_points(
             0.5 * curve.rho * v**2 * curve.cds_sources_m2,
             curve.drag_factor,
             float(np.interp(v, curve.v_m_s, curve.power_total_w)),
+            source,
         )
         points.append(point)
+        if abs(point.curve_gap) > CURVE_GAP_TOLERANCE:
+            warnings.append(
+                f"V{k}: interpolated curve and imposed-speed block differ by "
+                f"{100 * point.curve_gap:+.1f} % (Cz {cz:.3f})"
+            )
         if block is not None:
-            devs.extend((
+            devs.append(abs(read_back_v / (3.6 * v) - 1.0))
+        if source == "block":
+            devs.append(
                 abs(point.drag_predimrc_n * v / power_p - 1.0)
                 if power_p > 0
-                else np.inf,
-                abs(read_back_v / (3.6 * v) - 1.0),
-            ))
+                else np.inf
+            )
         gaps.append(point.curve_gap)
         read_back.append(read_back_v)
     m_g_vz = np.asarray(results.power_required_w, dtype=float)
@@ -189,6 +243,6 @@ def target_points(
         float(np.nanmax(np.abs(m_g_vz / col - 1.0))) if len(col) else float("nan")
     )
     iso = IsoCheck(
-        curve_dev, float(max(devs)) if devs else float("nan"), gaps, read_back
+        curve_dev, float(max(devs)) if devs else float("nan"), gaps, read_back, warnings
     )
     return curve, points, iso

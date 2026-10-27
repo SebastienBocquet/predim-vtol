@@ -144,6 +144,41 @@ class MomentumPropeller(Model):
 
 
 _BEM_EXAMPLE = {"diameter_m": 0.254, "pitch_m": 0.1143}
+_HALVINGS = 12
+"""Halvings of n_max bracketing the rotation speed (n_max / 4096 ≈ 0 for an RC propeller)."""
+
+
+def _bracketed_root(f, lo, hi, f_lo, f_hi, xtol, max_iter: int = 100) -> np.ndarray:
+    """Root of ``f`` in [lo, hi] where ``f_lo`` and ``f_hi`` have opposite signs, vectorised.
+
+    Regula falsi with the Illinois modification: the root stays bracketed as with a
+    bisection, but the convergence is superlinear (a few iterations instead of ~50).
+    Elements without a sign change are returned at an end of their interval.
+    """
+    lo, hi, f_lo, f_hi = (
+        np.array(a, dtype=float) for a in np.broadcast_arrays(lo, hi, f_lo, f_hi)
+    )
+    side = np.zeros(lo.shape, dtype=np.int8)
+    x = 0.5 * (lo + hi)
+    for _ in range(max_iter):
+        denom = f_hi - f_lo
+        with np.errstate(divide="ignore", invalid="ignore"):
+            secant = (lo * f_hi - hi * f_lo) / denom
+        new = np.where(np.isfinite(secant), secant, 0.5 * (lo + hi))
+        new = np.clip(new, np.minimum(lo, hi), np.maximum(lo, hi))
+        done = np.max(np.abs(new - x), initial=0.0) <= xtol
+        x = new
+        if done:
+            break
+        fx = f(x)
+        same = np.sign(fx) == np.sign(f_lo)
+        lo, f_lo = np.where(same, x, lo), np.where(same, fx, f_lo)
+        hi, f_hi = np.where(same, hi, x), np.where(same, f_hi, fx)
+        # Illinois: the end kept twice in a row has its value halved.
+        f_hi = np.where(same & (side == 1), 0.5 * f_hi, f_hi)
+        f_lo = np.where(~same & (side == -1), 0.5 * f_lo, f_lo)
+        side = np.where(same, np.int8(1), np.int8(-1))
+    return x
 
 
 def _static_coefficients(model: BladeElementPropeller) -> bool:
@@ -375,18 +410,23 @@ class BladeElementPropeller(Model):
             d_momentum = 4.0 * np.pi * rr * r * axial * vi * np.maximum(tip, 1e-3)
             return d_thrust, d_torque, d_momentum
 
+        def excess(vi):
+            dt, _, dm = loads(vi)
+            return dt - dm
+
         zero = np.zeros(omega.shape[:-1] + r.shape)
         t0, _, _ = loads(zero)
-        lo, hi = (
+        hi = np.broadcast_to(omega * radius + np.abs(vv) + 1.0, zero.shape)
+        # Induced velocity where the blade-element thrust equals the momentum thrust.
+        vi = _bracketed_root(
+            excess,
             zero,
-            np.broadcast_to(omega * radius + np.abs(vv) + 1.0, zero.shape).copy(),
+            hi,
+            t0,
+            excess(hi),
+            xtol=1e-12 * max(float(hi.max(initial=1.0)), 1.0),
         )
-        for _ in range(48):
-            mid = 0.5 * (lo + hi)
-            dt, _, dm = loads(mid)
-            positive = dt - dm > 0.0
-            lo, hi = np.where(positive, mid, lo), np.where(positive, hi, mid)
-        vi = np.where(t0 > 0.0, 0.5 * (lo + hi), 0.0)
+        vi = np.where(t0 > 0.0, vi, 0.0)
         dt, dq, _ = loads(vi)
         thrust = np.sum(dt * dr, axis=-1)
         torque = np.sum(dq * dr, axis=-1)
@@ -408,18 +448,43 @@ class BladeElementPropeller(Model):
     def n_for_thrust(
         self, thrust_n, v_m_s, rho: float, n_max: float = 600.0
     ) -> np.ndarray:
-        """Rotation speed (rev/s) giving a thrust at a speed (NaN above ``n_max``), by bisection."""
+        """Rotation speed (rev/s) giving a thrust at a speed (NaN above ``n_max``).
+
+        Propulsive branch: the upper bound n_max is halved while the thrust stays above the
+        target (at most ``_HALVINGS`` times), then the root is refined in the bracket by a
+        regula falsi (Illinois). In forward flight the thrust dips below its n = 0 value
+        (windmilling) before rising; this keeps the rising branch, as the former bisection.
+        A target already reached below n_max / 2^_HALVINGS and at n = 0 gives 0.
+        """
         t, v = np.broadcast_arrays(
             np.asarray(thrust_n, dtype=float), np.asarray(v_m_s, dtype=float)
         )
-        lo, hi = np.zeros(t.shape), np.full(t.shape, n_max)
-        reachable = (
-            self.evaluate({"n_rev_s": hi, "v_m_s": v, "rho": rho})["thrust_n"] >= t
-        )
-        for _ in range(50):
-            mid = 0.5 * (lo + hi)
-            above = (
-                self.evaluate({"n_rev_s": mid, "v_m_s": v, "rho": rho})["thrust_n"] >= t
-            )
-            lo, hi = np.where(above, lo, mid), np.where(above, mid, hi)
-        return np.where(reachable, hi, np.nan)
+
+        def excess(n):
+            return self.evaluate({"n_rev_s": n, "v_m_s": v, "rho": rho})["thrust_n"] - t
+
+        hi = np.full(t.shape, float(n_max))
+        f_hi = excess(hi)
+        reachable = f_hi >= 0.0
+        lo, f_lo = hi.copy(), f_hi.copy()
+        open_ = reachable.copy()  # no point below the target found yet
+        for _ in range(_HALVINGS):
+            if not open_.any():
+                break
+            mid = np.where(open_, 0.5 * lo, lo)
+            f_mid = excess(mid)
+            below = open_ & (f_mid < 0.0)
+            still = open_ & ~below
+            hi, f_hi = np.where(still, mid, hi), np.where(still, f_mid, f_hi)
+            lo, f_lo = np.where(open_, mid, lo), np.where(open_, f_mid, f_lo)
+            open_ = still
+        if open_.any():
+            zero = np.zeros(t.shape)
+            f_zero = excess(zero)
+            lo, f_lo = np.where(open_, zero, lo), np.where(open_, f_zero, f_lo)
+            at_zero = open_ & (f_zero >= 0.0)
+        else:
+            at_zero = np.zeros(t.shape, dtype=bool)
+        n = _bracketed_root(excess, lo, hi, f_lo, f_hi, xtol=1e-12 * n_max)
+        n = np.where(at_zero, 0.0, n)
+        return np.where(reachable, n, np.nan)

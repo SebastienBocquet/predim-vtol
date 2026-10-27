@@ -74,24 +74,3 @@ def tiltrotor(
         _slot(tilt_unit, "tilt", x_front_mm, -span_mm / 2),
         _slot(rear_unit, "lift", x_rear_mm, 0.0),
     ]
-
-
-def presets_for(architecture: str, n_lift: int) -> dict:
-    """Layout generators matching a configuration: a tricopter only offers the tricopter layout, etc."""
-    if architecture == "quadplane":
-        return {
-            "quadplane 4+1 (two booms + pusher)": quadplane,
-            "tricopter with wing (2 tilting front + 1 rear)": tiltrotor,
-        }
-    if n_lift == 3:
-        return {"tricopter (2 front arms + 1 rear arm)": tricopter}
-    return {"multirotor X (N evenly spread arms)": multirotor}
-
-
-PRESETS = {
-    "multirotor": multirotor,
-    "tricopter": tricopter,
-    "quadplane": quadplane,
-    "tiltrotor": tiltrotor,
-}
-"""Layout functions offered by the GUI."""

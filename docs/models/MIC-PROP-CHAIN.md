@@ -44,7 +44,7 @@
 |---|---|---|---|---|---|---|
 | `branches` | — | — | per motor: cable lengths and gauges, ESC efficiency | project wiring + geometry | — | project |
 | `main_length_mm` | L_main | mm | main cable length, battery rear → distribution | geometry | ≥ 0 | project |
-| `main_awg` | — | AWG | main cable gauge | project or current | — | project |
+| `main_awg` | — | AWG | main cable gauge | project or motor maximum current | — | project |
 | `connector_mohm` | R_conn | mΩ | battery connector resistance | 0.5 | ≥ 0 | XT60-class connector, generic |
 | `wire_temperature_c` | T_w | °C | wire temperature | 40.0 | — | generic |
 | `battery` | — | — | battery model (MIC-PROP-BAT) | project | — | project |
@@ -56,10 +56,17 @@
 
 - Copper resistance ρ(T) = 1.72e-8·(1 + 0.00393·(T − 20)) Ω·m, R = ρL/A, AWG area
   from d = 0.127 mm·92^((36 − n)/39).
+- Gauges (INC3-006): entered, else the smallest wire rated for 1.25 × the maximum current
+  I_max of the motor (data sheet) for its DC and phase cables, and for 1.25 × max(Σ I_max of
+  the lift motors, Σ I_max of the cruise motors) for the main cable: the cables as
+  installed, the same at every operating point (losses, mass, cost).
 - Phase cables: DC-equivalent loss I_m²·2R_phase with the motor current I_m (larger than
   the supply current at part throttle: the ESC lowers the average voltage).
-- ESC: constant efficiency of the propulsion unit (MVP model, default 0.95); for data
-  measured at the ESC input, the ESC loss is shown as part of the data.
+- ESC: constant efficiency (MVP model, default 0.95): of the propulsion unit for a separate
+  ESC, of the board (`four_in_one_efficiency`) for every channel of a 4-in-1 ESC; for data
+  measured at the ESC input, the ESC loss is shown as part of the data. A 4-in-1 board
+  drives the lift motors, and the cruise motors with `cruise_on_four_in_one`, 4 motors at
+  most; its loss is the "4-in-1 ESC" segment of each motor it drives.
 - DC branch and main cable: supply-side currents I = P / U_bus, 2 conductors; connector
   resistance on the main cable (default 0.5 mΩ).
 - Battery: MIC-PROP-BAT, terminal voltage under load; bus voltage by fixed point.

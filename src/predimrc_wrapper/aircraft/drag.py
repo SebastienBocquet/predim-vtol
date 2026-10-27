@@ -47,7 +47,9 @@ def _sum_of_sources(model: DragModel) -> bool:
 class DragModel(Model):
     """Total drag D(V).
 
-    Boom: CdS = C_f·π·d·L + C_d,end·π·d²/4. Stopped rotor: CdS = n_b·c̄·R·C_d,b.
+    Boom: CdS = C_f·π·d·L + C_d,end·π·d²/4. Stopped rotor: CdS = n_b·c̄·R·C_d,b, with
+    C_d,b of the blades along the flow (skin friction), across it (sections at their pitch
+    angle) or their mean for a random stop (normal dynamic pressure ∝ sin²ψ, ⟨sin²ψ⟩ = ½).
     Quadplane: D = D_PredimRC(V·√(ρ/ρ_p)) + ½·ρ·V²·ΣCdS (equal dynamic pressure, Reynolds
     neglected). Multicopter: D = ½·ρ·V²·(CdS_body + ΣCdS).
     """
@@ -98,13 +100,22 @@ class DragModel(Model):
             source="generic",
         ),
         Param(
-            "blade_cd",
-            "C_d,b",
+            "blade_cd_aligned",
+            "C_d,b∥",
             "—",
-            "stopped blade drag (blade planform)",
-            default=0.05,
+            "stopped blade drag, blades along the flow (blade planform)",
+            default=0.015,
             bounds=(0, None),
-            source="generic, blades aligned",
+            source="2·C_f, spanwise flow (skin friction only)",
+        ),
+        Param(
+            "blade_cd_crosswind",
+            "C_d,b⊥",
+            "—",
+            "stopped blade drag, blades across the flow (blade planform)",
+            default=0.15,
+            bounds=(0, None),
+            source="sections at their pitch angle (10° at 0.75R, 20-30° at the root), low Re",
         ),
     )
     expected_forms = [
@@ -118,6 +129,18 @@ class DragModel(Model):
         ),
         Invariant("ΣCdS is the sum of the sources", _sum_of_sources),
     ]
+
+    def blade_cd(self, position: str = "random") -> float:
+        """Stopped blade drag coefficient for a blade position (aligned, random, crosswind)."""
+        aligned, crosswind = self.p.blade_cd_aligned, self.p.blade_cd_crosswind
+        if position == "aligned":
+            return aligned
+        if position == "crosswind":
+            return crosswind
+        if position == "random":
+            return 0.5 * (aligned + crosswind)
+        msg = f"Unknown blade position '{position}'."
+        raise ValueError(msg)
 
     def cds(self, source: dict) -> float:
         """Drag area of one source, multiplied by its count (m²)."""
@@ -133,7 +156,7 @@ class DragModel(Model):
                 source.get("n_blades", 2)
                 * source["blade_chord_m"]
                 * source["radius_m"]
-                * self.p.blade_cd
+                * self.blade_cd(source.get("blade_position", "random"))
             )
         elif kind == "cds":
             one = source["cds_m2"]

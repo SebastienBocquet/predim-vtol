@@ -1,5 +1,8 @@
 # Cost and reliability (COST)
 
+Requirements added by increment 3 (2026-10-18), statements in
+`spdd/inc3/specs/requirements/REQ-COST.md`.
+
 ### REQ-COST-001 — The purchase cost is computed with its sources
 
 - **Statement:** The system shall give the purchase cost of the aircraft: motors,
@@ -8,7 +11,7 @@
   (entered) and avionics (entered). Prices are copied from manufacturer or retailer pages
   with URL, date and currency; every price can be overridden in the project.
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — the total is the sum of the items; an override replaces the
   database price.
 - **Satisfied by:** INC3-004
@@ -20,7 +23,7 @@
   / motor life (default 1000 h); propellers price / flights between replacements; per
   flight (two-phase flight time at V₁) and per flight hour.
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — formula on a hand case.
 - **Satisfied by:** INC3-004
 
@@ -33,7 +36,7 @@
   single points of failure (4-in-1 ESC, single battery). A tricopter whose rear motor
   tilts for yaw balances yaw by the tilt.
 - **Priority:** Should
-- **Status:** Proposed
+- **Status:** Implemented (2026-10-18)
 - **Verification:** Test — quadcopter X not survivable (yaw), hexacopter survivable;
   tricopter rule.
 - **Satisfied by:** INC3-004

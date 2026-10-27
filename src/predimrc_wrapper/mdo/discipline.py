@@ -13,6 +13,9 @@ Outputs (arrays of size 1):
 | ``margin_mass`` | — | 1 − m / m_max (NaN without m_max) |
 | ``feasible`` | — | 1 if the scenario is feasible, else 0 |
 
+Two-phase mode: ``OUTPUTS_TWO_PHASE`` (flight times, ranges, powers, margins, and the cost and
+reliability outputs ``cost_purchase``, ``cost_per_hour``, ``motor_out_tw``).
+
 A failing evaluation gives NaN outputs and ``feasible = 0`` instead of stopping the study.
 Evaluations are sequential, with one PredimRC session per discipline.
 """
@@ -30,6 +33,8 @@ from gemseo.core.discipline import Discipline
 from predimrc_wrapper.aircraft import Project
 from predimrc_wrapper.api import _solve
 from predimrc_wrapper.api import profiles_dir
+from predimrc_wrapper.runs.summary import OUTPUTS_TWO_PHASE
+from predimrc_wrapper.runs.summary import two_phase_outputs
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -54,29 +59,6 @@ OUTPUTS = (
     "feasible",
 )
 """Outputs of the scenario mode (MVP solver)."""
-
-OUTPUTS_TWO_PHASE = (
-    "flight_time_v1",
-    "flight_time_v2",
-    "range_v1",
-    "range_v2",
-    "v1",
-    "v2",
-    "hover_power",
-    "cruise_power_v1",
-    "cruise_power_v2",
-    "mass_total",
-    "front_rear_ratio",
-    "margin_motor_power",
-    "margin_motor_current",
-    "margin_hover_thrust",
-    "margin_thrust_to_weight",
-    "margin_battery_c",
-    "margin_mass",
-    "max_sd_rel",
-    "feasible",
-)
-"""Outputs of the two-phase mode (INC2-007): times s, ranges m, speeds m/s, powers W."""
 
 
 def outputs_of(mode: str) -> tuple[str, ...]:
@@ -130,11 +112,13 @@ class PresizingDiscipline(Discipline):
         self._backend = backend
         self._owned_backend = None
         self.calibration_report = None
-        if self.base_project.calibration is not None and mode == "scenario":
+        if self.base_project.calibration is not None:
             # The measurements describe the base design: its factors apply to every variant.
             from predimrc_wrapper.calibration import calibrate  # noqa: PLC0415
+            from predimrc_wrapper.calibration import calibrate_two_phase  # noqa: PLC0415
 
-            self.base_project, self.calibration_report = calibrate(
+            run = calibrate_two_phase if mode == "two_phase" else calibrate
+            self.base_project, self.calibration_report = run(
                 self.base_project, self._get_backend()
             )
         self.input_grammar.update_from_names([p.name for p in self.parameters])
@@ -152,11 +136,11 @@ class PresizingDiscipline(Discipline):
         if self.base_project.architecture != "quadplane":
             return None
         if self._backend is None:
-            from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+            from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
 
-            self._owned_backend = PredimRCWrapper(
-                profile=self.base_project.aero.profile, template_dir=profiles_dir()
-            ).__enter__()
+            self._owned_backend = open_backend(
+                self.base_project.aero.profile, profiles_dir()
+            )
             self._backend = self._owned_backend
         return self._backend
 
@@ -202,38 +186,15 @@ class PresizingDiscipline(Discipline):
         from predimrc_wrapper.api import evaluate_two_phase  # noqa: PLC0415
 
         try:
-            r = evaluate_two_phase(
-                self.project_for(input_data), backend=self._get_backend()
-            )
+            project = self.project_for(input_data)
+            r = evaluate_two_phase(project, backend=self._get_backend())
         except Exception as error:  # ruff: ignore[blind-except]  (a failed point must not stop a study)
             LOGGER.warning("Evaluation failed for %s: %s", dict(input_data), error)
             out = {k: np.array([np.nan]) for k in OUTPUTS_TWO_PHASE}
             out["feasible"] = np.array([0.0])
             return out
         self.last_result = r
-        m = r.margins
-        c1, c2 = r.cruise
-        values = {
-            "flight_time_v1": c1.flight_time_s,
-            "flight_time_v2": c2.flight_time_s,
-            "range_v1": c1.range_m,
-            "range_v2": c2.range_m,
-            "v1": c1.v_m_s,
-            "v2": c2.v_m_s,
-            "hover_power": r.hover.battery_power_w,
-            "cruise_power_v1": c1.battery_power_w,
-            "cruise_power_v2": c2.battery_power_w,
-            "mass_total": r.metadata["mass_total_kg"],
-            "front_rear_ratio": r.hover.front_rear_ratio,
-            "margin_motor_power": m["motor_power"],
-            "margin_motor_current": m["motor_current"],
-            "margin_hover_thrust": m["hover_thrust"],
-            "margin_thrust_to_weight": m["thrust_to_weight"],
-            "margin_battery_c": m["battery_c"],
-            "margin_mass": m["mass"],
-            "max_sd_rel": max(m_.power_sd_w / m_.power_w for m_ in r.hover.motors),
-            "feasible": float(r.feasible),
-        }
+        values = two_phase_outputs(project, r)
         return {k: np.array([float(v)]) for k, v in values.items()}
 
     def close(self) -> None:

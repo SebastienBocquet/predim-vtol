@@ -86,7 +86,11 @@ def test_defaults_left():
 def test_mass_budget_exact():
     model = AircraftModel(Project.template("multicopter"))
     unit = model.units["lift"].mass_kg
-    expected = 0.5 + 0.3 + 0.12 + 4 * unit + 0.7
+    from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
+
+    wiring = wiring_mass_kg(model.project)
+    assert model.mass["breakdown"]["wiring"] == pytest.approx(wiring)
+    expected = 0.5 + 0.3 + 0.12 + 4 * unit + 0.7 + wiring
     assert model.total_mass_kg == pytest.approx(expected, rel=1e-12)
     assert model.mass["margin_mass"] == pytest.approx(1 - expected / 3.0)
 
@@ -104,7 +108,15 @@ def test_drag_formulas():
     assert drag.cds(boom) == pytest.approx(
         2 * (0.005 * np.pi * 0.016 * 0.65 + 0.15 * np.pi * 0.016**2 / 4)
     )
-    assert drag.cds(rotor) == pytest.approx(4 * 2 * 0.025 * 0.165 * 0.05)
+    planform = 4 * 2 * 0.025 * 0.165
+    assert drag.cds(rotor) == pytest.approx(planform * 0.5 * (0.015 + 0.15))
+    aligned = drag.cds({**rotor, "blade_position": "aligned"})
+    crosswind = drag.cds({**rotor, "blade_position": "crosswind"})
+    assert aligned == pytest.approx(planform * 0.015)
+    assert crosswind == pytest.approx(10 * aligned)
+    assert drag.cds(rotor) == pytest.approx(0.5 * (aligned + crosswind))
+    with pytest.raises(ValueError, match="blade position"):
+        drag.cds({**rotor, "blade_position": "sideways"})
 
 
 def test_drag_with_polar_equal_dynamic_pressure():

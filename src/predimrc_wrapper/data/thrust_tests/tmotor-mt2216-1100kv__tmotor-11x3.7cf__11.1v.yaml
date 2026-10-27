@@ -1,0 +1,20 @@
+# Thrust-power test of the T-Motor MT2216 table supplied by the user (REQ-DATA-005). Manufacturer units.
+id: tmotor-mt2216-1100kv__tmotor-11x3.7cf__11.1v
+motor_id: tmotor-mt2216-1100kv
+propeller_id: tmotor-11x3.7cf
+esc: null
+measured_at: motor_input  # no ESC named by the table
+voltage_v: 11.1
+bench: manufacturer
+source: "T-Motor MT2216 test table (CSV supplied by the user, 2026-10-25)"
+retrieved: 2026-10-25
+status: verified
+temperature_c: 41
+notes: "Voltage given once for the table. Temperature: motor at 100 % throttle for 10 min. Efficiency column (g/W) of the table not copied: derived from thrust and power. The 100 % row reads 9500 rpm after 7400 rpm at 85 %: copied as published."
+columns: [throttle_pct, voltage_v, current_a, power_w, thrust_g, rpm]
+rows:
+  - [50, 11.1, 4.6, 51, 490, 5400]
+  - [65, 11.1, 7, 78, 630, 6200]
+  - [75, 11.1, 8.9, 99, 730, 6800]
+  - [85, 11.1, 11.5, 128, 890, 7400]
+  - [100, 11.1, 13.8, 153, 1030, 9500]
