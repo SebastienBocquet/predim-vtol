@@ -9,7 +9,7 @@ import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from predimrc_wrapper.core.units import GRAVITY
+from predimrc_wrapper.aircraft.cruise import CURVE_GAP_TOLERANCE
 
 if TYPE_CHECKING:
     from predimrc_wrapper.mission.two_phase import TwoPhaseResult
@@ -217,7 +217,8 @@ def power_figure(r: TwoPhaseResult) -> go.Figure:
 
 
 def imposed_figure(r: TwoPhaseResult) -> go.Figure:
-    """ "Performances à vitesse imposée": aerodynamic power and L/D versus C_z, trimmed C_z marked."""
+    """ "Performances à vitesse imposée": aerodynamic power and L/D versus C_z, trimmed C_z marked
+    (stabiliser lift included)."""
     a, c = r.aero_results, r.curve
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.06)
     for k, block in sorted(a.imposed.items()):
@@ -241,8 +242,9 @@ def imposed_figure(r: TwoPhaseResult) -> go.Figure:
             2,
             1,
         )
-        cz = 2 * c.mass_kg * GRAVITY / (c.rho * c.wing_area_m2 * block.vx_m_s**2)
-        fig.add_vline(x=cz, line={"color": V_COLORS[k], "dash": "dash"})
+        fig.add_vline(
+            x=c.wing_cz(block.vx_m_s), line={"color": V_COLORS[k], "dash": "dash"}
+        )
     fig.update_yaxes(title_text="Puissance aéro (W)", row=1, col=1)
     fig.update_yaxes(title_text="Finesse (Cz / Cx)", row=2, col=1)
     fig.update_xaxes(title_text="Cz", row=2, col=1)
@@ -262,8 +264,10 @@ def iso_text(r: TwoPhaseResult) -> tuple[bool | None, str]:
     if not iso.available:
         return None, "Iso-model check not available (no PredimRC blocks)."
     gaps = ", ".join(f"V{i + 1} {100 * g:+.2f} %" for i, g in enumerate(iso.curve_gaps))
+    warnings = "".join(f" ⚠ {w}." for w in iso.warnings)
     return iso.passed, (
         f"Iso-model with PredimRC: curve {iso.curve_max_rel_dev:.1e}, imposed speeds "
         f"{iso.imposed_max_rel_dev:.1e} (tolerance 1e-6). Interpolated curve versus PredimRC at the "
-        f"target speeds: {gaps} (coarse polar grid; the target-speed values are PredimRC's)."
+        f"target speeds: {gaps} (warning above {100 * CURVE_GAP_TOLERANCE:g} %; both are "
+        f"interpolations, on the polar in speed and on the imposed-speed block in Cz).{warnings}"
     )

@@ -117,7 +117,11 @@
   The tool writes into PredimRC the flight altitude and temperature (`3-Geometrie!T29`,
   `T30`; density read back in `U30`) and the target speeds V_x 1, V_x 2 (`AB29`, `AB30`);
   the aerodynamic power at each target speed equals the PredimRC "vitesse imposée"
-  value at the trimmed C_z = 2mg / (ρSV²) within 1e-6 relative.
+  value at the trimmed wing C_z within 1e-6 relative. The trimmed wing C_z includes the
+  stabiliser lift (linear relation between the wing C_z and 2mg / (ρSV²) on the PredimRC
+  polar rows); the block is read by a parabola on its nodes up to the last C_z of the
+  polar. Beyond them (stall edge) the polar value is used, with a warning; a warning is
+  also given when the interpolated curve and the block differ by more than 3 %.
 - **Rationale:** The designer trusts PredimRC; any difference must come only from what
   the tool adds (drag sources, density), and be visible.
 - **Priority:** Must

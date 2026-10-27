@@ -612,7 +612,9 @@ class TwoPhaseEvaluation(CompositeModel):
                     motors,
                     chain,
                     chain.chemical_power_w,
-                    "PredimRC imposed speed + drag sources",
+                    "PredimRC imposed speed + drag sources"
+                    if point.source == "block"
+                    else "PredimRC polar (stall edge) + drag sources",
                 )
             )
         return out, iso
@@ -733,7 +735,9 @@ class TwoPhaseEvaluation(CompositeModel):
                 f"Iso-model check with PredimRC failed: curve {iso.curve_max_rel_dev:.2e}, "
                 f"imposed speeds {iso.imposed_max_rel_dev:.2e}"
             )
-        elif iso is not None and not iso.available:
+        if iso is not None:
+            warnings += [f"Cruise {w}" for w in iso.warnings]
+        if iso is not None and not iso.available:
             warnings.append(
                 "Iso-model check not available (the aero backend gives no PredimRC blocks)"
             )

@@ -57,7 +57,9 @@
   diameter and pitch, else an untested pair (D, P) — pitch 0.4·D when not given
   (flagged untrusted).
 - Cruise (wing-borne): aerodynamic power at V_k from the PredimRC imposed-speed block +
-  drag sources (`aircraft/cruise.py`); thrust shared by disc area among cruise and tilt
+  drag sources (`aircraft/cruise.py`), read at the trimmed wing C_z (stabiliser lift
+  included, from the polar rows) by a parabola on the block nodes up to the last C_z of the
+  polar; beyond (stall edge), the polar value, with a warning; thrust shared by disc area among cruise and tilt
   motors; MIC-PROP-BEM at the unit pitch (constant η_c when no pitch, flagged); motor
   constants MIC-PROP-MOT; chain. Multicopter: MVP forward-flight model (MIC-MIS-SEG) at
   the best-endurance and best-range speeds.

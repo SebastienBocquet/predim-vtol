@@ -313,14 +313,35 @@ class ImposedSpeed:
     drag_n: np.ndarray
     power_w: np.ndarray
 
-    def at_cz(self, cz: float) -> tuple[float, float]:
-        """Drag (N) and power (W) interpolated at a wing Cz (NaN outside the block)."""
-        order = np.argsort(self.cz_wing)
-        x = self.cz_wing[order]
-        return (
-            float(np.interp(cz, x, self.drag_n[order], left=np.nan, right=np.nan)),
-            float(np.interp(cz, x, self.power_w[order], left=np.nan, right=np.nan)),
-        )
+    def at_cz(self, cz: float, cz_max: float | None = None) -> tuple[float, float]:
+        """Drag (N) and power (W) at a wing Cz, NaN outside the usable nodes (no extrapolation).
+
+        Parabola through the three nearest nodes (the induced drag varies as Cz²). The nodes
+        above ``cz_max`` (the last Cz of the trimmed polar) are dropped: the block grid
+        (0.15 in airfoil Cz) can keep one node in the stall drag rise, where the polar has
+        already stopped, and interpolating towards it overestimates the power.
+        """
+        keep = np.ones(len(self.cz_wing), dtype=bool)
+        if cz_max is not None:
+            keep = self.cz_wing <= cz_max * (1.0 + 1e-9)
+        order = np.argsort(self.cz_wing[keep])
+        x = self.cz_wing[keep][order]
+        drag, power = self.drag_n[keep][order], self.power_w[keep][order]
+        if not len(x) or not x[0] <= cz <= x[-1]:
+            return float("nan"), float("nan")
+        if len(x) < 3:
+            return float(np.interp(cz, x, drag)), float(np.interp(cz, x, power))
+        i = min(max(int(np.argmin(np.abs(x - cz))) - 1, 0), len(x) - 3)
+        w = _lagrange_weights(x[i : i + 3], cz)
+        return float(w @ drag[i : i + 3]), float(w @ power[i : i + 3])
+
+
+def _lagrange_weights(x: np.ndarray, x0: float) -> np.ndarray:
+    """Weights of the quadratic through three nodes at x0."""
+    return np.array([
+        np.prod([(x0 - x[j]) / (x[i] - x[j]) for j in range(3) if j != i])
+        for i in range(3)
+    ])
 
 
 # ---------------------------------------------------------------------------

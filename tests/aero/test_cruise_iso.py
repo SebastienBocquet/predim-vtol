@@ -10,7 +10,9 @@ from predimrc_wrapper.aircraft import Project
 from predimrc_wrapper.aircraft.aero import to_predimrc
 from predimrc_wrapper.aircraft.cruise import cruise_curve
 from predimrc_wrapper.aircraft.cruise import target_points
+from predimrc_wrapper.core.units import GRAVITY
 from predimrc_wrapper.data.drag_shapes import drag_shapes
+from predimrc_wrapper.predimrc_wrapper import ImposedSpeed
 from predimrc_wrapper.predimrc_wrapper import PredimRCError
 from predimrc_wrapper.predimrc_wrapper import discover_profiles
 from predimrc_wrapper.predimrc_wrapper import workbook_path
@@ -126,3 +128,102 @@ def test_iso_model_on_reference_case(predimrc):
         round(3.6 * v_d, 2),
     ])
     assert all(abs(g) < 0.02 for g in iso.curve_gaps)
+
+
+_K_3D = 0.784
+_BLOCK_CZ = _K_3D * np.array([0.01, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1.0, 1.15])
+"""PredimRC imposed-speed grid (airfoil Cz 0.01, 0.1, 0.25 → 1.15) in wing Cz."""
+
+
+class ImposedAero(ParabolicAero):
+    """Parabolic polar up to Cz 0.9 plus imposed-speed blocks on the PredimRC grid.
+
+    The last block node (Cz 0.902) is beyond the polar, in a stall drag rise (×4), as in
+    the SD7003 workbook; ``bias`` scales the block powers.
+    """
+
+    def __init__(self, bias: float = 1.0) -> None:
+        super().__init__(cz_max=0.9)
+        self.bias = bias
+
+    def evaluate(self, wing, stab, fus, settings):
+        r = super().evaluate(wing, stab, fus, settings)
+        for k, vx_kmh in ((1, settings.vx1_kmh), (2, settings.vx2_kmh)):
+            if vx_kmh is None:
+                continue
+            v = vx_kmh / 3.6
+            cx = self.cx0 + self.k * _BLOCK_CZ**2
+            cx[self.cz_max < _BLOCK_CZ] *= 4.0
+            drag = 0.5 * self.rho * self.area_m2 * v**2 * cx * self.bias
+            r.imposed[k] = ImposedSpeed(v, _BLOCK_CZ.copy(), drag, drag * v)
+        return r
+
+
+def test_at_cz_parabola_without_the_stall_node():
+    v, cz = 12.0, _BLOCK_CZ
+    drag = 0.2 + 1.5 * cz**2
+    drag[-1] *= 4.0  # stall drag rise beyond the polar
+    block = ImposedSpeed(v, cz, drag, drag * v)
+    d, p = block.at_cz(0.7, cz_max=0.862)
+    assert d == pytest.approx(0.2 + 1.5 * 0.7**2, rel=1e-12)  # exact on a parabola
+    assert p == pytest.approx(d * v, rel=1e-12)
+    assert np.isnan(block.at_cz(0.798, cz_max=0.862)[0])  # beyond the last usable node
+    assert block.at_cz(0.798)[0] > 1.1 * (
+        0.2 + 1.5 * 0.798**2
+    )  # the bias that was fixed
+    assert np.isnan(block.at_cz(0.001)[1])  # no extrapolation
+
+
+def test_wing_cz_includes_the_stabiliser_lift():
+    curve = cruise_curve(
+        AircraftModel(Project.template("quadplane"), aero_backend=ParabolicAero())
+    )
+    v = 15.0
+    cz_lift = 2 * curve.mass_kg * GRAVITY / (curve.rho * curve.wing_area_m2 * v**2)
+    # ParabolicAero: no stabiliser, g = 9.81 in the polar.
+    assert curve.wing_cz(v) == pytest.approx(cz_lift * 9.81 / GRAVITY, rel=1e-9)
+    ref = (
+        2 * curve.mass_kg * GRAVITY / (curve.rho * curve.wing_area_m2 * curve.v_m_s**2)
+    )
+    curve.cz_wing = 1.04 * ref + 0.012  # a download stabiliser: more wing lift
+    assert curve.wing_cz(v) == pytest.approx(1.04 * cz_lift + 0.012, rel=1e-9)
+
+
+def _speed(curve, cz: float) -> float:
+    return float(
+        np.sqrt(2 * curve.mass_kg * 9.81 / (curve.rho * curve.wing_area_m2 * cz))
+    )
+
+
+def test_target_points_block_and_stall_edge_fallback():
+    project = Project.template("quadplane")
+    aircraft = AircraftModel(project, aero_backend=ImposedAero())
+    base = cruise_curve(aircraft)
+    speeds = (_speed(base, 0.6), _speed(base, 0.85))
+    curve, points, iso = target_points(aircraft, speeds)
+    p1, p2 = points
+    assert p1.source == "block"
+    assert p1.cz_trim == pytest.approx(0.6, rel=1e-3)
+    v = p1.v_m_s
+    exact = 0.5 * curve.rho * curve.wing_area_m2 * v**3 * (0.03 + 0.04 * p1.cz_trim**2)
+    assert p1.power_predimrc_w == pytest.approx(exact, rel=1e-9)
+    assert p2.source == "polar"  # Cz 0.85 > 0.784, the 0.902 node is beyond the polar
+    assert p2.drag_predimrc_n == pytest.approx(
+        np.interp(p2.v_m_s, curve.v_m_s, curve.drag_predimrc_n), rel=1e-12
+    )
+    assert iso.imposed_max_rel_dev < 1e-12
+    assert len(iso.warnings) == 1
+    assert iso.warnings[0].startswith("V2: trimmed Cz 0.850")
+
+
+def test_target_points_warn_on_a_curve_gap():
+    aircraft = AircraftModel(
+        Project.template("quadplane"), aero_backend=ImposedAero(bias=1.1)
+    )
+    base = cruise_curve(aircraft)
+    _curve, points, iso = target_points(
+        aircraft, (_speed(base, 0.6), _speed(base, 0.4))
+    )
+    assert all(p.source == "block" for p in points)
+    assert [w[:3] for w in iso.warnings] == ["V1:", "V2:"]
+    assert "differ by -" in iso.warnings[0]
