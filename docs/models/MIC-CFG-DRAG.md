@@ -47,7 +47,8 @@
 |---|---|---|---|---|---|---|
 | `boom_cf` | C_f | — | boom skin friction coefficient | 0.005 | ≥ 0 | generic turbulent flat plate |
 | `boom_cd_end` | C_d,end | — | boom base drag coefficient | 0.15 | ≥ 0 | generic |
-| `blade_cd` | C_d,b | — | stopped blade drag (blade planform) | 0.05 | ≥ 0 | generic, blades aligned |
+| `blade_cd_aligned` | C_d,b∥ | — | stopped blade drag, blades along the flow (blade planform) | 0.015 | ≥ 0 | 2·C_f, spanwise flow (skin friction only) |
+| `blade_cd_crosswind` | C_d,b⊥ | — | stopped blade drag, blades across the flow (blade planform) | 0.15 | ≥ 0 | sections at their pitch angle (10° at 0.75R, 20-30° at the root), low Re |
 <!-- interface:end -->
 
 ## Implementation
@@ -55,7 +56,12 @@
 ### Modelling choices
 
 - Boom (axial flow in cruise): CdS = C_f·π·d·L + C_d,end·π·d²/4.
-- Stopped rotor: CdS = n_b·c̄·R·C_d,b.
+- Stopped rotor: CdS = n_b·c̄·R·C_d,b, C_d,b from the blade position (`blade_position`):
+  along the flow C_d,b∥ = 0.015 (spanwise flow, skin friction on both faces); across the
+  flow C_d,b⊥ = 0.15 (each section sees the flow chordwise at its pitch angle, ≈10° at
+  0.75R and 20-30° at the root, low Re, partly stalled; the two blades lift in opposite
+  directions); random stop: by the sweep principle the normal dynamic pressure varies as
+  sin²ψ (ψ: angle blade/flow), ⟨sin²ψ⟩ = ½, so C_d,b = (C_d,b∥ + C_d,b⊥)/2.
 - Free source: CdS given.
 - Shapes as the PredimRC accessory shapes, C_d referred to the frontal area, extracted
   from the workbook (`data/drag_shapes.yaml`, `Calculs1!AD3`): Profilé 0.2, Mixte 0.6,
@@ -82,7 +88,9 @@
 
 ### Model limitations
 
-- Generic coefficients; stopped rotors assumed aligned with the flow.
+- Generic coefficients, orders of magnitude (no measurement); stopped rotors: hub and motor
+  not counted, full radius R taken as blade span, axial flow at incidence (V·sin α through
+  the disc, windmilling) neglected.
 - V-arms and booms as straight beams of constant section; no interference drag.
 - Cross-flow principle: valid for bluff sections (round, square); for a profiled boom
   inclined to the flow it is an approximation (the profile is not aligned with the local

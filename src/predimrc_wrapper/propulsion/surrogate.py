@@ -202,6 +202,11 @@ def _kernel(n_features: int):
     ) + WhiteKernel(1e-4, (1e-8, 1e-1))
 
 
+def _alpha(noise_var: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Per-point noise variance in the normalised units of the GP (``normalize_y``)."""
+    return np.maximum(noise_var / max(float(np.var(y)), 1e-12), 1e-10)
+
+
 class ThrustPowerFit:
     """The Gaussian processes fitted on a test database (one per output)."""
 
@@ -218,7 +223,7 @@ class ThrustPowerFit:
             propellers,
             seed,
         )
-        rows, targets, groups, physics = [], {k: [] for k in OUTPUTS}, [], []
+        rows, targets, groups, physics, noise = [], {k: [] for k in OUTPUTS}, [], [], []
         self.pairs: dict[tuple[str, str], Pair] = {}
         self.max_thrust: dict[tuple[str, str], float] = {}
         for test in tests.records.values():
@@ -243,6 +248,9 @@ class ThrustPowerFit:
             rows.append(features(pair, test.thrust_n, test.voltage)[ok])
             groups += [f"{test.motor_id}|{test.propeller_id}"] * int(ok.sum())
             physics.append(phys["power_w"][ok] / data["power_w"][ok])
+            # Measurement noise of the table: its own P vs U·I disagreement (log variance).
+            mismatch = np.log(test.power_w / (test.voltage * test.current_a))
+            noise.append(np.full(int(ok.sum()), np.mean(mismatch**2)))
             for k in OUTPUTS:
                 targets[k].append(np.log(data[k][ok] / phys[k][ok]))
         self.x = np.vstack(rows) if rows else np.zeros((0, 5))
@@ -251,6 +259,7 @@ class ThrustPowerFit:
         }
         self.groups = np.asarray(groups)
         self.physics_ratio = np.concatenate(physics) if physics else np.zeros(0)
+        self.noise_var = np.concatenate(noise) if noise else np.zeros(0)
         self.x_min, self.x_max = (
             (self.x.min(axis=0), self.x.max(axis=0)) if len(self.x) else (None, None)
         )
@@ -262,6 +271,7 @@ class ThrustPowerFit:
                 continue
             gp = GaussianProcessRegressor(
                 _kernel(self.x.shape[1]),
+                alpha=_alpha(self.noise_var[finite], y[finite]),
                 normalize_y=True,
                 n_restarts_optimizer=3,
                 random_state=seed,
@@ -291,6 +301,7 @@ class ThrustPowerFit:
         mu_y, sd_y = gp._y_train_mean, gp._y_train_std  # noqa: SLF001  (normalisation of sklearn)
         yn = (y - mu_y) / sd_y
         k = gp.kernel_(self.x)
+        k[np.diag_indices_from(k)] += gp.alpha
         inv = np.linalg.inv(k)
         alpha = inv @ yn
         diag = np.diag(inv)
@@ -304,7 +315,10 @@ class ThrustPowerFit:
         for g in np.unique(self.groups):
             out = self.groups == g
             gp = GaussianProcessRegressor(
-                self.gps[key].kernel_, normalize_y=True, optimizer=None
+                self.gps[key].kernel_,
+                alpha=_alpha(self.noise_var[~out], self.y[key][~out]),
+                normalize_y=True,
+                optimizer=None,
             )
             gp.fit(self.x[~out], self.y[key][~out])
             mean[out], sd[out] = gp.predict(self.x[out], return_std=True)

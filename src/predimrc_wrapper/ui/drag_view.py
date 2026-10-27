@@ -66,7 +66,13 @@ SOURCE_KINDS = {
 """Kinds offered by the Add list, with their label."""
 
 SOURCE_FIELDS = {
-    "stopped_rotor": ("count", "n_blades", "blade_chord_mm", "radius_mm"),
+    "stopped_rotor": (
+        "count",
+        "n_blades",
+        "blade_chord_mm",
+        "radius_mm",
+        "blade_position",
+    ),
     "body_part": ("count", "shape", "frontal_area_dm2"),
     "v_arms": (
         "shape",

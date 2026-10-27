@@ -157,6 +157,25 @@ def test_pages_and_run():
     assert at.dataframe
 
 
+def test_save_run_and_runs_page(tmp_path, monkeypatch):
+    from streamlit.testing.v1 import AppTest  # noqa: PLC0415
+
+    monkeypatch.setenv("PREDIMRC_STUDIES", str(tmp_path))
+    at = AppTest.from_file(str(APP), default_timeout=300).run()
+    at.selectbox(key="configuration").set_value("tricopter").run()
+    next(b for b in at.button if b.label == "Run").click().run()
+    next(b for b in at.button if b.label == "Save run").click().run()
+    assert not at.exception, at.exception
+    assert len(list((tmp_path / "runs").iterdir())) == 1
+    assert next(b for b in at.button if b.label == "Save run").disabled
+    at.radio(key="page").set_value("Runs").run()
+    assert not at.exception, at.exception
+    assert any("1 / 1 runs" in m.value for m in at.markdown)
+    at.radio(key="runs.mode").set_value("Families along an input").run()
+    assert not at.exception, at.exception
+    assert any("No input varies" in i.value for i in at.info)
+
+
 def test_power_chain_after_motors_removed():
     """Regression (2026-10-17): IndexError in the Power chain tab once a Run result is outdated."""
     from streamlit.testing.v1 import AppTest  # noqa: PLC0415

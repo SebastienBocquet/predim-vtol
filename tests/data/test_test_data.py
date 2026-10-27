@@ -46,12 +46,15 @@ def test_shipped_tests_are_consistent():
     for t in tests.records.values():
         motors.motor(t.motor_id)
         props.propeller(t.propeller_id)
-        assert t.source.startswith("http")
+        # A web page, or a test table supplied by the user (data/README.md).
+        assert t.source.startswith("http") or "supplied by the user" in t.source
         assert t.measured_at == "motor_input"
         assert t.esc is None
         assert np.all(np.diff(t.thrust_n) > 0)
-        # Power column equals voltage × current within the rounding of the tables.
-        assert np.allclose(t.power_w, t.voltage * t.current_a, rtol=0.02)
+        # Power column equals voltage × current within the rounding of the tables; the T-Motor
+        # MT2216 tables supplied by the user disagree by up to 5 % (one voltage per table).
+        rtol = 0.06 if "supplied by the user" in t.source else 0.02
+        assert np.allclose(t.power_w, t.voltage * t.current_a, rtol=rtol)
 
 
 def test_grams_converted_to_newtons():

@@ -139,7 +139,7 @@ def _switch_configuration() -> None:
 with st.sidebar:
     page = st.radio(
         "Page",
-        ["Pre-sizing", "Studies", "Model cards (MIC)", "Glossary"],
+        ["Pre-sizing", "Studies", "Runs", "Model cards (MIC)", "Glossary"],
         key="page",
         horizontal=True,
     )
@@ -315,6 +315,13 @@ if page == "Studies":
 
     st.title("Studies: exploration, optimisation, stored studies")
     studies_page.render(app, checked, ranges, backend_for, table)
+    st.stop()
+
+if page == "Runs":
+    from predimrc_wrapper.ui import runs_page  # noqa: E402
+
+    st.title("Runs: stored evaluations, filtered and compared")
+    runs_page.render(app, backend_for, table)
     st.stop()
 
 # --- tabs ------------------------------------------------------------------------------
@@ -1748,6 +1755,10 @@ with tabs["Results"]:
             st.warning(
                 "Outdated: the project changed since this result. Press Run to update."
             )
+        if checked.project is not None and not app.outdated:
+            from predimrc_wrapper.ui import runs_page  # noqa: E402
+
+            runs_page.save_form(app, checked.project, two)
         st.subheader("Flight time — hover then cruise (designer's process)")
         st.markdown(
             (

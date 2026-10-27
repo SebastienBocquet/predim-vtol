@@ -6,6 +6,25 @@ versions from git tags (setuptools-scm).
 ## Unreleased
 
 ### Fixed
+- Cruise power at the target speeds (two-phase): near the stall edge V₁ could be overestimated
+  by 10–40 % (−12 % reported between the curve and V₁ on a quadplane with large drag sources).
+  The PredimRC imposed-speed grid (airfoil Cz step 0.15) keeps one node in the stall drag rise,
+  beyond the end of the polar, and the linear interpolation towards it biased every Cz above
+  the previous node. The block is now read by a parabola on its nodes up to the last Cz of
+  the polar; beyond them the polar value is used, with a warning. The trimmed wing Cz now
+  includes the stabiliser lift (from the PredimRC polar rows; +0.3 to +2.4 % in Cz on the
+  easyglider quadplane). A warning is given when the interpolated curve and the block differ
+  by more than 3 % (`IsoCheck.warnings`); a target point read on the polar says so
+  (`TargetPoint.source`).
+- Thrust-power surrogate: each test table now carries its own measurement noise (log variance
+  of its P vs U·I disagreement) instead of one noise for all. With the MT2216 tables (up to
+  5 % disagreement) the 95 % interval covered 87.5 % of the points (guarantee: 90–99 %); it
+  covers 91 % now (LOO mean error 1.6 %). The quadplane template hover (MN2806-650 at
+  13.8 V, tested at 15.3 V) stays flagged untrusted: σ 5.2 % for a 5 % threshold.
+- Prices of the T-Motor MT2216 KV1100 and KV900 (US$60, `search` status, the KV900 price
+  assumed equal to the KV1100 one); help entry of "motor current with T/W min (A)".
+- Data tests: a source may be a document supplied by the user (data/README.md), and the
+  P = U·I check of those tables allows 6 % (the T-Motor MT2216 tables disagree by up to 5 %).
 - Two-phase calibration: a reference point the model cannot reach (e.g. a mass in g typed as
   kg) failed with a SciPy "function value is NaN" error; it now names the point and the mass.
 - GUI: every Run of a winged configuration restarted Excel (~7 s, "Could not close the PredimRC
@@ -31,6 +50,21 @@ versions from git tags (setuptools-scm).
   each, nested) are replaced by a bracketed regula falsi (Illinois); same results to 1e-9.
 
 ### Added
+- Stored runs (REQ-UI-013): Results tab, "Save run" stores the result with a copy of the
+  project under `<studies folder>/runs/<date>-<name>/` (`project.yaml`, `summary.json`,
+  `result.json`, `metadata.json`). New "Runs" page: filters (architecture, project, dates,
+  name, query, feasible only), table of the runs, varying inputs, comparison table, relative
+  differences to a reference run, figures superposing the runs or the families of runs
+  differing by one input; rename, delete, open the project of a run, re-run it with the
+  current data. API `predimrc_wrapper.runs` (`load_runs`, `RunStore`, `RunResults`:
+  `filter`, `varying_inputs`, `families`, `to_dataframe`, `compare_to`, `visualize`), ported
+  from the results collections of VIMSEO. The inputs of a stored run are recomputed from its
+  project migrated to the current format; a project that no longer loads falls back to the
+  stored inputs.
+- Provenance (`predimrc_wrapper.provenance`): studies and runs record a hash per source of
+  reference data (motors, propellers, prices, drag shapes, boom sections, thrust tests, user
+  data folder, PredimRC workbook); `data_changes` names the sources changed since, and the
+  Runs page warns when the compared runs do not share the same data or tool version.
 - Custom motors: the motor database merges the user file `<user data>/motors.yaml`
   (`$PREDIMRC_USER_DATA`, else `~/.predimrc_wrapper/data`) with the shipped motors, as for
   the propellers. Configuration tab, "Add a custom motor to the database": a form that saves
@@ -96,6 +130,15 @@ versions from git tags (setuptools-scm).
   (MIC-REL); KPIs in Results; outputs and objectives for exploration and optimisation.
 
 ### Changed
+- `pandas` is a dependency (collection of the runs). The outputs of the two-phase mode
+  (`OUTPUTS_TWO_PHASE`, `two_phase_outputs`) live in `predimrc_wrapper.runs.summary`, shared
+  by the GEMSEO discipline and the stored runs.
+- Stopped rotor drag: new `blade_position` of the source (`aligned` / `random` / `crosswind`,
+  default `random`). The single C_d,b 0.05 ("blades aligned") is replaced by
+  `blade_cd_aligned` 0.015 (skin friction) and `blade_cd_crosswind` 0.15 (sections at their
+  pitch angle, worst case); a random stop takes their mean, 0.0825. **Breaking:** the
+  `blade_cd` parameter of `DragModel` is removed, and the default stopped-rotor drag rises
+  by 65 %.
 - 4-in-1 ESC: the power chain is consistent with the board. New wiring options
   `cruise_on_four_in_one` (the cruise motors driven by the board, no separate cruise ESC) and
   `four_in_one_mass_g` (board mass, required with a 4-in-1) and `four_in_one_efficiency`

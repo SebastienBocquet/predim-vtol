@@ -44,7 +44,7 @@ thrust margin: {definition: "1 − T / T_max of the tested pair (largest thrust 
 thrust with T/W min: {definition: "T_safety, thrust the motor must deliver with the safety factor: T/W_min (minimum thrust-to-weight, Mission tab) × its share × m·g (a transition row: divided by sin θ).", unit: N (kg), model: MIC-MIS-TWO}
 margin with T/W min (motor limits): {definition: "T_full throttle / T_safety − 1: thrust left at full throttle (motor model at the nominal voltage: current, power and voltage limits) once the safety factor T/W_min is applied (≥ 0 acceptable). The worst hover row is the 'Margin thrust-to-weight (control)' tile.", model: MIC-MIS-TWO}
 margin with T/W min (test data): {definition: "1 − T_safety / T_max,test: the thrust with the safety factor T/W_min against the largest thrust measured for the pair; negative means that thrust is beyond the test data (NaN without data).", model: MIC-PROP-SUR}
-motor current with T/W min: {definition: "I_safety, motor current at T_safety (thrust with the safety factor T/W_min), from the thrust-power surrogate at the bus voltage of the row; no climb factor. Beyond the test data it is extrapolated: see the 'margin with T/W min (test data)' column.", unit: A, model: MIC-MIS-TWO}
+motor current with T/W min (A): {definition: "I_safety, motor current at T_safety (thrust with the safety factor T/W_min), from the thrust-power surrogate at the bus voltage of the row; no climb factor. Beyond the test data it is extrapolated: see the 'margin with T/W min (test data)' column.", unit: A, model: MIC-MIS-TWO}
 current margin with T/W min: {definition: "1 − I_safety / I_max of the motor: current left at the thrust with the safety factor T/W_min (≥ 0 acceptable).", model: MIC-MIS-TWO}
 source: {definition: "Origin of the value: tested_pair (test data of this pair), untested_pair (predicted from similar pairs), physics_only (no data); or URL of a data source.", model: MIC-PROP-SUR}
 trusted: {definition: "The prediction is inside the trusted domain: σ_rel ≤ 5 % and thrust within the tested range.", model: MIC-PROP-SUR}
@@ -73,6 +73,7 @@ ESC position: {definition: "How the ESC position was obtained (4-in-1, separate 
 # --- drag (MIC-CFG-DRAG) -----------------------------------------------------------------------
 kind: {definition: "Kind of drag source (boom, stopped rotor, V-arms, body part, free CdS) or of study.", model: MIC-CFG-DRAG}
 formula: {definition: "Formula of the drag model with its coefficients.", model: MIC-CFG-DRAG}
+blade_position: {definition: "Position of the stopped blades in cruise: aligned with the flow (best case, C_d,b 0.015), across the flow (worst case, C_d,b 0.15: sections at their pitch angle) or random stop (mean, 0.0825).", model: MIC-CFG-DRAG}
 frontal area (dm²): {definition: "Area seen by the flow; V-arms: Σ t·L·√(1 − u_x²) from the geometry unless entered.", unit: dm², model: MIC-CFG-DRAG}
 area from: {definition: "Origin of the frontal area: geometry or user.", model: MIC-CFG-DRAG}
 C_d: {definition: "Drag coefficient of the shape, referred to the frontal area (PredimRC accessory shapes).", model: MIC-CFG-DRAG}

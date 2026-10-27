@@ -1,0 +1,483 @@
+{
+  "hover_time_s": 60.0,
+  "energy_nominal_j": 243000.0,
+  "energy_available_j": 194400.0,
+  "reserve_fraction": 0.2,
+  "hover": {
+    "thrust_total_n": 18.344700000000003,
+    "front_rear_ratio": 1.9999999999999993,
+    "cg_x_mm": 0.0,
+    "motors": [
+      {
+        "index": 0,
+        "unit": "front",
+        "thrust_n": 6.114900000000001,
+        "fraction": 0.33333333333333337,
+        "power_w": 82.28933176281308,
+        "power_sd_w": 2.338491972228374,
+        "motor_input_w": 82.28933176281308,
+        "motor_current_a": 8.229694083920787,
+        "rpm": 5028.34120029907,
+        "power_margin": 0.5599500975250638,
+        "current_margin": 0.33091918016904176,
+        "thrust_margin": 0.39832689832689816,
+        "trusted": true,
+        "reason": "",
+        "source": "tested_pair",
+        "pair": "tmotor-mn2806-650kv + tmotor-p12x4",
+        "measured_at": "motor_input",
+        "motor_id": "tmotor-mn2806-650kv",
+        "propeller_id": "tmotor-p12x4",
+        "diameter_in": 12.0,
+        "pitch_in": 4.0,
+        "voltage_v": 14.616696918858691,
+        "safety_thrust_n": 9.172350000000002,
+        "max_thrust_n": 9.440208720675736,
+        "test_max_thrust_n": 10.16316,
+        "safety_current_a": 12.167339521900798,
+        "safety_current_margin": 0.010785404723512415
+      },
+      {
+        "index": 1,
+        "unit": "front",
+        "thrust_n": 6.114900000000001,
+        "fraction": 0.33333333333333337,
+        "power_w": 82.28933176281308,
+        "power_sd_w": 2.338491972228374,
+        "motor_input_w": 82.28933176281308,
+        "motor_current_a": 8.229694083920787,
+        "rpm": 5028.34120029907,
+        "power_margin": 0.5599500975250638,
+        "current_margin": 0.33091918016904176,
+        "thrust_margin": 0.39832689832689816,
+        "trusted": true,
+        "reason": "",
+        "source": "tested_pair",
+        "pair": "tmotor-mn2806-650kv + tmotor-p12x4",
+        "measured_at": "motor_input",
+        "motor_id": "tmotor-mn2806-650kv",
+        "propeller_id": "tmotor-p12x4",
+        "diameter_in": 12.0,
+        "pitch_in": 4.0,
+        "voltage_v": 14.616696918858691,
+        "safety_thrust_n": 9.172350000000002,
+        "max_thrust_n": 9.440208720675736,
+        "test_max_thrust_n": 10.16316,
+        "safety_current_a": 12.167339521900798,
+        "safety_current_margin": 0.010785404723512415
+      },
+      {
+        "index": 2,
+        "unit": "rear",
+        "thrust_n": 6.114900000000003,
+        "fraction": 0.3333333333333334,
+        "power_w": 91.3741157260338,
+        "power_sd_w": 2.7587261505163627,
+        "motor_input_w": 91.3741157260338,
+        "motor_current_a": 10.312417084125178,
+        "rpm": 5519.703851477121,
+        "power_margin": 0.543129421369831,
+        "current_margin": 0.20673714737498627,
+        "thrust_margin": NaN,
+        "trusted": true,
+        "reason": "",
+        "source": "untested_pair",
+        "pair": "tmotor-mn2212-780kv + 10x4.5 (not in the database)",
+        "measured_at": "motor_input",
+        "motor_id": "tmotor-mn2212-780kv",
+        "propeller_id": null,
+        "diameter_in": 10.0,
+        "pitch_in": 4.5,
+        "voltage_v": 14.616696918858691,
+        "safety_thrust_n": 9.172350000000003,
+        "max_thrust_n": 9.830299990125143,
+        "test_max_thrust_n": NaN,
+        "safety_current_a": 14.986892233817454,
+        "safety_current_margin": -0.15283786413980405
+      }
+    ],
+    "chain": {
+      "segments": [
+        {
+          "name": "battery internal resistance",
+          "power_in_w": 279.99999999999983,
+          "loss_w": 3.1391391391389902,
+          "model": "R_bat\u00b7I\u00b2, MIC-PROP-BAT",
+          "in_data": false
+        },
+        {
+          "name": "main cable and connector",
+          "power_in_w": 276.86086086086084,
+          "loss_w": 0.3304170603599061,
+          "model": "(2\u00b7\u03c1L/A + R_conn)\u00b7I\u00b2, 60 mm AWG10",
+          "in_data": false
+        },
+        {
+          "name": "motor 1 (front): DC cable",
+          "power_in_w": 87.34255824437011,
+          "loss_w": 0.24012826732413625,
+          "model": "2\u00b7\u03c1L/A\u00b7I\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 1 (front): ESC",
+          "power_in_w": 87.10242997704597,
+          "loss_w": 4.355121498852302,
+          "model": "constant efficiency 0.95 (MVP)",
+          "in_data": false
+        },
+        {
+          "name": "motor 1 (front): phase cables",
+          "power_in_w": 82.74730847819367,
+          "loss_w": 0.4579767153805909,
+          "model": "2\u00b7\u03c1L/A\u00b7I_m\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 2 (front): DC cable",
+          "power_in_w": 87.34255824437011,
+          "loss_w": 0.24012826732413625,
+          "model": "2\u00b7\u03c1L/A\u00b7I\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 2 (front): ESC",
+          "power_in_w": 87.10242997704597,
+          "loss_w": 4.355121498852302,
+          "model": "constant efficiency 0.95 (MVP)",
+          "in_data": false
+        },
+        {
+          "name": "motor 2 (front): phase cables",
+          "power_in_w": 82.74730847819367,
+          "loss_w": 0.4579767153805909,
+          "model": "2\u00b7\u03c1L/A\u00b7I_m\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 3 (rear): DC cable",
+          "power_in_w": 96.84532731176076,
+          "loss_w": 0.18597984500963305,
+          "model": "2\u00b7\u03c1L/A\u00b7I\u00b2, 150 mm AWG16",
+          "in_data": false
+        },
+        {
+          "name": "motor 3 (rear): ESC",
+          "power_in_w": 96.65934746675113,
+          "loss_w": 4.832967373337561,
+          "model": "constant efficiency 0.95 (MVP)",
+          "in_data": false
+        },
+        {
+          "name": "motor 3 (rear): phase cables",
+          "power_in_w": 91.82638009341356,
+          "loss_w": 0.4522643673797597,
+          "model": "2\u00b7\u03c1L/A\u00b7I_m\u00b2, 150 mm AWG16",
+          "in_data": false
+        }
+      ],
+      "battery_power_w": 276.86086086086084,
+      "chemical_power_w": 279.99999999999983,
+      "battery_current_a": 18.918918918918905,
+      "battery_voltage_v": 14.634074074074075,
+      "bus_voltage_v": 14.616609172312193,
+      "motor_power_w": 255.95277925165996,
+      "feasible": true,
+      "branch_currents_a": [
+        5.959140656373346,
+        5.959140656373346,
+        6.612980228673633
+      ]
+    },
+    "battery_power_w": 279.99999999999983,
+    "battery_power_sd_w": 7.97845047890681
+  },
+  "cruise": [
+    {
+      "index": 1,
+      "v_m_s": 10.331743332918734,
+      "aero_power_w": 16.887553480485757,
+      "drag_n": 1.6345308759925414,
+      "motors": [],
+      "chain": null,
+      "battery_power_w": 169.68278021948913,
+      "source": "multicopter forward-flight model of the MVP (MIC-MIS-SEG)",
+      "time_s": 984.5855950830486,
+      "time_sd_s": 4.611879277228973,
+      "flight_time_s": 1079.5855950830487,
+      "range_m": 10172.485657687112,
+      "shaft_power_w": 125.18676872464688,
+      "terminal_power_w": 168.52993754068936
+    },
+    {
+      "index": 2,
+      "v_m_s": 13.978994620366572,
+      "aero_power_w": 41.82863811025054,
+      "drag_n": 2.9922493889015933,
+      "motors": [],
+      "chain": null,
+      "battery_power_w": 194.45506753636343,
+      "source": "multicopter forward-flight model of the MVP (MIC-MIS-SEG)",
+      "time_s": 859.1559132626359,
+      "time_sd_s": 4.0243564115423265,
+      "flight_time_s": 954.1559132626359,
+      "range_m": 12010.135889554516,
+      "shaft_power_w": 141.69816669167835,
+      "terminal_power_w": 192.94104257978375
+    }
+  ],
+  "margins": {
+    "motor_power": 0.47339641823075407,
+    "motor_current": 0.10819794067536692,
+    "transition": NaN,
+    "hover_thrust": 0.39832689832689816,
+    "thrust_to_weight": 0.02920284558218289,
+    "battery_c": 0.837603988074135,
+    "mass": NaN
+  },
+  "feasible": true,
+  "limiting": "",
+  "warnings": [],
+  "metadata": {
+    "tool_version": "0.1.0.dev0+d20261012",
+    "project": "tricopter",
+    "test_data_hash": "99201c70b6e4660b",
+    "mass_total_kg": 1.87,
+    "hover_power_factor": 1.1033205866072713,
+    "mass_breakdown": {
+      "airframe": 0.6617000000000001,
+      "payload": 0.3,
+      "avionics": 0.148,
+      "wiring": 0.038299999999999994,
+      "lift propulsion": 0.272,
+      "battery": 0.45
+    },
+    "calibration": [
+      {
+        "point": "hover",
+        "measured_w": 280.0,
+        "model_before_w": 253.80143477991237,
+        "model_after_w": 279.99999999999983,
+        "parameter": "hover_power_factor",
+        "values_before": {
+          "mission": 1.0
+        },
+        "values_after": {
+          "mission": 1.1033205866072713
+        },
+        "factor": 1.1033205866072713,
+        "note": ""
+      }
+    ]
+  },
+  "phases": [
+    {
+      "name": "climb",
+      "duration_s": 15.0,
+      "battery_power_w": 328.85192414987654,
+      "battery_power_sd_w": 9.61869729895437
+    },
+    {
+      "name": "hover",
+      "duration_s": 60.0,
+      "battery_power_w": 279.99999999999983,
+      "battery_power_sd_w": 7.97845047890681
+    },
+    {
+      "name": "descent",
+      "duration_s": 20.0,
+      "battery_power_w": 279.99999999999983,
+      "battery_power_sd_w": 7.97845047890681
+    }
+  ],
+  "climb": {
+    "thrust_total_n": 18.344700000000003,
+    "front_rear_ratio": 1.9999999999999993,
+    "cg_x_mm": 0.0,
+    "motors": [
+      {
+        "index": 0,
+        "unit": "front",
+        "thrust_n": 6.114900000000001,
+        "fraction": 0.33333333333333337,
+        "power_w": 97.56685566696977,
+        "power_sd_w": 2.8646207978365252,
+        "motor_input_w": 97.56685566696977,
+        "motor_current_a": 9.442350005359879,
+        "rpm": 5028.564750442206,
+        "power_margin": 0.478252108732782,
+        "current_margin": 0.23232926785692043,
+        "thrust_margin": 0.39832689832689816,
+        "trusted": true,
+        "reason": "",
+        "source": "tested_pair",
+        "pair": "tmotor-mn2806-650kv + tmotor-p12x4",
+        "measured_at": "motor_input",
+        "motor_id": "tmotor-mn2806-650kv",
+        "propeller_id": "tmotor-p12x4",
+        "diameter_in": 12.0,
+        "pitch_in": 4.0,
+        "voltage_v": 14.584739485286981,
+        "safety_thrust_n": 9.172350000000002,
+        "max_thrust_n": 9.440208720675736,
+        "test_max_thrust_n": 10.16316,
+        "safety_current_a": 12.168764638994208,
+        "safety_current_margin": 0.0106695415451864
+      },
+      {
+        "index": 1,
+        "unit": "front",
+        "thrust_n": 6.114900000000001,
+        "fraction": 0.33333333333333337,
+        "power_w": 97.56685566696977,
+        "power_sd_w": 2.8646207978365252,
+        "motor_input_w": 97.56685566696977,
+        "motor_current_a": 9.442350005359879,
+        "rpm": 5028.564750442206,
+        "power_margin": 0.478252108732782,
+        "current_margin": 0.23232926785692043,
+        "thrust_margin": 0.39832689832689816,
+        "trusted": true,
+        "reason": "",
+        "source": "tested_pair",
+        "pair": "tmotor-mn2806-650kv + tmotor-p12x4",
+        "measured_at": "motor_input",
+        "motor_id": "tmotor-mn2806-650kv",
+        "propeller_id": "tmotor-p12x4",
+        "diameter_in": 12.0,
+        "pitch_in": 4.0,
+        "voltage_v": 14.584739485286981,
+        "safety_thrust_n": 9.172350000000002,
+        "max_thrust_n": 9.440208720675736,
+        "test_max_thrust_n": 10.16316,
+        "safety_current_a": 12.168764638994208,
+        "safety_current_margin": 0.0106695415451864
+      },
+      {
+        "index": 2,
+        "unit": "rear",
+        "thrust_n": 6.114900000000003,
+        "fraction": 0.3333333333333334,
+        "power_w": 105.32071635384918,
+        "power_sd_w": 3.205094690025977,
+        "motor_input_w": 105.32071635384918,
+        "motor_current_a": 11.59342677122023,
+        "rpm": 5521.508523012013,
+        "power_margin": 0.47339641823075407,
+        "current_margin": 0.10819794067536692,
+        "thrust_margin": NaN,
+        "trusted": true,
+        "reason": "",
+        "source": "untested_pair",
+        "pair": "tmotor-mn2212-780kv + 10x4.5 (not in the database)",
+        "measured_at": "motor_input",
+        "motor_id": "tmotor-mn2212-780kv",
+        "propeller_id": null,
+        "diameter_in": 10.0,
+        "pitch_in": 4.5,
+        "voltage_v": 14.584739485286981,
+        "safety_thrust_n": 9.172350000000003,
+        "max_thrust_n": 9.830299990125143,
+        "test_max_thrust_n": NaN,
+        "safety_current_a": 14.984387887499174,
+        "safety_current_margin": -0.15264522211532117
+      }
+    ],
+    "chain": {
+      "segments": [
+        {
+          "name": "battery internal resistance",
+          "power_in_w": 328.85192414987654,
+          "loss_w": 4.330073594276939,
+          "model": "R_bat\u00b7I\u00b2, MIC-PROP-BAT",
+          "in_data": false
+        },
+        {
+          "name": "main cable and connector",
+          "power_in_w": 324.5218505555996,
+          "loss_w": 0.4557715108338477,
+          "model": "(2\u00b7\u03c1L/A + R_conn)\u00b7I\u00b2, 60 mm AWG10",
+          "in_data": false
+        },
+        {
+          "name": "motor 1 (front): DC cable",
+          "power_in_w": 103.6760360995334,
+          "loss_w": 0.3394644556144217,
+          "model": "2\u00b7\u03c1L/A\u00b7I\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 1 (front): ESC",
+          "power_in_w": 103.33657164391899,
+          "loss_w": 5.166828582195954,
+          "model": "constant efficiency 0.95 (MVP)",
+          "in_data": false
+        },
+        {
+          "name": "motor 1 (front): phase cables",
+          "power_in_w": 98.16974306172304,
+          "loss_w": 0.6028873947532699,
+          "model": "2\u00b7\u03c1L/A\u00b7I_m\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 2 (front): DC cable",
+          "power_in_w": 103.6760360995334,
+          "loss_w": 0.3394644556144217,
+          "model": "2\u00b7\u03c1L/A\u00b7I\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 2 (front): ESC",
+          "power_in_w": 103.33657164391899,
+          "loss_w": 5.166828582195954,
+          "model": "constant efficiency 0.95 (MVP)",
+          "in_data": false
+        },
+        {
+          "name": "motor 2 (front): phase cables",
+          "power_in_w": 98.16974306172304,
+          "loss_w": 0.6028873947532699,
+          "model": "2\u00b7\u03c1L/A\u00b7I_m\u00b2, 150 mm AWG18",
+          "in_data": false
+        },
+        {
+          "name": "motor 3 (rear): DC cable",
+          "power_in_w": 111.7140068456989,
+          "loss_w": 0.24840672256615454,
+          "model": "2\u00b7\u03c1L/A\u00b7I\u00b2, 150 mm AWG16",
+          "in_data": false
+        },
+        {
+          "name": "motor 3 (rear): ESC",
+          "power_in_w": 111.46560012313275,
+          "loss_w": 5.573280006156642,
+          "model": "constant efficiency 0.95 (MVP)",
+          "in_data": false
+        },
+        {
+          "name": "motor 3 (rear): phase cables",
+          "power_in_w": 105.89232011697611,
+          "loss_w": 0.5716037631269313,
+          "model": "2\u00b7\u03c1L/A\u00b7I_m\u00b2, 150 mm AWG16",
+          "in_data": false
+        }
+      ],
+      "battery_power_w": 324.5218505555996,
+      "chemical_power_w": 328.85192414987654,
+      "battery_current_a": 22.219724604721385,
+      "battery_voltage_v": 14.605124785688963,
+      "bus_voltage_v": 14.584612762297951,
+      "motor_power_w": 300.4544276877887,
+      "feasible": true,
+      "branch_currents_a": [
+        7.085314730538938,
+        7.085314730538938,
+        7.6426849269028425
+      ]
+    },
+    "battery_power_w": 328.85192414987654,
+    "battery_power_sd_w": 9.61869729895437
+  },
+  "transition": null
+}

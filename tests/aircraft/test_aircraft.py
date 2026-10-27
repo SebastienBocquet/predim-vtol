@@ -108,7 +108,15 @@ def test_drag_formulas():
     assert drag.cds(boom) == pytest.approx(
         2 * (0.005 * np.pi * 0.016 * 0.65 + 0.15 * np.pi * 0.016**2 / 4)
     )
-    assert drag.cds(rotor) == pytest.approx(4 * 2 * 0.025 * 0.165 * 0.05)
+    planform = 4 * 2 * 0.025 * 0.165
+    assert drag.cds(rotor) == pytest.approx(planform * 0.5 * (0.015 + 0.15))
+    aligned = drag.cds({**rotor, "blade_position": "aligned"})
+    crosswind = drag.cds({**rotor, "blade_position": "crosswind"})
+    assert aligned == pytest.approx(planform * 0.015)
+    assert crosswind == pytest.approx(10 * aligned)
+    assert drag.cds(rotor) == pytest.approx(0.5 * (aligned + crosswind))
+    with pytest.raises(ValueError, match="blade position"):
+        drag.cds({**rotor, "blade_position": "sideways"})
 
 
 def test_drag_with_polar_equal_dynamic_pressure():

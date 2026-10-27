@@ -127,3 +127,4 @@ drag, cost models and motor-out reliability. Scope and decisions:
 | INC3-004 | [Feat] cost — prices, cost of use, motor-out reliability | INC3-003 |
 | INC3-005 | [Fix] ui — motor layout box, two-phase only with calibration, CG check | INC3-004 |
 | INC3-006 | [Feat] mission — vertical phases, transition tilt, cable mass, mass recap | INC3-005 |
+| INC3-007 | [Feat] ui — stored runs, filters, comparison, families, data provenance | INC3-006 |

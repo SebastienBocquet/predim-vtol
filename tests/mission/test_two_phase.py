@@ -142,4 +142,12 @@ def test_quadplane_two_phase_through_predimrc(predimrc):
     )
     assert r.feasible
     assert r.iso_check.passed
-    assert not r.warnings
+    # The only warning: the lift pair hovers at ~13.8 V, its test table is at 15.3 V, so the
+    # power σ slightly exceeds 5 % (extrapolation in voltage).
+    assert len(r.warnings) == 1
+    assert r.warnings[0].startswith("Untrusted hover power")
+    assert "relative σ above the threshold" in r.warnings[0]
+    assert all(not m.trusted for m in r.hover.motors if m.unit == "lift")
+    assert all(
+        m.power_sd_w / m.power_w < 0.06 for m in r.hover.motors if m.unit == "lift"
+    )

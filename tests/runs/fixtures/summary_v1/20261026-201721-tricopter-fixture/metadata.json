@@ -1,0 +1,17 @@
+{
+  "tool_version": "0.1.0.dev0+d20261012",
+  "format_version": 2,
+  "date": "2026-10-26T20:17:21",
+  "seconds": NaN,
+  "test_data_hash": "99201c70b6e4660b",
+  "motor_database_hash": "41d513728da3d8fb",
+  "data_hashes": {
+    "motors": "41d513728da3d8fb",
+    "propellers": "860242f44c5c8db2",
+    "prices": "693339e7cd103273",
+    "drag_shapes": "8850423066781fc5",
+    "boom_sections": "0a7286abcdbe9f29",
+    "thrust_tests": "f706a42af6ec791a",
+    "user_data": "e3b0c44298fc1c14"
+  }
+}

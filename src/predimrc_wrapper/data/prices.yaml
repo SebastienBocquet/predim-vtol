@@ -30,6 +30,16 @@ motors:  # per motor, ids of the motor database
     price: 46.90
     source: https://www.ligpower.com/product/mn2806-kv650-motor-antigravity-type.html
     status: verified
+  tmotor-mt2216-1100kv:
+    price: 60.00
+    source: https://www.aeroflyhobbies.com/24-t-motor-mt2216-12-800kv-v2-brushless-motor.html
+    status: search
+    notes: "Read on 2026-10-26: MT2216-09 1100KV V2, US$60.00 tax excl., last items. Other listings: Ozcopters 58.00 (AUD?), FPV24 25.90 EUR (no longer available)."
+  tmotor-mt2216-900kv:
+    price: 60.00
+    source: https://www.aeroflyhobbies.com/24-t-motor-mt2216-12-800kv-v2-brushless-motor.html
+    status: search
+    notes: "No US$ listing of the KV900 found on 2026-10-26: price of the KV1100 assumed (one price per KV variant, as the MN2212). Buzzflyer: V2.0 900KV 24.96 GBP ex VAT."
   tmotor-at2308-1450kv:
     price: 29.99
     source: https://store.tmotor.com/product/at2308-long-shaft-fixed-wing-motor.html

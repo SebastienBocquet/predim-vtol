@@ -127,3 +127,18 @@
 - **Status:** Implemented (2026-10-19)
 - **Verification:** Test — the recap adds up to the total mass for every template.
 - **Satisfied by:** INC3-006
+
+### REQ-UI-013 — Runs are stored and compared
+
+- **Statement:** The user shall be able to store the result of a Run with a name and a copy
+  of the project, then list the stored runs, filter them by architecture, project name,
+  date, name and a query on their inputs and outputs, and compare a selection: inputs that
+  differ, table of outputs, relative differences to a reference run, figures superposing the
+  runs, families of runs differing by one input. A run computed with other reference data
+  or another tool version is flagged, and a run whose project format changed remains
+  comparable.
+- **Priority:** Should
+- **Status:** Implemented (2026-10-26)
+- **Verification:** Test — `tests/runs` (filters, families, provenance, migration of the
+  stored projects, runs stored by earlier versions) and the GUI test Save run / Runs page.
+- **Satisfied by:** INC3-007

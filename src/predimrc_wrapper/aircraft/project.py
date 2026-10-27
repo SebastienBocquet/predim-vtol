@@ -350,6 +350,10 @@ class DragSource(_Strict):
     diameter_mm: float | None = opt(None, gt=0, description="Boom diameter (mm)")
     length_mm: float | None = opt(None, gt=0, description="Boom exposed length (mm)")
     n_blades: int = opt(2, ge=1, description="Blades per stopped rotor")
+    blade_position: Literal["aligned", "random", "crosswind"] = opt(
+        "random",
+        description="Position of the stopped blades: along the flow (best), random stop, across the flow (worst)",
+    )
     blade_chord_mm: float | None = opt(None, gt=0, description="Mean blade chord (mm)")
     radius_mm: float | None = opt(None, gt=0, description="Rotor radius (mm)")
     cds_m2: float | None = opt(None, ge=0, description="Drag area CdS (m²), kind cds")

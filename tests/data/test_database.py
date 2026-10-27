@@ -16,7 +16,10 @@ def test_shipped_database_complete():
     assert db.ids("lift")
     assert db.ids("cruise")
     for record in db.records.values():
-        assert record.source.startswith("http")
+        # A web page, or a data sheet supplied by the user (data/README.md).
+        assert (
+            record.source.startswith("http") or "supplied by the user" in record.source
+        )
         assert record.retrieved
         assert record.status in ("verified", "estimated")
         assert record.kv > 0

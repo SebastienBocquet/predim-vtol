@@ -274,6 +274,7 @@ class AircraftModel:
                 "kind": s.kind,
                 "count": s.count,
                 "n_blades": s.n_blades,
+                "blade_position": s.blade_position,
                 "diameter_m": (s.diameter_mm or 0) * MM,
                 "length_m": (s.length_mm or 0) * MM,
                 "blade_chord_m": (s.blade_chord_mm or 0) * MM,
