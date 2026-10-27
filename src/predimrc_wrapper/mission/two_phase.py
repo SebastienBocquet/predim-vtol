@@ -173,6 +173,19 @@ class PhaseResult:
 
 
 @dataclass
+class YawCase:
+    """One yaw worst case: the yaw-tilting motors at full yaw tilt, thrust split solved again."""
+
+    vertical: dict[int, float]
+    """Vertical component k of a unit thrust of each yaw-tilting motor (index in
+    ``project.motors``)."""
+    tilt_deg: dict[int, float]
+    """Tilt from the horizontal of each front yaw-tilting motor (θ ∓ δ; empty for the rear
+    rotor, tilted laterally)."""
+    point: HoverResult
+
+
+@dataclass
 class TwoPhaseResult:
     """Flight time of the designer's process, per target speed."""
 
@@ -198,6 +211,10 @@ class TwoPhaseResult:
     """Operating point of the climb (rotors at the climb power), when there is a climb."""
     transition: HoverResult | None = None
     """Operating point of the transition (tilting motors at the tilt angle)."""
+    yaw_cases: list[YawCase] = field(default_factory=list)
+    """Yaw worst cases, transition tilt included when there is one: front differential tilt
+    (each side tilted forward in turn), or the rear rotor tilted laterally; empty without
+    yaw tilt."""
 
     @property
     def hover_energy_j(self) -> float:
@@ -334,14 +351,22 @@ class TwoPhaseEvaluation(CompositeModel):
     # --- hover -----------------------------------------------------------------
 
     def hover(
-        self, climb_speed_m_s: float = 0.0, tilt_deg: float | None = None
+        self,
+        climb_speed_m_s: float = 0.0,
+        tilt_deg: float | None = None,
+        vertical: dict[int, float] | None = None,
     ) -> HoverResult:
         """Operating point of the lift motors carrying the weight.
+
+        With a tilted motor the thrust split is solved again (``hover_thrust_split``): the
+        vertical components k_i·T_i balance the weight and the pitch and roll moments.
 
         Args:
             climb_speed_m_s: Vertical climb speed (momentum-theory power factor per rotor).
             tilt_deg: Tilt angle of the tilting motors from the horizontal (transition):
-                a tilting motor gives F_i / sin θ to carry its share F_i.
+                vertical component k = sin θ of their thrust.
+            vertical: Vertical component k_i of a unit thrust per motor index in
+                ``project.motors`` (yaw worst case); it overrides ``tilt_deg``.
         """
         from predimrc_wrapper.data import default_tests  # noqa: PLC0415
         from predimrc_wrapper.propulsion.chain import PowerChain  # noqa: PLC0415
@@ -353,11 +378,26 @@ class TwoPhaseEvaluation(CompositeModel):
         u_bus = ac.battery.open_circuit_voltage
         chain = None
         full_throttle: dict[str, float] = {}
+        factors = [
+            (vertical or {}).get(
+                ac.project.motors.index(m),
+                float(np.sin(np.radians(tilt_deg)))
+                if tilt_deg is not None and m.role == "tilt"
+                else 1.0,
+            )
+            for m in ac.lift_motors
+        ]
+        fractions = (
+            ac.hover_fractions
+            if np.allclose(factors, 1.0, rtol=0.0, atol=1e-12)
+            else ac.thrust_split(np.array(factors))
+        )
         for _ in range(2):  # surrogate at the bus voltage under load, updated once
             motors = []
-            for (i, slot), f in zip(
+            for (i, slot), f, k in zip(
                 ((ac.project.motors.index(m), m) for m in ac.lift_motors),
-                ac.hover_fractions,
+                fractions,
+                factors,
                 strict=False,
             ):
                 motor_id, prop_id, d_in, p_in, pitch_known = _pair(ac, slot)
@@ -369,9 +409,6 @@ class TwoPhaseEvaluation(CompositeModel):
                 )
                 thrust = f * weight
                 safety = self.p.min_thrust_to_weight * f * ac.total_mass_kg * GRAVITY
-                if tilt_deg is not None and slot.role == "tilt":
-                    thrust /= np.sin(np.radians(tilt_deg))
-                    safety /= np.sin(np.radians(tilt_deg))
                 if slot.unit not in full_throttle:
                     full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(
                         ac.rho, ac.battery.open_circuit_voltage
@@ -409,7 +446,7 @@ class TwoPhaseEvaluation(CompositeModel):
                         i,
                         slot.unit,
                         thrust,
-                        float(f),
+                        float(k * f),
                         power,
                         k_h
                         * k_c
@@ -458,8 +495,8 @@ class TwoPhaseEvaluation(CompositeModel):
             ac.project.cg_x_mm
             if ac.project.cg_x_mm is not None
             else float(
-                sum(m.thrust_n * ac.project.motors[m.index].x_mm for m in motors)
-                / sum(m.thrust_n for m in motors)
+                sum(m.fraction * ac.project.motors[m.index].x_mm for m in motors)
+                / sum(m.fraction for m in motors)
             )
         )
         front = sum(
@@ -619,6 +656,61 @@ class TwoPhaseEvaluation(CompositeModel):
             )
         return out, iso
 
+    def yaw_cases(
+        self, cg_x_mm: float, transition: bool
+    ) -> list[tuple[dict[int, float], dict[int, float]]]:
+        """Vertical components and tilts of the yaw-tilting motors in each worst case.
+
+        θ: transition tilt from the horizontal on a tilting motor when there is a transition,
+        else 90°; δ: maximum yaw tilt. Front motors, differential tilt about the same axis as
+        the transition: one side at θ − δ (k = sin(θ − δ)), the other at θ + δ, then the
+        reverse (two cases); a front motor on the centreline at θ − δ in both. Rear rotor
+        (tricopter, lateral tilt about the boom, orthogonal to the transition tilt):
+        k = sin θ · cos δ, one case. Empty without yaw tilt.
+
+        Returns:
+            (vertical components, tilts from the horizontal) per case, by motor index.
+        """
+        mission = self.aircraft.project.mission
+        if mission.yaw_tilt == "none" or mission.yaw_tilt_max_deg <= 0:
+            return []
+        delta = mission.yaw_tilt_max_deg
+        front = mission.yaw_tilt == "front"
+        side = -1.0 if front else 1.0  # x aft-positive
+        motors = {
+            i: m
+            for i, m in enumerate(self.aircraft.project.motors)
+            if m.role in ("lift", "tilt") and side * (m.x_mm - cg_x_mm) > 1e-6
+        }
+        if not motors:
+            return []
+        theta = {
+            i: mission.transition_tilt_deg if transition and m.role == "tilt" else 90.0
+            for i, m in motors.items()
+        }
+        if not front:
+            cos_delta = np.cos(np.radians(delta))
+            return [
+                (
+                    {
+                        i: float(np.sin(np.radians(t)) * cos_delta)
+                        for i, t in theta.items()
+                    },
+                    {},
+                )
+            ]
+        cases = []
+        for forward in (1.0, -1.0):  # the side y > 0, then y < 0, tilted forward
+            tilts = {
+                i: theta[i] - delta if forward * m.y_mm >= -1e-6 else theta[i] + delta
+                for i, m in motors.items()
+            }
+            cases.append((
+                {i: float(np.sin(np.radians(a))) for i, a in tilts.items()},
+                tilts,
+            ))
+        return cases
+
     # --- flight time -----------------------------------------------------------------
 
     def solve(
@@ -640,6 +732,19 @@ class TwoPhaseEvaluation(CompositeModel):
             if t_tr > 0 and tilting
             else None
         )
+        yaw_cases = [
+            YawCase(
+                vertical,
+                tilts,
+                self.hover(
+                    tilt_deg=mission.transition_tilt_deg
+                    if transition is not None
+                    else None,
+                    vertical=vertical,
+                ),
+            )
+            for vertical, tilts in self.yaw_cases(hover.cg_x_mm, transition is not None)
+        ]
         phases = [
             PhaseResult(
                 name,
@@ -692,6 +797,13 @@ class TwoPhaseEvaluation(CompositeModel):
             )
             if transition is not None
             else float("nan"),
+            "yaw_tilt": min(
+                min(m.power_margin, m.current_margin)
+                for case in yaw_cases
+                for m in case.point.motors
+            )
+            if yaw_cases
+            else float("nan"),
             "hover_thrust": float(np.nanmin(thrust_margins))
             if any(np.isfinite(t) for t in thrust_margins)
             else float("nan"),
@@ -712,6 +824,7 @@ class TwoPhaseEvaluation(CompositeModel):
             "battery_c",
             "thrust_to_weight",
             "transition",
+            "yaw_tilt",
             "hover_thrust",
             "mass",
         ):
@@ -769,6 +882,7 @@ class TwoPhaseEvaluation(CompositeModel):
             phases,
             climb,
             transition,
+            yaw_cases,
         )
 
     def evaluate(self, x):

@@ -70,6 +70,16 @@
   theory); hover t_h; transition t_tr of a winged aircraft (tilting motors at the tilt angle
   θ: T_i = F_i / sin θ, no wing lift; without tilting motor, at hover power); descent from h
   at v_d at hover power. Calibration factor k_h on every vertical point.
+- Yaw tilt worst case (optional, `mission.yaw_tilt` front or rear): the lift motors ahead of
+  (front) or behind (rear) the CG tilt up to δ = `yaw_tilt_max_deg` for yaw, during the
+  transition when there is one (θ the transition tilt of a tilting motor, else 90°). Front
+  (differential tilt, same axis as the transition): one side at θ − δ, k = sin(θ − δ), the
+  other at θ + δ, then the reverse (two cases, each motor at its worst); rear
+  (tricopter rotor tilted laterally about its boom, orthogonal axis): k = sin θ · cos δ. The
+  thrust split is solved again: min Σ T_i²/A_i with the vertical components k_i·T_i balancing
+  the weight and the pitch and roll moments (side and yaw forces ignored); the transition
+  uses the same split with k = sin θ. Short manoeuvre: own margin `yaw_tilt` (worst power or
+  current margin of the lift motors), not counted in the energy.
 - t_c,k = (E_avail − Σ P_j·t_j) / P_c,k over the vertical phases j; flight time Σ t_j + t_c,k;
   range V_k·t_c,k; σ_t from the surrogate σ of the vertical powers (motor errors fully
   correlated).

@@ -159,3 +159,109 @@ def test_cruise_tab_shows_the_predimrc_stability_with_its_descriptions():
     assert rows["Volume de stab"]["value"] == "-"  # not given by the stub backend
     assert rows["Vé longi. (°)"]["description"] == "Angle entre l'aile et le stab"
     assert all(row["description"] for row in rows.values())
+
+
+def test_front_yaw_tilt_is_differential():
+    theta, delta = 60.0, 15.0
+    project, r = _solve(
+        "tiltrotor",
+        **{
+            "mission.transition_tilt_deg": theta,
+            "mission.yaw_tilt": "front",
+            "mission.yaw_tilt_max_deg": delta,
+        },
+    )
+    front = {i for i, m in enumerate(project.motors) if m.role == "tilt"}
+    assert len(r.yaw_cases) == 2  # each side tilted forward in turn
+    for case in r.yaw_cases:
+        assert set(case.vertical) == front
+        assert sorted(case.tilt_deg.values()) == [theta - delta, theta + delta]
+        # Three rotors and a CG: the vertical forces are set by the balances
+        for hover, worst in zip(r.hover.motors, case.point.motors, strict=True):
+            k = case.vertical.get(hover.index, 1.0)
+            assert worst.thrust_n == pytest.approx(hover.thrust_n / k, rel=1e-9)
+    forward = [
+        {i for i, a in c.tilt_deg.items() if a == theta - delta} for c in r.yaw_cases
+    ]
+    assert forward[0] | forward[1] == front
+    assert not forward[0] & forward[1]
+    assert r.margins["yaw_tilt"] < r.margins["transition"]
+    assert [p.name for p in r.phases] == ["climb", "hover", "transition", "descent"]
+    from predimrc_wrapper.ui import two_phase_view as tpv  # noqa: PLC0415
+
+    rows = tpv.hover_tilt_rows(r, front, theta, "front", delta)
+    assert [row["phase"] for row in rows if "worst" in row["phase"]] == [
+        (
+            "worst case yaw (transition 60°, differential yaw ±15°, tilted 45°, "
+            "other side 75°)"
+        )
+    ] * 2
+
+
+def test_yaw_tilt_of_the_tricopter_rear_rotor_is_lateral():
+    delta = 20.0
+    project, r = _solve(
+        "tricopter", **{"mission.yaw_tilt": "rear", "mission.yaw_tilt_max_deg": delta}
+    )
+    rear = max(range(len(project.motors)), key=lambda i: project.motors[i].x_mm)
+    k = np.cos(np.radians(delta))
+    (case,) = r.yaw_cases
+    assert case.vertical == {rear: pytest.approx(k)}
+    worst = next(m for m in case.point.motors if m.index == rear)
+    assert worst.thrust_n == pytest.approx(r.hover.motors[rear].thrust_n / k, rel=1e-9)
+    from predimrc_wrapper.ui import two_phase_view as tpv  # noqa: PLC0415
+
+    rows = tpv.hover_tilt_rows(r, set(), 60.0, "rear", delta)
+    assert [row["phase"] for row in rows if "worst" in row["phase"]] == [
+        f"worst case yaw (yaw 20° lateral, k = {k:.3f})"
+    ]
+
+
+def test_lateral_yaw_tilt_combines_with_the_transition_tilt():
+    theta, delta = 60.0, 20.0
+    project = Project.template("tiltrotor").with_overrides({
+        "mission.transition_tilt_deg": theta,
+        "mission.yaw_tilt": "rear",
+        "mission.yaw_tilt_max_deg": delta,
+    })
+    data = project.model_dump()
+    rear = max(range(len(project.motors)), key=lambda i: project.motors[i].x_mm)
+    data["motors"][rear]["role"] = "tilt"  # the rear rotor tilts for the transition too
+    project = Project.model_validate(data)
+    r = TwoPhaseEvaluation(AircraftModel(project, aero_backend=ParabolicAero())).solve(
+        60.0, (13.0, 16.0)
+    )
+    assert r.yaw_cases[0].vertical[rear] == pytest.approx(
+        np.sin(np.radians(theta)) * np.cos(np.radians(delta))
+    )
+
+
+def test_tilted_split_balances_the_vertical_forces_and_moments():
+    from predimrc_wrapper.aircraft.model import hover_thrust_split  # noqa: PLC0415
+
+    x = np.array([-0.2, -0.2, 0.2, 0.2])
+    y = np.array([0.2, -0.2, 0.2, -0.2])
+    area = np.ones(4)
+    k = np.array([np.cos(np.radians(20.0)), 1.0, 1.0, 1.0])
+    f = hover_thrust_split(x, y, area, (0.0, 0.0), k)
+    assert k @ f == pytest.approx(1.0)
+    assert (k * f) @ x == pytest.approx(0.0, abs=1e-12)
+    assert (k * f) @ y == pytest.approx(0.0, abs=1e-12)
+    # Redundant rotors: the tilted rotor's loss is shared, not carried by it alone
+    assert k[0] * f[0] < 0.25
+    assert f[0] < 0.25 / k[0]
+
+
+def test_without_yaw_tilt_no_worst_case():
+    _, r = _solve("tiltrotor")
+    assert r.yaw_cases == []
+    assert np.isnan(r.margins["yaw_tilt"])
+
+
+def test_yaw_tilt_must_stay_below_the_transition_tilt():
+    with pytest.raises(ValueError, match="yaw_tilt_max_deg"):
+        Project.template("tiltrotor").with_overrides({
+            "mission.yaw_tilt": "front",
+            "mission.transition_tilt_deg": 30.0,
+            "mission.yaw_tilt_max_deg": 30.0,
+        })

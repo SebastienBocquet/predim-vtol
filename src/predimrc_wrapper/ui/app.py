@@ -1820,6 +1820,19 @@ with tabs["Results"]:
                 if two.transition is not None and tilting
                 else ""
             )
+            + (
+                f" — then the worst case of the {mission.yaw_tilt} yaw-tilting motors at the "
+                f"yaw tilt {mission.yaw_tilt_max_deg:g}° "
+                + (
+                    "differential, added to the transition tilt on one side (sin(θ − δ)) "
+                    "and taken off on the other (sin(θ + δ))"
+                    if mission.yaw_tilt == "front"
+                    else "lateral, orthogonal to the transition tilt (sin θ · cos δ)"
+                )
+                + ", thrust split solved again"
+                if two.yaw_cases
+                else ""
+            )
         )
         if mission is not None:
             st.caption(
@@ -1830,7 +1843,13 @@ with tabs["Results"]:
                 "≥ 0, and the worst hover row is the 'Margin thrust-to-weight' tile."
             )
         table(
-            tpv.hover_tilt_rows(two, tilting, mission.transition_tilt_deg)
+            tpv.hover_tilt_rows(
+                two,
+                tilting,
+                mission.transition_tilt_deg,
+                mission.yaw_tilt,
+                mission.yaw_tilt_max_deg,
+            )
             if mission is not None
             else tpv.hover_rows(two)
         )
