@@ -72,9 +72,12 @@
 - Local induced velocity from ½ρW²Bc(c_l·cos φ − c_d·sin φ) = 4πρr(V + v_i)·v_i·F,
   Prandtl tip loss F, solved per station by a bracketed regula falsi (Illinois, relative
   tolerance 1e-12); v_i = 0 where the blade gives no thrust (windmilling).
-- Rotation speed for a thrust (`n_for_thrust`): n_max halved while T(n) ≥ T (propulsive
-  branch, the thrust dips below its n = 0 value in forward flight), then the same regula
-  falsi in the bracket; 0 when T is reached at rest, NaN above n_max.
+- Rotation speed for a thrust (`n_for_thrust`): static (V = 0), closed form
+  n = √(T / (ρ C_T0 D⁴)), C_T0 from one evaluation at 100 rev/s. Exact for this model: with
+  no Reynolds or Mach effect, doubling n doubles every velocity of a station and keeps its
+  velocity triangle, so C_T does not depend on n (T ∝ n²). In forward flight, n_max halved
+  while T(n) ≥ T (propulsive branch, the thrust dips below its n = 0 value), then the same
+  regula falsi in the bracket. 0 when T is reached at rest, NaN above n_max.
 - T = ∫dT; Q = ∫½ρW²Bc(c_l·sin φ + c_d·cos φ)·r dr; P = Q·ω; η = T·V / P.
 - Chord c/R = c₇₅·(1 + s·(0.75 − r/R)).
 - Post-stall drag c_d,s = 0.5 fitted on the 8 shipped manufacturer thrust tables

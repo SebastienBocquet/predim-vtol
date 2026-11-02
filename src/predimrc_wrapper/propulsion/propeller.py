@@ -146,6 +146,8 @@ class MomentumPropeller(Model):
 _BEM_EXAMPLE = {"diameter_m": 0.254, "pitch_m": 0.1143}
 _HALVINGS = 12
 """Halvings of n_max bracketing the rotation speed (n_max / 4096 ≈ 0 for an RC propeller)."""
+_N_REF = 100.0
+"""Rotation speed (rev/s) of the evaluation giving the static C_T (any value: C_T is constant)."""
 
 
 def _bracketed_root(f, lo, hi, f_lo, f_hi, xtol, max_iter: int = 100) -> np.ndarray:
@@ -450,15 +452,36 @@ class BladeElementPropeller(Model):
     ) -> np.ndarray:
         """Rotation speed (rev/s) giving a thrust at a speed (NaN above ``n_max``).
 
+        Static (V = 0 everywhere): closed form. The model has no Reynolds or Mach effect, so
+        doubling n doubles every velocity of a station and keeps its velocity triangle: C_T
+        does not depend on n (invariant T ∝ n²). One evaluation at ``_N_REF`` gives C_T0 and
+        n = √(T / (ρ C_T0 D⁴)), 0 for T ≤ 0.
+
+        Otherwise ``_n_for_thrust_general``.
+        """
+        t, v = np.broadcast_arrays(
+            np.asarray(thrust_n, dtype=float), np.asarray(v_m_s, dtype=float)
+        )
+        if not v.any():
+            ct0 = np.asarray(
+                self.evaluate({"n_rev_s": _N_REF, "v_m_s": 0.0, "rho": rho})["ct"]
+            )
+            if np.all(ct0 > 0.0):
+                n = np.sqrt(np.maximum(t, 0.0) / (rho * ct0 * self.p.diameter_m**4))
+                return np.where(n <= n_max, n, np.nan)
+        return self._n_for_thrust_general(t, v, rho, n_max)
+
+    def _n_for_thrust_general(
+        self, t: np.ndarray, v: np.ndarray, rho: float, n_max: float
+    ) -> np.ndarray:
+        """Rotation speed (rev/s) giving a thrust at a speed, by root finding (any V).
+
         Propulsive branch: the upper bound n_max is halved while the thrust stays above the
         target (at most ``_HALVINGS`` times), then the root is refined in the bracket by a
         regula falsi (Illinois). In forward flight the thrust dips below its n = 0 value
         (windmilling) before rising; this keeps the rising branch, as the former bisection.
         A target already reached below n_max / 2^_HALVINGS and at n = 0 gives 0.
         """
-        t, v = np.broadcast_arrays(
-            np.asarray(thrust_n, dtype=float), np.asarray(v_m_s, dtype=float)
-        )
 
         def excess(n):
             return self.evaluate({"n_rev_s": n, "v_m_s": v, "rho": rho})["thrust_n"] - t

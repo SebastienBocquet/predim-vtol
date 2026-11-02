@@ -5,6 +5,14 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Changed
+- Static rotation speed of the blade-element propeller in closed form: C_T does not depend
+  on n at V = 0, so n = √(T / (ρ C_T0 D⁴)) with one evaluation instead of about 13 (halvings,
+  then regula falsi). Same result to 1e-15. `evaluate_two_phase` about 4 times faster on a
+  tricopter with a hover calibration, where the static search took 80 % of the time
+  (13.7 → 3.1 s, both versions alternated on the same machine). Forward flight keeps the
+  root finding.
+
 ### Fixed
 - Cruise power at the target speeds (two-phase): near the stall edge V₁ could be overestimated
   by 10–40 % (−12 % reported between the curve and V₁ on a quadplane with large drag sources).

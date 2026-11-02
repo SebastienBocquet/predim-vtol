@@ -136,6 +136,25 @@ def test_blade_element_thrust_inverse():
     assert np.isnan(prop.n_for_thrust(1e4, 0.0, 1.225))
 
 
+@pytest.mark.parametrize(
+    ("diameter_in", "pitch_in"), [(10, 4.5), (12, 4), (12, 6), (8, 8), (15, 5)]
+)
+def test_blade_element_static_closed_form(diameter_in, pitch_in):
+    """The static closed form gives the root-finding rotation speed, NaN and 0 included."""
+    from predimrc_wrapper.propulsion import BladeElementPropeller  # noqa: PLC0415
+
+    prop = BladeElementPropeller(
+        diameter_m=diameter_in * 0.0254, pitch_m=pitch_in * 0.0254
+    )
+    t = np.array([-1.0, 0.0, 0.5, 3.0, 8.0, 20.0, 1e4, np.nan])
+    closed = prop.n_for_thrust(t, 0.0, 1.1, n_max=1500.0)
+    general = prop._n_for_thrust_general(t, np.zeros_like(t), 1.1, 1500.0)
+    assert np.array_equal(np.isnan(closed), np.isnan(general))
+    assert np.array_equal(closed == 0.0, general == 0.0)
+    ok = np.isfinite(general) & (general > 0.0)
+    assert closed[ok] == pytest.approx(general[ok], rel=1e-12)
+
+
 def test_blade_element_pitch_trends():
     """A higher pitch: more static power at equal thrust, more efficient at speed."""
     from predimrc_wrapper.propulsion import BladeElementPropeller  # noqa: PLC0415
