@@ -387,89 +387,129 @@ class TwoPhaseEvaluation(CompositeModel):
             )
             for m in ac.lift_motors
         ]
-        for _ in range(2):  # surrogate at the bus voltage under load, updated once
-            motors = []
-            for (i, slot), f, k in zip(
-                ((ac.project.motors.index(m), m) for m in ac.lift_motors),
-                ac.hover_fractions,
-                factors,
-                strict=False,
-            ):
-                motor_id, prop_id, d_in, p_in, pitch_known = _pair(ac, slot)
-                model = ThrustPowerSurrogate(
+        k_h = ac.project.mission.hover_power_factor  # calibration, 1 by default
+        # What does not depend on the bus voltage, per lift motor; the motors of one
+        # surrogate pair share a model, predicted once per pass on all their thrusts.
+        lift = []
+        models = {}
+        for (i, slot), f, k in zip(
+            ((ac.project.motors.index(m), m) for m in ac.lift_motors),
+            ac.hover_fractions,
+            factors,
+            strict=False,
+        ):
+            motor_id, prop_id, d_in, p_in, pitch_known = _pair(ac, slot)
+            key = (motor_id, prop_id or f"{d_in:g}x{p_in:g}", d_in, p_in)
+            if key not in models:
+                models[key] = ThrustPowerSurrogate(
                     motor_id=motor_id,
-                    propeller_id=prop_id or f"{d_in:g}x{p_in:g}",
+                    propeller_id=key[1],
                     diameter_in=d_in,
                     pitch_in=p_in,
                 )
-                thrust = f * weight / k
-                safety = (
-                    self.p.min_thrust_to_weight * f * ac.total_mass_kg * GRAVITY / k
+            thrust = f * weight / k
+            k_c = 1.0
+            if climb_speed_m_s > 0:
+                v_h = np.sqrt(thrust / (2.0 * ac.rho * ac.disc_area_m2(slot)))
+                ratio = climb_speed_m_s / (2.0 * v_h)
+                k_c = float(ratio + np.sqrt(ratio**2 + 1.0))
+            if slot.unit not in full_throttle:
+                full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(
+                    ac.rho, ac.battery.open_circuit_voltage
                 )
-                if slot.unit not in full_throttle:
-                    full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(
-                        ac.rho, ac.battery.open_circuit_voltage
-                    )
-                p = model.predict(thrust, u_bus, ac.rho)
-                k_c = 1.0
-                if climb_speed_m_s > 0:
-                    v_h = np.sqrt(thrust / (2.0 * ac.rho * ac.disc_area_m2(slot)))
-                    ratio = climb_speed_m_s / (2.0 * v_h)
-                    k_c = float(ratio + np.sqrt(ratio**2 + 1.0))
-                pair_tests = tests.tests(motor_id, prop_id) if prop_id else []
-                measured_at = pair_tests[0].measured_at if pair_tests else "motor_input"
-                record = ac.db.motor(motor_id)
-                k_h = ac.project.mission.hover_power_factor  # calibration, 1 by default
-                power = k_h * k_c * float(p.power_w[0])
-                eta = ac.project.esc_efficiency(slot)
-                motor_in = power * eta if measured_at == "esc_input" else power
+            pair_tests = tests.tests(motor_id, prop_id) if prop_id else []
+            lift.append({
+                "i": i,
+                "slot": slot,
+                "f": f,
+                "key": key,
+                "prop_id": prop_id,
+                "thrust": thrust,
+                "safety": self.p.min_thrust_to_weight
+                * f
+                * ac.total_mass_kg
+                * GRAVITY
+                / k,
+                "k_c": k_c,
+                "pair_tests": pair_tests,
+                "measured_at": pair_tests[0].measured_at
+                if pair_tests
+                else "motor_input",
+                "pitch_known": pitch_known,
+                "record": ac.db.motor(motor_id),
+            })
+        groups = {key: [m for m in lift if m["key"] == key] for key in models}
+        for group in groups.values():
+            for j, m in enumerate(group):
+                m["j"], m["j_safety"] = j, len(group) + j
+        for _ in range(2):  # surrogate at the bus voltage under load, updated once
+            # Nominal thrusts then thrusts with the safety factor (static, no climb factor).
+            predictions = {
+                key: models[key].predict(
+                    np.array(
+                        [m["thrust"] for m in group] + [m["safety"] for m in group]
+                    ),
+                    u_bus,
+                    ac.rho,
+                )
+                for key, group in groups.items()
+            }
+            motors = []
+            for m in lift:
+                p = predictions[m["key"]]
+                j, j_s = m["j"], m["j_safety"]
+                motor_id, prop_label, d_in, p_in = m["key"]
+                prop_id = m["prop_id"]
+                record, thrust, k_c = m["record"], m["thrust"], m["k_c"]
+                power = k_h * k_c * float(p.power_w[j])
+                eta = ac.project.esc_efficiency(m["slot"])
+                esc_input = m["measured_at"] == "esc_input"
+                motor_in = power * eta if esc_input else power
                 current = _motor_current(
-                    motor_in, float(p.rpm[0]), record.kv, record.r_m
+                    motor_in, float(p.rpm[j]), record.kv, record.r_m
                 )
-                # Current at the thrust with the safety factor (static, no climb factor)
-                p_s = model.predict(safety, u_bus, ac.rho)
-                safety_in = k_h * float(p_s.power_w[0])
-                if measured_at == "esc_input":
-                    safety_in *= eta
+                safety_in = k_h * float(p.power_w[j_s]) * (eta if esc_input else 1.0)
                 safety_current = _motor_current(
-                    safety_in, float(p_s.rpm[0]), record.kv, record.r_m
+                    safety_in, float(p.rpm[j_s]), record.kv, record.r_m
                 )
-                t_max = max((t.max_thrust_n for t in pair_tests), default=float("nan"))
-                reason = str(p.reason[0]) + (
-                    "" if pitch_known else "; propeller pitch not given"
+                t_max = max(
+                    (t.max_thrust_n for t in m["pair_tests"]), default=float("nan")
+                )
+                reason = str(p.reason[j]) + (
+                    "" if m["pitch_known"] else "; propeller pitch not given"
                 )
                 motors.append(
                     MotorHover(
-                        i,
-                        slot.unit,
+                        m["i"],
+                        m["slot"].unit,
                         thrust,
-                        float(f),
+                        float(m["f"]),
                         power,
                         k_h
                         * k_c
                         * float(
-                            p.power_sd[0]
+                            p.power_sd[j]
                             if hasattr(p, "power_sd")
-                            else p.power_w[0] * p.sd_rel[0]
+                            else p.power_w[j] * p.sd_rel[j]
                         ),
                         motor_in,
                         current,
-                        float(p.rpm[0]),
+                        float(p.rpm[j]),
                         1.0 - motor_in / record.p_max,
                         1.0 - current / record.i_max,
                         1.0 - thrust / t_max if np.isfinite(t_max) else float("nan"),
-                        bool(p.trusted[0]) and pitch_known,
+                        bool(p.trusted[j]) and m["pitch_known"],
                         reason.strip("; "),
                         p.source,
-                        f"{motor_id} + {prop_id or f'{d_in:g}x{p_in:g} (not in the database)'}",
-                        measured_at,
+                        f"{motor_id} + {prop_id or f'{prop_label} (not in the database)'}",
+                        m["measured_at"],
                         motor_id,
                         prop_id,
                         d_in,
                         p_in,
                         u_bus,
-                        safety,
-                        full_throttle[slot.unit],
+                        m["safety"],
+                        full_throttle[m["slot"].unit],
                         t_max,
                         safety_current,
                         1.0 - safety_current / record.i_max,

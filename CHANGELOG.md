@@ -12,6 +12,10 @@ versions from git tags (setuptools-scm).
   tricopter with a hover calibration, where the static search took 80 % of the time
   (13.7 → 3.1 s, both versions alternated on the same machine). Forward flight keeps the
   root finding.
+- Hover: one surrogate prediction per motor + propeller pair and per bus-voltage pass, on the
+  stacked nominal and safety thrusts of its motors, instead of two per motor (12 → 4 per hover
+  on a tricopter with two identical front motors). Same results to 1e-14; `evaluate_two_phase`
+  2.9 → 1.5 s on the same tricopter.
 
 ### Fixed
 - Cruise power at the target speeds (two-phase): near the stall edge V₁ could be overestimated
