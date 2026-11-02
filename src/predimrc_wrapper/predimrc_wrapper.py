@@ -44,8 +44,12 @@ Example:
 
 from __future__ import annotations
 
+import contextlib
 import logging
+import os
+import signal
 import string
+import threading
 import time
 from dataclasses import dataclass
 from dataclasses import field
@@ -907,7 +911,12 @@ class ExcelThreadBackend:
             initializer=None if wrapper_factory else _co_initialize,
         )
         self._wrapper = None
+        self._excel_pid = None
+        """Excel process, read in the Excel thread, to kill it when that thread is gone."""
         self._closed = False
+        # Closed at interpreter exit before concurrent.futures stops its threads (``atexit``
+        # handlers run after, when the Excel thread no longer takes work).
+        threading._register_atexit(self.close)  # noqa: SLF001
 
     def __enter__(self) -> Self:
         return self
@@ -921,6 +930,8 @@ class ExcelThreadBackend:
     def _session(self):
         if self._wrapper is None:
             self._wrapper = self._factory()
+            app = getattr(self._wrapper, "_app", None)
+            self._excel_pid = getattr(app, "pid", None)
         return self._wrapper
 
     @property
@@ -958,5 +969,17 @@ class ExcelThreadBackend:
         self._closed = True
         try:
             self._call(close)
+        except RuntimeError:  # executor already shut down: Excel is out of reach
+            self._kill_excel()
         finally:
             self._executor.shutdown(wait=True)
+
+    def _kill_excel(self) -> None:
+        if self._wrapper is None or self._excel_pid is None:
+            return
+        LOGGER.warning(
+            "Excel thread already stopped: killing Excel (pid %d).", self._excel_pid
+        )
+        with contextlib.suppress(OSError):  # already gone
+            os.kill(self._excel_pid, signal.SIGTERM)
+        self._wrapper = None
