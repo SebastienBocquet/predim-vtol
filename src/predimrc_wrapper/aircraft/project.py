@@ -461,6 +461,37 @@ class MissionSettings(_Strict):
             "90° = vertical; a tilting motor gives T·sin θ vertically"
         ),
     )
+    yaw_tilt: Literal["none", "front", "rear"] = opt(
+        "none",
+        description=(
+            "Yaw by tilting motors: none; front (the lift motors ahead of the CG tilt "
+            "differentially, tilt-rotor); rear (the lift motors behind the CG, tricopter rear rotor)"
+        ),
+    )
+    yaw_tilt_max_deg: float = opt(
+        15.0,
+        ge=0,
+        lt=90,
+        description=(
+            "Maximum yaw tilt angle δ of the yaw-tilting motors (°), worst case: front, "
+            "differential about the transition axis, θ − δ on one side and θ + δ on the other; rear, "
+            "lateral (orthogonal axis), sin θ · cos δ"
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _yaw_tilt_below_transition(self) -> MissionSettings:
+        if (
+            self.yaw_tilt == "front"
+            and self.yaw_tilt_max_deg >= self.transition_tilt_deg
+        ):
+            msg = (
+                "yaw_tilt_max_deg must be below transition_tilt_deg with the front yaw "
+                "tilt: the worst-case tilt θ − δ from the horizontal must stay positive."
+            )
+            raise ValueError(msg)
+        return self
+
     target_speeds_m_s: list[float] | None = opt(
         None,
         min_length=2,

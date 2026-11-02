@@ -50,6 +50,13 @@ versions from git tags (setuptools-scm).
   each, nested) are replaced by a bracketed regula falsi (Illinois); same results to 1e-9.
 
 ### Added
+- Yaw by tilting motors (Mission tab): `yaw_tilt` = none, front (the lift motors ahead of the
+  CG, tilt-rotor) or rear (behind the CG, tricopter rear rotor), and the maximum yaw tilt
+  `yaw_tilt_max_deg` δ. Worst case: front, differential tilt about the transition axis, one
+  side at θ − δ (vertical component sin(θ − δ)) and the other at θ + δ, both ways; rear,
+  lateral tilt, sin θ · cos δ; each motor keeps its hover vertical share F and gives
+  T = F / k. Rows in the hover table of Results, margin `yaw_tilt` (feasibility),
+  `TwoPhaseResult.yaw_cases`.
 - Stored runs (REQ-UI-013): Results tab, "Save run" stores the result with a copy of the
   project under `<studies folder>/runs/<date>-<name>/` (`project.yaml`, `summary.json`,
   `result.json`, `metadata.json`). New "Runs" page: filters (architecture, project, dates,
