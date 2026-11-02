@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from typing import Any
 
@@ -20,6 +21,49 @@ if TYPE_CHECKING:
     from predimrc_wrapper.propulsion import PropulsionUnit
 
 VERTICAL = ("hover", "vertical_climb", "vertical_descent")
+
+MULTICOPTER_V_MIN = 1.0
+"""Lowest cruise speed swept for a multicopter (m/s)."""
+
+MULTICOPTER_V_MAX = 40.0
+"""Highest cruise speed swept for a multicopter (m/s)."""
+
+
+@dataclass
+class SpeedSweep:
+    """Cruise battery power versus speed."""
+
+    v_m_s: np.ndarray
+    battery_power_w: np.ndarray
+    feasible: np.ndarray
+    v_endurance: float
+    v_range: float
+    drag_n: np.ndarray | None = None
+    """Total drag (N)."""
+    shaft_power_w: np.ndarray | None = None
+    """Total shaft power of the running propellers (W)."""
+
+    @property
+    def aero_power_w(self) -> np.ndarray | None:
+        """Aerodynamic power D·V (W)."""
+        return (
+            None
+            if self.drag_n is None
+            else np.asarray(self.drag_n) * np.asarray(self.v_m_s)
+        )
+
+
+def parabolic_min(v: np.ndarray, f: np.ndarray, i: int) -> float:
+    """Refine a grid minimum with the parabola through its neighbours."""
+    if 0 < i < len(v) - 1 and np.all(np.isfinite(f[i - 1 : i + 2])):
+        x0, x1, x2 = v[i - 1 : i + 2]
+        y0, y1, y2 = f[i - 1 : i + 2]
+        denom = (x0 - x1) * (x0 - x2) * (x1 - x2)
+        a = (x2 * (y1 - y0) + x1 * (y0 - y2) + x0 * (y2 - y1)) / denom
+        b = (x2**2 * (y0 - y1) + x1**2 * (y2 - y0) + x0**2 * (y1 - y2)) / denom
+        if a > 0:
+            return float(np.clip(-b / (2 * a), x0, x2))
+    return float(v[i])
 
 
 def _multicopter_zero_speed_is_hover(_: SegmentPower) -> bool:
@@ -285,3 +329,41 @@ class SegmentPower(CompositeModel):
     def lift_thrust_to_weight(self) -> float:
         """Largest lift thrust keeping the hover split / weight, at the nominal battery voltage."""
         return self.aircraft.lift_thrust_to_weight()
+
+    def cruise_sweep(self) -> SpeedSweep:
+        """Battery power versus cruise speed and the two optimal speeds.
+
+        Sweep V ∈ [k_s·V_min; V_max] by ΔV (``mission.stall_margin``, ``mission.speed_step``):
+        V_e = argmin P_b, V_r = argmin P_b/V over the feasible speeds, parabolic refinement.
+        """
+        ac = self.aircraft
+        mission = ac.project.mission
+        if ac.wing_borne:
+            lo = mission.stall_margin * ac.drag(1.0)["v_min_m_s"]
+            polar = ac.aero.polar(ac.total_mass_kg)
+            hi = float(polar.v_m_s[-1] * np.sqrt(polar.rho / ac.rho))
+        else:
+            lo, hi = MULTICOPTER_V_MIN, MULTICOPTER_V_MAX
+        v = np.arange(lo, hi + 1e-9, mission.speed_step)
+        y = self.evaluate({"kind": "cruise", "v_m_s": v})
+        p = np.asarray(y["battery_power_w"], dtype=float)
+        ok = np.asarray(y["feasible"], dtype=bool) & np.isfinite(p)
+        extra = {
+            "drag_n": np.asarray(ac.drag(v)["drag_n"], dtype=float),
+            "shaft_power_w": np.broadcast_to(
+                np.asarray(y["shaft_power_w"], dtype=float), v.shape
+            ).copy(),
+        }
+        if not ok.any():
+            return SpeedSweep(v, p, ok, float("nan"), float("nan"), **extra)
+        masked = np.where(ok, p, np.inf)
+        per_m = np.where(ok, p / v, np.inf)
+        i_e, i_r = int(np.argmin(masked)), int(np.argmin(per_m))
+        return SpeedSweep(
+            v,
+            p,
+            ok,
+            parabolic_min(v, masked, i_e),
+            parabolic_min(v, per_m, i_r),
+            **extra,
+        )

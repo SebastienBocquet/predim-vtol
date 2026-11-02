@@ -13,7 +13,7 @@ import pytest
 pytest.importorskip("gemseo")
 
 from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.api import evaluate  # noqa: E402
+from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
 from predimrc_wrapper.mdo import OUTPUTS  # noqa: E402
 from predimrc_wrapper.mdo import Parameter  # noqa: E402
 from predimrc_wrapper.mdo import PresizingDiscipline  # noqa: E402
@@ -72,16 +72,16 @@ def test_discipline_matches_evaluate(parameters):
         ]),
     }
     out = disc.execute(x)
-    ref = evaluate(
+    ref = evaluate_two_phase(
         base.with_overrides({
             "battery.mass_g": 900.0,
             "battery.n_series": 4,
             "propulsion_units.lift.motor_id": "tmotor-mn2806-400kv",
         })
     )
-    assert out["flight_time"][0] == pytest.approx(ref.flight_time_s)
-    assert out["range"][0] == pytest.approx(ref.range_m)
-    assert out["mass_total"][0] == pytest.approx(ref.mass_total_kg)
+    assert out["flight_time_v1"][0] == pytest.approx(ref.cruise[0].flight_time_s)
+    assert out["range_v1"][0] == pytest.approx(ref.cruise[0].range_m)
+    assert out["mass_total"][0] == pytest.approx(ref.metadata["mass_total_kg"])
     assert out["margin_battery_c"][0] == pytest.approx(ref.margins["battery_c"])
     assert out["feasible"][0] == float(ref.feasible)
 
@@ -95,11 +95,13 @@ def test_default_inputs_are_base_project(parameters):
 
 
 def test_cache_hit(parameters, monkeypatch):
-    from predimrc_wrapper.mdo import discipline as module  # noqa: PLC0415
+    from predimrc_wrapper import api  # noqa: PLC0415
 
     calls = []
-    original = module._solve
-    monkeypatch.setattr(module, "_solve", lambda *a: calls.append(1) or original(*a))
+    original = api.evaluate_two_phase
+    monkeypatch.setattr(
+        api, "evaluate_two_phase", lambda *a, **k: calls.append(1) or original(*a, **k)
+    )
     disc = PresizingDiscipline(Project.template("multicopter"), parameters)
     disc.execute({"battery_mass_g": np.array([800.0])})
     disc.execute({"battery_mass_g": np.array([800.0])})
@@ -110,15 +112,15 @@ def test_cache_hit(parameters, monkeypatch):
 
 
 def test_failure_gives_nan(parameters, monkeypatch):
-    from predimrc_wrapper.mdo import discipline as module  # noqa: PLC0415
+    from predimrc_wrapper import api  # noqa: PLC0415
 
-    def boom(*args):
+    def boom(*args, **kwargs):
         msg = "injected"
         raise RuntimeError(msg)
 
-    monkeypatch.setattr(module, "_solve", boom)
+    monkeypatch.setattr(api, "evaluate_two_phase", boom)
     out = PresizingDiscipline(Project.template("multicopter"), parameters).execute()
-    assert np.isnan(out["flight_time"][0])
+    assert np.isnan(out["flight_time_v1"][0])
     assert out["feasible"][0] == 0.0
 
 
@@ -127,14 +129,14 @@ def test_quadplane_with_fake_backend():
     params = [Parameter("span_t2_mm", "aero.wing.length_mm.1", "float", 250.0, 350.0)]
     disc = PresizingDiscipline(Project.template("quadplane"), params, backend=backend)
     out = disc.execute({"span_t2_mm": np.array([300.0])})
-    assert out["flight_time"][0] > 0
+    assert out["flight_time_v1"][0] > 0
     assert backend.calls >= 1
     disc.close()  # the injected backend is not owned: nothing to close
 
 
 def test_optim_multicopter_example(tmp_path):
     result = subprocess.run(
-        [sys.executable, str(EXAMPLES / "optim_multicopter.py"), "5"],
+        [sys.executable, str(EXAMPLES / "optim_multicopter.py"), "5", "2"],
         capture_output=True,
         text=True,
         timeout=600,
@@ -145,7 +147,7 @@ def test_optim_multicopter_example(tmp_path):
     summary = json.loads(
         (EXAMPLES / "outputs" / "optim_multicopter.json").read_text(encoding="utf-8")
     )
-    assert summary["best"]["outputs"]["flight_time"] > 0
+    assert summary["best"]["outputs"]["flight_time_v1"] > 0
     assert "propulsion_units.lift.motor_id" in summary["best"]["choice"]
 
 
@@ -164,7 +166,7 @@ def test_optim_quadplane_example():
     summary = json.loads(
         (EXAMPLES / "outputs" / "optim_quadplane.json").read_text(encoding="utf-8")
     )
-    assert summary["best"]["outputs"]["flight_time"] > 0
+    assert summary["best"]["outputs"]["flight_time_v1"] > 0
 
 
 def test_optimise_loop_and_best_design():
@@ -180,13 +182,14 @@ def test_optimise_loop_and_best_design():
     assert len(summary.runs) == 2
     assert all(r.history and not r.error for r in summary.runs)
     best = summary.best
-    assert best.outputs["flight_time"] == max(
-        r.outputs["flight_time"] for r in summary.runs if r.feasible
+    assert best.outputs["flight_time_v1"] == max(
+        r.outputs["flight_time_v1"] for r in summary.runs if r.feasible
     )
     overrides = summary.best_overrides(continuous)
     assert set(overrides) == {"battery.n_series", "battery.mass_g"}
-    assert evaluate(project.with_overrides(overrides)).flight_time_s == pytest.approx(
-        best.outputs["flight_time"]
+    applied = evaluate_two_phase(project.with_overrides(overrides))
+    assert applied.cruise[0].flight_time_s == pytest.approx(
+        best.outputs["flight_time_v1"]
     )
 
 
@@ -209,11 +212,11 @@ def test_calibrated_base_is_kept_for_variants():
     )
     assert disc.calibration_report.points[0].point == "hover"
     assert disc.base_project.calibration is None
-    fm = disc.base_project.propulsion_units["front"].figure_of_merit
+    k_h = disc.base_project.mission.hover_power_factor
+    assert k_h != 1.0
     assert (
-        disc
-        .project_for({"battery_mass_g": np.array([700.0])})
-        .propulsion_units["front"]
-        .figure_of_merit
-        == fm
+        disc.project_for({
+            "battery_mass_g": np.array([700.0])
+        }).mission.hover_power_factor
+        == k_h
     )

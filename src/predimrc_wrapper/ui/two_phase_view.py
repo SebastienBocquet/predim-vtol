@@ -91,6 +91,42 @@ def phase_rows(r: TwoPhaseResult) -> list[dict]:
     return rows
 
 
+def discharge_figure(r: TwoPhaseResult):
+    """Pack voltage (open-circuit and under load) and state of charge along the flight."""
+    import plotly.graph_objects as go  # noqa: PLC0415
+
+    d = r.discharge
+    t = np.asarray(d.time_s) / 60.0
+    fig = go.Figure([
+        go.Scatter(x=t, y=d.voltage_v, name="under load", mode="lines"),
+        go.Scatter(x=t, y=d.ocv_v, name="open circuit", mode="lines"),
+        go.Scatter(
+            x=t,
+            y=100.0 * np.asarray(d.soc),
+            name="state of charge (%)",
+            mode="lines",
+            yaxis="y2",
+            line={"dash": "dot"},
+        ),
+    ])
+    for name, end in zip(d.names, d.segment_end, strict=True):
+        fig.add_vline(x=t[end], line={"width": 1, "dash": "dot"}, annotation_text=name)
+    fig.update_layout(
+        title="Battery discharge (cruise at V1)",
+        xaxis_title="time (min)",
+        yaxis_title="pack voltage (V)",
+        yaxis2={
+            "title": "state of charge (%)",
+            "overlaying": "y",
+            "side": "right",
+            "range": [0, 100],
+        },
+        legend={"orientation": "h"},
+        height=360,
+    )
+    return fig
+
+
 def hover_rows(r: TwoPhaseResult, point=None) -> list[dict]:
     """One row per lift motor of an operating point (hover by default, or climb, transition)."""
     point = point or r.hover
@@ -143,6 +179,11 @@ def hover_tilt_rows(
         yaw_tilt_deg: Maximum yaw tilt (°).
     """
     rows = [{"phase": "hover", **row} for row in hover_rows(r)]
+    if r.landing is not None:
+        rows.extend(
+            {"phase": f"landing, battery at {r.reserve_fraction:.0%}", **row}
+            for row in hover_rows(r, r.landing)
+        )
     if r.transition is not None:
         rows.extend(
             {"phase": f"transition, tilted {tilt_deg:g}°", **row}

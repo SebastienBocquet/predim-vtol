@@ -25,7 +25,7 @@ BATTERY = Parameter("battery_mass_g", "battery.mass_g", "float", 400.0, 1200.0)
 
 def test_two_phase_discipline_matches_api():
     base = Project.template("multicopter")
-    disc = PresizingDiscipline(base, [BATTERY], mode="two_phase")
+    disc = PresizingDiscipline(base, [BATTERY])
     assert set(disc.output_grammar.names) == set(OUTPUTS_TWO_PHASE)
     out = disc.execute({"battery_mass_g": np.array([900.0])})
     ref = evaluate_two_phase(base.with_overrides({"battery.mass_g": 900.0}))
@@ -121,7 +121,6 @@ def test_two_phase_optimisation_and_study(tmp_path):
         max_sd_rel=0.05,
     )
     run = summary.runs[0]
-    assert summary.mode == "two_phase"
     assert "margin_motor_power" in run.constraints
     assert "margin_sd" in run.constraints
     start = evaluate_two_phase(project).cruise[1].flight_time_s

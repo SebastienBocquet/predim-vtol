@@ -1,7 +1,8 @@
 """Maximise the flight time of the quadcopter template (no Excel).
 
 Outer loop over the lift motor and the cell count, SLSQP on battery mass and propeller
-diameter, constraints on the margins.
+diameter, constraints on the margins. Arguments: maximum iterations (60), number of lift
+motors of the database tried (all).
 """
 
 from __future__ import annotations
@@ -29,8 +30,9 @@ if __name__ == "__main__":
             15.9,
         ),
     ]
+    n_motors = int(sys.argv[2]) if len(sys.argv) > 2 else None
     discrete = {
-        "propulsion_units.lift.motor_id": default_database().ids("lift"),
+        "propulsion_units.lift.motor_id": default_database().ids("lift")[:n_motors],
         "battery.n_series": [4, 6],
     }
     max_iter = int(sys.argv[1]) if len(sys.argv) > 1 else 60

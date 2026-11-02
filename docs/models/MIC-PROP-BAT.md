@@ -28,6 +28,7 @@
 | Name | Symbol | Unit | Description | Physical bounds |
 |---|---|---|---|---|
 | `power_w` | P | W | terminal power demanded | ≥ 0 |
+| `soc` | s | — | state of charge (optional; nominal voltage without) | [0, 1] |
 
 ### Outputs
 
@@ -38,6 +39,7 @@
 | `chemical_power_w` | P_c | W | power drawn from the cells, losses included | ≥ 0 |
 | `c_rate_margin` | — | — | 1 − I / I_max | — |
 | `feasible` | — | — | false when P > V₀² / 4R | — |
+| `cutoff_ok` | — | — | terminal cell voltage U / n_s ≥ V_c | — |
 
 ### Parameters
 
@@ -55,6 +57,8 @@
 | `r_cell_ohm_ah` | r | Ω·Ah | cell resistance × capacity | chemistry table (0.010 / 0.040) | ≥ 0 | generic, to confirm |
 | `c_max` | c_max | C | maximum continuous discharge rate | chemistry table (30 / 8) | ≥ 0 | generic data sheets |
 | `usable_fraction` | f_u | — | usable fraction of the capacity | chemistry table (0.85 / 0.90) | [0, 1] | engineering practice |
+| `ocv_shape` | y(s) | — | open-circuit cell voltage (V − V_c)/(V_f − V_c) versus state of charge | chemistry table | — | generic discharge curves, to confirm |
+| `r_low_soc_factor` | k_R | — | internal resistance at 0 % / at ≥ 20 % state of charge | chemistry table (1.5 / 1.5) | ≥ 1 | generic, to confirm |
 <!-- interface:end -->
 
 ## Implementation
@@ -67,12 +71,24 @@
 - Current for a power: R·I² − V₀·I + P = 0, smallest root; P > V₀²/(4R) ⇒ infeasible.
 - Chemical power P_c = V₀·I, so Joule losses are counted in the energy.
 - I_max = c_max·C.
+- State of charge s (optional input), energy-based: s = 1 − E_drawn / E. Open-circuit
+  voltage V₀(s) = n_s·(V_c + y(s)·(V_f − V_c)), y the generic discharge curve of the
+  chemistry (piecewise linear, y(0) = 0, y(1) = 1); internal resistance R(s) = R·(1 +
+  (k_R − 1)·max(0, (0.2 − s)/0.2)). Without s: V₀ = n_s·V_n and R (nominal point).
+- `cutoff_ok`: terminal cell voltage U/n_s ≥ V_c.
+- Discharge along a flight (`discharge`): stateless, the whole history of terminal powers
+  (piecewise constant) is given; ds/dt = −P_c(s)/E integrated with the midpoint rule, 20
+  steps per segment.
 
 ### Model limitations
 
-- Constant open-circuit voltage (no dependence on state of charge); end of discharge
-  covered by f_u.
-- No Peukert, temperature or ageing effects.
+- Generic discharge curves (LiPo 3.30 → 4.20 V, Li-ion NMC 2.8 → 4.2 V) and resistance
+  factor k_R = 1.5, to confirm on cell data sheets. With a 20 % reserve the LiPo is still
+  on its plateau at landing (3.74 V open circuit, above V_n = 3.7 V); the Li-ion is below
+  (3.47 V against 3.6 V).
+- The state of charge counts energy, not charge: the mean of the curves differs from V_n
+  by a few %, so energy and charge counts differ by as much.
+- No Peukert, temperature, relaxation or ageing effects.
 
 ### Model classification
 

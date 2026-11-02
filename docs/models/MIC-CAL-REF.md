@@ -10,8 +10,8 @@
 | Release / date / type | 0.1.0-mvp / 2026-10-13 / specification (pre-release) |
 | Supplier / confidentiality / legal | see [index](index.md) |
 
-Procedure, not a model class: it calls MIC-MIS-SEG on modified copies of the project
-(`predimrc_wrapper.calibration.calibrate`). No generated Interface section.
+Procedure, not a model class: it calls MIC-MIS-TWO on modified copies of the project
+(`predimrc_wrapper.calibration.calibrate_two_phase`). No generated Interface section.
 
 ## Purpose and objectives
 
@@ -32,36 +32,32 @@ Procedure, not a model class: it calls MIC-MIS-SEG on modified copies of the pro
 | `calibration.cruise.speed_m_s` | m/s | airspeed of the cruise measurement |
 | `calibration.cruise.battery_power_w` | W | measured battery power in cruise |
 | `calibration.cruise.mass_kg` | kg | mass during the measurement (project mass by default) |
-| `calibration.cruise_parameter` | — | `auto`, `propeller_efficiency` or `drag` |
 
 | Output | Meaning |
 |---|---|
-| calibrated project | figures of merit, cruise efficiencies or `mission.drag_factor` replaced |
+| calibrated project | `mission.hover_power_factor` and `mission.drag_factor` replaced |
 | report (per point) | measured, model before, model after, parameter, values before and after, factor, note |
 
 ## Implementation
 
 ### Modelling choices
 
-1. Hover point → common factor on the figure of merit of every lift and tilt unit type
-   (FM ≤ 0.95). The motor and ESC come from data sheets: the residual goes to the least
-   known term, the propeller.
-2. Cruise point, after the hover factor →
-   - wing-borne, `auto` or `propeller_efficiency`: factor on the cruise efficiency η_c of
-     the cruise and tilt unit types (η_c ≤ 0.95), PredimRC polar kept;
-   - multicopter (`auto`) or `drag`: `mission.drag_factor`, multiplier of the total drag
-     (bounds 0.2–5).
-3. Each factor solves model(k) = measured by bisection (monotonic residual); a factor at
+1. Hover point → `mission.hover_power_factor` k_h, multiplier of the motor powers read
+   in the thrust–power test data (bounds 0.5–2).
+2. Cruise point, after the hover factor → `mission.drag_factor` k_D, multiplier of the
+   total cruise drag (bounds 0.2–5). The propeller (blade elements at its pitch) and the
+   motor are physics models: the residual goes to the least known term, the drag.
+3. Each factor solves model(k) = measured by Brent's method (monotonic residual); a factor at
    its bound is reported in `note`: the measurement is outside what the model can
    represent, check the masses, motor and battery inputs.
-4. The calibration describes the reference configuration: `evaluate` calibrates the
-   project itself; the MDO discipline calibrates the base project once and its variants
+4. The calibration describes the reference configuration: `evaluate_two_phase`
+   calibrates the project itself; the MDO discipline calibrates the base project once and its variants
    reuse the factors.
 
 ### Limitations
 
 - One point per factor: drag and propeller efficiency cannot be separated with a single
-  cruise point (choose `drag` when the propeller is known).
+  cruise point; the residual is put on the drag.
 - Battery power measured at the pack terminals assumed (avionics power included in the
   model).
 

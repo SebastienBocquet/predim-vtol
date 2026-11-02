@@ -39,7 +39,6 @@ CARDS = {
     "calibration": "MIC-CAL-REF",
     "test_data": "MIC-CAL-REF",
     "environment": "MIC-ATM-ISA",
-    "scenarios": "MIC-MIS-SOL",
     "aero": "PredimRC (external model)",
 }
 """MIC card of the model using each top-level project block."""
@@ -81,7 +80,7 @@ def normalise(path: str) -> str:
     keys = path.split(".")
     out = []
     for i, k in enumerate(keys):
-        if k.isdigit() or (i == 1 and keys[0] in ("propulsion_units", "scenarios")):
+        if k.isdigit() or (i == 1 and keys[0] == "propulsion_units"):
             out.append("*")
         else:
             out.append(k)
@@ -138,10 +137,7 @@ def schema_entries(
         for sub in subs:
             sub_prefix = (
                 f"{key}.*."
-                if (
-                    _container(info.annotation)
-                    or name in ("propulsion_units", "scenarios")
-                )
+                if _container(info.annotation) or name == "propulsion_units"
                 else f"{key}."
             )
             entries.update(schema_entries(sub, sub_prefix, model))
@@ -157,7 +153,7 @@ def model_entries() -> dict[str, HelpEntry]:
     for module in (
         "propulsion",
         "aircraft",
-        "mission.solver",
+        "mission.powers",
         "mission.two_phase",
         "sizing",
     ):

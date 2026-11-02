@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from predimrc_wrapper.core.units import GRAVITY
-from predimrc_wrapper.mission.solver import _parabolic_min
+from predimrc_wrapper.mission.powers import parabolic_min
 
 if TYPE_CHECKING:
     from predimrc_wrapper.aircraft.model import AircraftModel
@@ -84,7 +84,7 @@ class CruiseCurve:
         """(V minimum power, V maximum L/D) of the total curve, parabolic refinement (m/s)."""
         v = self.v_m_s
         i_p, i_d = int(np.argmin(self.power_total_w)), int(np.argmin(self.drag_total_n))
-        return _parabolic_min(v, self.power_total_w, i_p), _parabolic_min(
+        return parabolic_min(v, self.power_total_w, i_p), parabolic_min(
             v, self.drag_total_n, i_d
         )
 

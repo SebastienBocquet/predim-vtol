@@ -28,25 +28,15 @@ if TYPE_CHECKING:
     from predimrc_wrapper.predimrc_wrapper import AeroBackend
 
 CONSTRAINTS = (
-    "margin_motor_current",
-    "margin_battery_c",
-    "margin_thrust_to_weight",
-    "margin_mass",
-)
-"""Default constraints (≥ 0) of the scenario mode."""
-
-CONSTRAINTS_TWO_PHASE = (
     "margin_motor_power",
     "margin_motor_current",
     "margin_battery_c",
     "margin_thrust_to_weight",
     "margin_mass",
 )
-"""Default constraints (≥ 0) of the two-phase mode."""
+"""Default constraints (≥ 0)."""
 
 OBJECTIVES = {
-    "flight_time": True,
-    "range": True,
     "mass_total": False,
     "flight_time_v1": True,
     "flight_time_v2": True,
@@ -56,16 +46,7 @@ OBJECTIVES = {
     "cost_per_hour": False,
     "motor_out_tw": True,
 }
-"""Objectives offered, with whether they are maximised (``*_v1``, ``*_v2`` and the cost and
-reliability outputs: two-phase mode)."""
-
-TWO_PHASE_ONLY = ("cost_purchase", "cost_per_hour", "motor_out_tw")
-
-
-def mode_of(objective: str) -> str:
-    """The discipline mode giving an objective."""
-    two_phase = objective.endswith(("_v1", "_v2")) or objective in TWO_PHASE_ONLY
-    return "two_phase" if two_phase else "scenario"
+"""Objectives offered, with whether they are maximised."""
 
 
 ALGORITHMS = ("SLSQP", "NLOPT_COBYLA", "COBYQA", "NLOPT_SLSQP")
@@ -103,7 +84,6 @@ class OptimisationSummary:
     maximize: bool
     runs: list[OptimisationRun]
     seconds: float
-    mode: str = "scenario"
 
     @property
     def best(self) -> OptimisationRun | None:
@@ -139,7 +119,6 @@ class OptimisationSummary:
             "objective": self.objective,
             "maximize": self.maximize,
             "seconds": self.seconds,
-            "mode": self.mode,
             "best": asdict(best) if best else None,
             "all": [asdict(r) for r in self.runs],
         }
@@ -149,14 +128,13 @@ def optimise(
     project: Project,
     continuous: list[Parameter],
     discrete: dict[str, list] | None = None,
-    objective: str = "flight_time",
+    objective: str = "flight_time_v1",
     constraints: tuple[str, ...] | None = None,
     algo: str = "SLSQP",
     max_iter: int = 60,
     backend: AeroBackend | None = None,
     progress: Callable[[int, int, dict], None] | None = None,
     max_sd_rel: float | None = None,
-    mode: str | None = None,
 ) -> OptimisationSummary:
     """Optimise the objective for every combination of the discrete choices.
 
@@ -165,19 +143,17 @@ def optimise(
         continuous: The continuous design parameters.
         discrete: Values by project path; every combination is optimised.
         objective: A discipline output, see ``OBJECTIVES``.
-        constraints: Discipline outputs constrained to be ≥ 0; the defaults of the mode when None.
+        constraints: Discipline outputs constrained to be ≥ 0; ``CONSTRAINTS`` when None.
         algo: A GEMSEO optimisation algorithm.
         max_iter: The maximum number of iterations per combination.
         backend: The aero backend (quadplane).
         progress: Called with (index, number of combinations, choice) before each one.
-        max_sd_rel: Two-phase mode: constrain the largest relative σ of the hover power.
-        mode: ``scenario`` or ``two_phase``; from the objective by default.
+        max_sd_rel: Constrain the largest relative σ of the hover power.
     """
     from predimrc_wrapper.mdo.parameters import expand_overrides  # noqa: PLC0415
 
-    mode = mode or mode_of(objective)
     if constraints is None:
-        constraints = CONSTRAINTS_TWO_PHASE if mode == "two_phase" else CONSTRAINTS
+        constraints = CONSTRAINTS
     logging.getLogger("gemseo").setLevel(logging.WARNING)
     maximize = OBJECTIVES[objective]
     discrete = discrete or {}
@@ -194,7 +170,6 @@ def optimise(
                 project.with_overrides(expand_overrides(choice)),
                 continuous,
                 backend=backend,
-                mode=mode,
             )
             runs.append(
                 _run_one(
@@ -214,9 +189,7 @@ def optimise(
         finally:
             if disc is not None:
                 disc.close()
-    return OptimisationSummary(
-        objective, maximize, runs, time.perf_counter() - start, mode
-    )
+    return OptimisationSummary(objective, maximize, runs, time.perf_counter() - start)
 
 
 def _run_one(

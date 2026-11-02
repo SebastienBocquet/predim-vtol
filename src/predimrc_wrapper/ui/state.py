@@ -8,7 +8,6 @@ import sys
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
-from typing import TYPE_CHECKING
 from typing import Any
 
 import yaml
@@ -16,10 +15,6 @@ from pydantic import ValidationError
 
 from predimrc_wrapper.aircraft import Project
 from predimrc_wrapper.api import profiles_dir
-from predimrc_wrapper.mission.scenario import Scenario
-
-if TYPE_CHECKING:
-    from predimrc_wrapper.mission.solver import MissionResult
 
 
 @dataclass
@@ -29,14 +24,12 @@ class AppState:
     Attributes:
         data: The project as plain data, edited by the widgets.
         source_path: The file the project came from, if any.
-        result: The last evaluation.
-        result_key: The ``project_key`` of the data evaluated for ``result``.
+        result_key: The ``project_key`` of the data evaluated for ``two_phase``.
         generation: Incremented when a new project is loaded, to reset the widgets.
     """
 
     data: dict[str, Any]
     source_path: Path | None = None
-    result: MissionResult | None = None
     two_phase: Any = None
     """Last two-phase flight time (``TwoPhaseResult``)."""
     result_key: str | None = None
@@ -44,7 +37,7 @@ class AppState:
 
     def load(self, data: dict[str, Any], source_path: Path | None = None) -> None:
         self.data, self.source_path = data, source_path
-        self.result = self.result_key = self.two_phase = None
+        self.result_key = self.two_phase = None
         self.generation += 1
 
     @property
@@ -67,11 +60,6 @@ def load_template(architecture: str) -> dict[str, Any]:
 
 def load_file(path: str | Path) -> dict[str, Any]:
     return yaml.safe_load(Path(path).read_text(encoding="utf-8"))
-
-
-def hover_scenario(architecture: str, hover_s: float = 90.0) -> Scenario:
-    """Starter scenario offered by "Add scenario"."""
-    return Scenario.hover_time(hover_s, wing_borne=architecture == "quadplane")
 
 
 def _path(loc: tuple) -> str:

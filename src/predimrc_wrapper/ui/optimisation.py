@@ -13,14 +13,7 @@ if TYPE_CHECKING:
     from predimrc_wrapper.mdo.optimise import OptimisationSummary
     from predimrc_wrapper.mdo.parameters import Parameter
 
-OBJECTIVE_LABELS = {
-    "flight_time": "Maximise the flight time",
-    "range": "Maximise the range",
-    "mass_total": "Minimise the total mass",
-}
 UNITS = {
-    "flight_time": ("min", 1 / 60),
-    "range": ("km", 1e-3),
     "mass_total": ("kg", 1.0),
     "flight_time_v1": ("min", 1 / 60),
     "flight_time_v2": ("min", 1 / 60),

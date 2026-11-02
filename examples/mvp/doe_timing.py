@@ -45,7 +45,7 @@ if __name__ == "__main__":
         disc = PresizingDiscipline(project, parameters, backend=backend)
         scenario = create_scenario(
             [disc],
-            "flight_time",
+            "flight_time_v1",
             build_design_space(parameters),
             formulation_name="DisciplinaryOpt",
             scenario_type="DOE",

@@ -20,7 +20,7 @@ def optimise(
     backend=None,
     algo: str = "SLSQP",
 ) -> dict:
-    """Maximise the flight time for every combination of the discrete choices."""
+    """Maximise the flight time at V1 for every combination of the discrete choices."""
     OUT.mkdir(exist_ok=True)
     summary = run(
         project, continuous, discrete, max_iter=max_iter, backend=backend, algo=algo
@@ -30,7 +30,7 @@ def optimise(
             print(f"{r.choice}: failed ({r.error})")
         else:
             print(
-                f"{r.choice}: flight time {r.outputs['flight_time'] / 60:.1f} min, feasible={r.feasible}, "
+                f"{r.choice}: flight time V1 {r.outputs['flight_time_v1'] / 60:.1f} min, feasible={r.feasible}, "
                 f"x={ {k: round(v, 3) for k, v in r.x.items()} }"
             )
     data = summary.to_dict()
@@ -39,8 +39,8 @@ def optimise(
     o = best.outputs
     print(f"\nOptimum {best.choice} {best.x}")
     print(
-        f"  flight time {o['flight_time'] / 60:.1f} min, range {o['range'] / 1000:.1f} km, "
-        f"V_endurance {o['v_endurance']:.1f} m/s, V_range {o['v_range']:.1f} m/s, mass {o['mass_total']:.2f} kg"
+        f"  flight time V1 {o['flight_time_v1'] / 60:.1f} min, range V2 {o['range_v2'] / 1000:.1f} km, "
+        f"V1 {o['v1']:.1f} m/s, V2 {o['v2']:.1f} m/s, mass {o['mass_total']:.2f} kg"
     )
     print(
         "  margins: "

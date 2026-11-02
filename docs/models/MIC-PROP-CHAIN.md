@@ -31,6 +31,7 @@
 | `motor_current_a` | I_m,i | A | motor (phase-side) current of each motor | ≥ 0 |
 | `esc_input` | — | — | per motor: the power is measured at the ESC input | — |
 | `avionics_power_w` | P_av | W | avionics and payload power on the bus | ≥ 0 |
+| `soc` | s | — | battery state of charge (optional; nominal voltage without) | [0, 1] |
 
 ### Outputs
 

@@ -43,9 +43,7 @@ def test_flatten_inputs_round_trip():
     assert "architecture" not in inputs
     assert inputs["motors.0.unit"] == project.motors[0].unit
     assert inputs["aero.wing.length_mm.1"] == project.aero.wing.length_mm[1]
-    same = project.with_overrides({
-        k: v for k, v in inputs.items() if not k.startswith("scenarios.")
-    })
+    same = project.with_overrides(inputs)
     assert same.to_dict() == project.to_dict()
 
 

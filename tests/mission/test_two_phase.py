@@ -52,6 +52,39 @@ def test_flight_time_formula_and_reserve():
     assert "E_avail" in r.hand_check(1)
 
 
+@pytest.mark.parametrize("chemistry", ["lipo", "li-ion"])
+def test_landing_at_the_reserve_is_in_the_margins(chemistry):
+    r = _solve("tricopter", **{"battery.chemistry": chemistry})
+    battery = AircraftModel(
+        Project.template("tricopter").with_overrides({"battery.chemistry": chemistry})
+    ).battery
+    # Landing: open-circuit voltage of the pack at the reserve state of charge.
+    open_circuit = battery.ocv_v(r.reserve_fraction)
+    assert r.landing.chain.bus_voltage_v < open_circuit
+    assert r.landing.motors[0].voltage_v == pytest.approx(
+        r.landing.chain.bus_voltage_v, rel=1e-3
+    )
+    lower = open_circuit < battery.open_circuit_voltage
+    assert (r.landing.chain.bus_voltage_v < r.hover.chain.bus_voltage_v) == lower
+    # Descent at the landing power; margins are the worst over the points.
+    descent = next(p for p in r.phases if p.name == "descent")
+    assert descent.battery_power_w == pytest.approx(r.landing.battery_power_w)
+    assert r.margins["motor_current"] <= min(m.current_margin for m in r.landing.motors)
+    # The discharge along the flight ends near the reserve (energy budget at nominal).
+    d = r.discharge
+    assert d.names == ["climb", "hover", "cruise V1", "descent"]
+    assert d.soc[-1] == pytest.approx(r.reserve_fraction, abs=0.01)
+
+
+def test_landing_below_cut_off_is_infeasible():
+    r = _solve(
+        "tricopter",
+        **{"mission.reserve_fraction": 0.0, "battery.chemistry": "li-ion"},
+    )
+    assert not r.landing.chain.cutoff_ok
+    assert not r.feasible
+
+
 def test_zero_hover_and_too_long_hover():
     base = _solve("tricopter", hover=0.0, **{"mission.transition_altitude_m": 0.0})
     for c in base.cruise:
