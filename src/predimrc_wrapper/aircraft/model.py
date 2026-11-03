@@ -240,9 +240,14 @@ class AircraftModel:
             for m, a in zip(self.cruise_motors, areas, strict=False)
         ]
 
-    def lift_thrust_to_weight(self) -> float:
-        """Largest total lift thrust keeping the hover split, over the weight, at nominal voltage."""
-        v0 = self.battery.open_circuit_voltage
+    def lift_thrust_to_weight(self, soc: float | None = None) -> float:
+        """Largest total lift thrust keeping the hover split, over the weight.
+
+        Args:
+            soc: The battery state of charge: open-circuit voltage at that state; the
+                nominal voltage when None.
+        """
+        v0 = self.battery.ocv_v(soc)
         cache: dict[str, float] = {}
         limits = []
         for m, f in zip(self.lift_motors, self.hover_fractions, strict=False):

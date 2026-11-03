@@ -66,6 +66,8 @@ class ChainResult:
     """Σ power at the motor inputs (W)."""
     feasible: bool
     branch_currents_a: list[float] = field(default_factory=list)
+    cutoff_ok: bool = True
+    """Terminal cell voltage at or above the cut-off voltage."""
 
     @property
     def total_loss_w(self) -> float:
@@ -125,6 +127,13 @@ class PowerChain(Model):
             "W",
             "avionics and payload power on the bus",
             (0, None),
+        ),
+        Port(
+            "soc",
+            "s",
+            "—",
+            "battery state of charge (optional; nominal voltage without)",
+            (0, 1),
         ),
     )
     outputs = ports(
@@ -243,12 +252,13 @@ class PowerChain(Model):
         i_m = [float(v) for v in x["motor_current_a"]]
         esc_input = list(x.get("esc_input") or [False] * len(p_m))
         p_av = float(x.get("avionics_power_w", 0.0))
+        soc = x.get("soc")
         battery = self.p.battery
         r_main = (
             2.0 * self._r(self.p.main_length_mm, self.p.main_awg)
             + self.p.connector_mohm / 1000.0
         )
-        u_bus = battery.open_circuit_voltage
+        u_bus = battery.ocv_v(soc)
         for _ in range(30):
             segments, p_bus, dc_currents = [], p_av, []
             for b, p, i, at_esc in zip(
@@ -287,11 +297,11 @@ class PowerChain(Model):
             current = p_bus / u_bus
             main_loss = current**2 * r_main
             p_t = p_bus + main_loss
-            bat = battery.evaluate({"power_w": p_t})
+            bat = battery.evaluate({"power_w": p_t, "soc": soc})
             u_t = (
                 float(bat["voltage_v"])
                 if np.isfinite(bat["voltage_v"])
-                else battery.open_circuit_voltage
+                else battery.ocv_v(soc)
             )
             new_bus = (
                 u_t - float(bat["current_a"]) * r_main
@@ -309,7 +319,8 @@ class PowerChain(Model):
                 "battery internal resistance",
                 chemical,
                 chemical - p_t,
-                "R_bat·I², MIC-PROP-BAT",
+                "R_bat·I², MIC-PROP-BAT"
+                + ("" if soc is None else f", state of charge {soc:.0%}"),
             ),
             SegmentLoss(
                 "main cable and connector",
@@ -333,6 +344,7 @@ class PowerChain(Model):
                 motor_power,
                 bool(bat["feasible"]),
                 dc_currents,
+                bool(bat["cutoff_ok"]),
             )
         }
 

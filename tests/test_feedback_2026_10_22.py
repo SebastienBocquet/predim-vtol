@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import dataclasses
+import subprocess
+import sys
 import threading
 import time
 
@@ -189,6 +191,37 @@ def test_excel_thread_backend_runs_in_one_thread(reference_case):
     assert created == [1]
     assert len(set(fake.threads)) == 1
     assert fake.threads[0] != threading.get_ident()
+
+
+def test_excel_thread_backend_closes_excel_at_exit():
+    """A session never closed (GUI stopped by Ctrl+C) is closed in its thread at exit."""
+    code = (
+        "from predimrc_wrapper.predimrc_wrapper import ExcelThreadBackend\n"
+        "class Fake:\n"
+        "    def close(self):\n"
+        "        print('closed', flush=True)\n"
+        "backend = ExcelThreadBackend(wrapper_factory=Fake)\n"
+        "backend._call(backend._session)\n"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    )
+    assert out.stdout.strip() == "closed"
+    assert "Error" not in out.stderr
+
+
+def test_excel_thread_backend_kills_excel_when_its_thread_is_gone():
+    excel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    try:
+        fake = FakeWrapper()
+        fake._app = type("App", (), {"pid": excel.pid})()
+        backend = ExcelThreadBackend(wrapper_factory=lambda: fake)
+        backend._call(backend._session)
+        backend._executor.shutdown()
+        backend.close()
+        assert excel.wait(timeout=10) is not None
+    finally:
+        excel.kill()
 
 
 def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_path):

@@ -12,10 +12,9 @@ pytest.importorskip("plotly")
 from predimrc_wrapper.aircraft import Project  # noqa: E402
 from predimrc_wrapper.aircraft import layouts  # noqa: E402
 from predimrc_wrapper.aircraft.project import BatterySpec  # noqa: E402
+from predimrc_wrapper.aircraft.project import FlightPoint  # noqa: E402
 from predimrc_wrapper.aircraft.project import PropulsionSpec  # noqa: E402
 from predimrc_wrapper.aircraft.project import WingSpec  # noqa: E402
-from predimrc_wrapper.mission.scenario import Segment  # noqa: E402
-from predimrc_wrapper.ui import charts  # noqa: E402
 from predimrc_wrapper.ui import forms  # noqa: E402
 from predimrc_wrapper.ui import geometry  # noqa: E402
 from predimrc_wrapper.ui import state  # noqa: E402
@@ -124,16 +123,17 @@ def test_panel_rows_and_table_rows():
     rows = [
         {
             "kind": "cruise",
-            "duration_s": float("nan"),
-            "distance_m": None,
-            "speed": "12.5",
-            "until_reserve": True,
+            "battery_power_w": "90",
+            "mass_kg": float("nan"),
+            "voltage_v": None,
+            "speed_m_s": "12.5",
+            "comment": "",
         },
-        {"kind": "hover", "duration_s": 60.0, "speed": "optimal_range"},
+        {"kind": "hover", "battery_power_w": 280.0, "not_a_field": 1.0},
     ]
-    items = forms.rows_to_items(rows, Segment)
-    assert items[0] == {"kind": "cruise", "speed": 12.5, "until_reserve": True}
-    assert Segment(**items[1]).duration_s == 60
+    items = forms.rows_to_items(rows, FlightPoint)
+    assert items[0] == {"kind": "cruise", "battery_power_w": 90.0, "speed_m_s": 12.5}
+    assert FlightPoint(**items[1]).battery_power_w == 280.0
     assert forms.bounds(BatterySpec.model_fields["n_series"]) == (1, 14)
 
 
@@ -155,19 +155,7 @@ def test_outdated_flag():
     assert app.outdated
 
 
-# --- charts and app -----------------------------------------------------------------
-
-
-def test_charts_on_multicopter():
-    from predimrc_wrapper.api import evaluate  # noqa: PLC0415
-
-    result = evaluate(Project.template("multicopter"))
-    tiles = charts.kpis(result)
-    assert tiles[0].label == "Flight time"
-    assert tiles[0].value == pytest.approx(result.flight_time_min)
-    assert charts.power_figure(result).data
-    assert len(charts.segment_rows(result)) == len(result.segments)
-    assert charts.mass_figure(result).data
+# --- app ----------------------------------------------------------------------------
 
 
 def test_app_smoke_multicopter():
@@ -182,13 +170,13 @@ def test_app_smoke_multicopter():
     labels = [m.label for m in at.metric]
     assert "Flight time" in labels
     assert all("Outdated" not in w.value for w in at.warning)
-    result = at.session_state["app"].result
+    result = at.session_state["app"].two_phase
     # Editing a field keeps the result (no re-run) and flags it as outdated.
     gen = at.session_state["app"].generation
     at.number_input(key=f"{gen}:battery.mass_g").set_value(900.0).run()
     assert not at.exception, at.exception
     assert at.session_state["app"].data["battery"]["mass_g"] == 900.0
-    assert at.session_state["app"].result is result
+    assert at.session_state["app"].two_phase is result
     assert any("Outdated" in w.value for w in at.warning)
 
 
@@ -292,15 +280,15 @@ def test_optimisation_helpers():
         OptimisationRun(
             {"battery.n_series": 4},
             {"battery_mass_g": 800.0},
-            {"flight_time": 1200.0},
+            {"flight_time_v1": 1200.0},
             True,
             [1000.0, 1200.0],
         ),
         OptimisationRun({"battery.n_series": 6}, {}, {}, False, error="boom"),
     ]
-    summary = OptimisationSummary("flight_time", True, runs, 1.0)
+    summary = OptimisationSummary("flight_time_v1", True, runs, 1.0)
     table = opt.run_rows(summary)
     assert table[0]["best"]
-    assert table[0]["flight_time (min)"] == 20.0
+    assert table[0]["flight_time_v1 (min)"] == 20.0
     assert table[1]["error"] == "boom"
     assert len(opt.history_figure(summary).data) == 1

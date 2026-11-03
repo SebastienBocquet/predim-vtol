@@ -40,10 +40,3 @@ sizing:
   target_mass_kg: [1.7, 2.0]
 calibration:
   hover: {battery_power_w: 280, mass_kg: 1.87}
-scenarios:
-  hover_90s:
-    segments:
-      - {kind: vertical_climb, altitude_change_m: 30, vertical_speed_m_s: 2.0}
-      - {kind: hover, duration_s: 90}
-      - {kind: cruise, until_reserve: true, speed: optimal_range}
-      - {kind: vertical_descent, altitude_change_m: -30, vertical_speed_m_s: 1.5}

@@ -19,10 +19,9 @@ Margin transition (tilting motors): {definition: "Worst min(power margin, curren
 Margin yaw tilt (worst case): {definition: "Worst min(power margin, current margin) of the yaw-tilting motors in the yaw worst case (Mission tab: yaw tilt front or rear): transition tilt θ (if any) and maximum yaw tilt δ. Front motors (differential tilt, same axis as the transition): one side at θ − δ (vertical component k = sin(θ − δ)), the other at θ + δ, then the reverse; rear rotor (tricopter, lateral tilt, orthogonal axis): k = sin θ · cos δ (θ = 90° for a motor that does not tilt for the transition). Each motor keeps its hover share F of the vertical force: T = F / k. Short manoeuvre: not counted in the energy. Worst-case rows of the hover table in Results (NaN without yaw tilt).", model: MIC-MIS-TWO}
 Margin battery c: {definition: "1 − battery current / maximum continuous current (C rate) at the most demanding phase, transition included (tilt included).", model: MIC-PROP-BAT}
 Margin mass: {definition: "1 − total mass / maximum take-off mass (NaN when no maximum is set).", model: MIC-CFG-MASS}
-Margin voltage: {definition: "1 − motor voltage / (maximum duty × battery voltage), scenario mode.", model: MIC-MIS-SEG}
 Total mass: {definition: "Sum of the mass items, propulsion units and battery.", unit: kg, symbol: m, model: MIC-CFG-MASS}
-Best-endurance speed: {definition: "Speed of minimum battery power, scenario mode.", unit: km/h, symbol: V_e, model: MIC-MIS-SOL}
-Best-range speed: {definition: "Speed of minimum battery energy per distance, scenario mode.", unit: km/h, symbol: V_r, model: MIC-MIS-SOL}
+Best-endurance speed: {definition: "Speed of minimum battery power (multicopter speed sweep, default V1).", unit: km/h, symbol: V_e, model: MIC-MIS-SEG}
+Best-range speed: {definition: "Speed of minimum battery energy per distance (multicopter speed sweep, default V2).", unit: km/h, symbol: V_r, model: MIC-MIS-SEG}
 max_sd_rel: {definition: "Largest relative standard deviation of the hover power of a motor (surrogate uncertainty); constrained ≤ 5 % when asked.", model: MIC-PROP-SUR}
 tilts: {definition: "The motor tilts: it lifts in hover and pushes in cruise (role tilt, ArduPilot Q_TILT_MASK); it counts once in the mass.", model: MIC-MIS-TWO}
 
@@ -167,16 +166,13 @@ Pmax (W): {definition: "Maximum power (180 s) of the data sheet.", unit: W, mode
 mass (g): {definition: "Mass.", unit: g}
 fits unit types: {definition: "Unit types whose power range contains this motor.", model: MIC-CFG-SIZ}
 
-# --- scenario mode (MVP) ----------------------------------------------------------------------------
-duration (s): {definition: "Duration of the segment.", unit: s, model: MIC-MIS-SOL}
-distance (m): {definition: "Distance flown in the segment.", unit: m, model: MIC-MIS-SOL}
-energy (Wh): {definition: "Energy drawn from the cells in the segment.", unit: Wh, model: MIC-MIS-SOL}
+# --- feasibility ------------------------------------------------------------------------------------
 feasible: {definition: "All limits respected (1) or not (0)."}
 limiting: {definition: "First violated limit."}
 
 # --- studies (INC2-008) -----------------------------------------------------------------------------
 name: {definition: "Name."}
-mode: {definition: "Evaluation mode of the study: two_phase (designer's process) or scenario (MVP solver)."}
+mode: {definition: "Evaluation mode of the study: two_phase (designer's process); scenario for the studies made with the removed MVP solver."}
 title: {definition: "Title of the MIC card."}
 verification: {definition: "Verification status of the model (MIC card)."}
 Flight time V1 (min): {definition: "Two-phase flight time at V1.", unit: min, model: MIC-MIS-TWO}
@@ -187,8 +183,6 @@ Total mass (kg): {definition: "Total mass of the design point.", unit: kg, model
 Hover power (battery) (W): {definition: "Hover battery power of the design point.", unit: W, model: MIC-MIS-TWO}
 Cruise power V1 (battery) (W): {definition: "Cruise battery power at V1.", unit: W, model: MIC-MIS-TWO}
 Cruise power V2 (battery) (W): {definition: "Cruise battery power at V2.", unit: W, model: MIC-MIS-TWO}
-Flight time (scenario) (min): {definition: "Flight time of the scenario mode.", unit: min, model: MIC-MIS-SOL}
-Range (scenario) (km): {definition: "Range of the scenario mode.", unit: km, model: MIC-MIS-SOL}
 
 # --- power chain cables (MIC-PROP-CHAIN) ------------------------------------------------------------
 cable: {definition: "Kind of cable: main (battery → distribution), DC (distribution → separate ESC), phase (ESC → motor).", model: MIC-PROP-CHAIN}

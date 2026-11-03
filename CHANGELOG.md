@@ -18,6 +18,10 @@ versions from git tags (setuptools-scm).
   2.9 → 1.5 s on the same tricopter.
 
 ### Fixed
+- GUI: stopping `predimrc-ui` (Ctrl+C) left Excel running. The session was closed by an
+  `atexit` handler, which runs after `concurrent.futures` has stopped the Excel thread, so the
+  close was refused. `ExcelThreadBackend` now closes itself before that thread stops, and kills
+  Excel by its process id if the thread is already gone.
 - Cruise power at the target speeds (two-phase): near the stall edge V₁ could be overestimated
   by 10–40 % (−12 % reported between the curve and V₁ on a quadplane with large drag sources).
   The PredimRC imposed-speed grid (airfoil Cz step 0.15) keeps one node in the stall drag rise,
@@ -61,7 +65,29 @@ versions from git tags (setuptools-scm).
   surrogate is fitted): the induced-velocity and rotation-speed bisections (~50 iterations
   each, nested) are replaced by a bracketed regula falsi (Illinois); same results to 1e-9.
 
+### Removed (breaking)
+- The scenario mode (MVP solver): `MissionSolver`, `MissionResult`, `SegmentResult`
+  (`mission/solver.py`), the scenarios (`Scenario`, `Segment`, `Project.scenarios`),
+  `api.evaluate`, the scenario-mode calibration `calibration.calibrate` and
+  `calibration.cruise_parameter`, the MIC-MIS-SOL card and `ui/charts.py`. The two-phase
+  evaluation (`evaluate_two_phase`, surrogate and power chain) is the only one; old project
+  files load, their `scenarios` and `cruise_parameter` dropped. The cruise speed sweep moves
+  to `SegmentPower.cruise_sweep` (`SpeedSweep`, `parabolic_min` in `mission/powers.py`).
+- MDO: `PresizingDiscipline` and `optimise` lose `mode` and `scenario` (two-phase only);
+  `OUTPUTS` is the two-phase outputs; `CONSTRAINTS` the former `CONSTRAINTS_TWO_PHASE`;
+  objectives `flight_time` and `range` removed (default objective `flight_time_v1`);
+  `explore` loses `mode`.
+
 ### Added
+- Battery discharge (MIC-PROP-BAT): open-circuit voltage versus state of charge from a
+  generic curve per chemistry (LiPo 3.30 → 4.20 V, Li-ion 2.8 → 4.2 V), internal resistance
+  growing below 20 % (× 1.5 at 0 %), cut-off flag, and a stateless `discharge` of a power
+  history. Two-phase: the landing hover is evaluated at the reserve state of charge
+  (`TwoPhaseResult.landing`, used for the descent energy), every margin is the worst over
+  the flight, landing included, and a landing below the cut-off voltage is infeasible
+  (`battery_cutoff`); discharge profile and chart in Results (`TwoPhaseResult.discharge`).
+  With the default 20 % reserve a LiPo lands on its plateau (3.74 V per cell, above the
+  nominal 3.7 V), a Li-ion below (3.47 V against 3.6 V).
 - Yaw by tilting motors (Mission tab): `yaw_tilt` = none, front (the lift motors ahead of the
   CG, tilt-rotor) or rear (behind the CG, tricopter rear rotor), and the maximum yaw tilt
   `yaw_tilt_max_deg` δ. Worst case: front, differential tilt about the transition axis, one

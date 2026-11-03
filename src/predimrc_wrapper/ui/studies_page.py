@@ -24,7 +24,7 @@ try:
     from predimrc_wrapper.mdo.explore import explore
     from predimrc_wrapper.mdo.explore import pareto_mask
     from predimrc_wrapper.mdo.explore import study_from_optimisation
-    from predimrc_wrapper.mdo.optimise import CONSTRAINTS_TWO_PHASE
+    from predimrc_wrapper.mdo.optimise import CONSTRAINTS
     from predimrc_wrapper.mdo.optimise import available_algorithms
     from predimrc_wrapper.mdo.optimise import optimise
     from predimrc_wrapper.mdo.parameters import expand_overrides
@@ -244,7 +244,7 @@ def render(app, checked, ranges, backend_for, table) -> None:
                     "margin_battery_c",
                     "margin_mass",
                 ],
-                default=list(CONSTRAINTS_TWO_PHASE),
+                default=list(CONSTRAINTS),
                 key=f"{gen}:opt.constraints",
             )
             sd_on = st.checkbox(

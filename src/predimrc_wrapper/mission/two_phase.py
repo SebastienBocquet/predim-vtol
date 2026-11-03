@@ -15,11 +15,17 @@ The designer's process (INC2-007):
    v_h = √(T/(2ρA)), on its power. Transition: the tilting motors at the tilt angle θ give
    T·sin θ vertically, so T_i = F_i / sin θ (F_i their hover share), no wing lift
    (start of the transition, conservative; default θ = 60°); a winged aircraft without tilting motors
-   transitions at hover power. Descent at hover power (conservative).
+   transitions at hover power. Descent at the landing hover power (conservative).
 4. E_avail = (1 − r)·E_nom (80 % of the nominal energy by default);
    t_c = (E_avail − Σ P_k·t_k) / P_c over the vertical phases k; flight time Σ t_k + t_c;
    range V·t_c. Powers are the powers drawn from the cells (chemical power, battery losses
    included).
+5. End of the flight (battery discharge): the cruise runs until the reserve, so the descent
+   and the landing are at the state of charge s = r. The landing hover is evaluated at the
+   open-circuit voltage and resistance of the pack at s (MIC-PROP-BAT); the other points at
+   the nominal voltage. Every margin is the worst over the points, landing included; the
+   landing fails below the cut-off voltage. The discharge profile along the flight (cruise at
+   V₁) is integrated from the terminal powers (stateless, MIC-PROP-BAT).
 """
 
 from __future__ import annotations
@@ -44,6 +50,7 @@ from predimrc_wrapper.core.units import INCH
 if TYPE_CHECKING:
     from predimrc_wrapper.aircraft.model import AircraftModel
     from predimrc_wrapper.aircraft.project import MotorSlot
+    from predimrc_wrapper.propulsion.battery import DischargeProfile
     from predimrc_wrapper.propulsion.chain import ChainResult
 
 DEFAULT_PITCH_RATIO = 0.4
@@ -83,7 +90,7 @@ class MotorHover:
     safety_thrust_n: float = float("nan")
     """Thrust with the safety factor: T/W_min · share · m·g (/ sin θ for a tilted motor) (N)."""
     max_thrust_n: float = float("nan")
-    """Full-throttle thrust of the motor model at the nominal voltage (N)."""
+    """Full-throttle thrust of the motor model at the open-circuit voltage of the point (N)."""
     test_max_thrust_n: float = float("nan")
     """Largest thrust of the tested pair (N), NaN without data."""
     safety_current_a: float = float("nan")
@@ -215,6 +222,11 @@ class TwoPhaseResult:
     """Yaw worst cases, transition tilt included when there is one: front differential tilt
     (each side tilted forward in turn), or the rear rotor tilted laterally; empty without
     yaw tilt."""
+    landing: HoverResult | None = None
+    """Hover at the end of the flight, battery at the reserve state of charge (descent and
+    landing; worst case of the margins)."""
+    discharge: DischargeProfile | None = None
+    """Battery state of charge and voltages along the flight, cruise at V1."""
 
     @property
     def hover_energy_j(self) -> float:
@@ -355,6 +367,7 @@ class TwoPhaseEvaluation(CompositeModel):
         climb_speed_m_s: float = 0.0,
         tilt_deg: float | None = None,
         vertical: dict[int, float] | None = None,
+        soc: float | None = None,
     ) -> HoverResult:
         """Operating point of the lift motors carrying the weight.
 
@@ -367,6 +380,8 @@ class TwoPhaseEvaluation(CompositeModel):
                 k = sin θ.
             vertical: Vertical component k_i of a unit thrust per motor index in
                 ``project.motors`` (yaw worst case); it overrides ``tilt_deg``.
+            soc: Battery state of charge (open-circuit voltage and resistance of the pack
+                at that state); nominal voltage when None.
         """
         from predimrc_wrapper.data import default_tests  # noqa: PLC0415
         from predimrc_wrapper.propulsion.chain import PowerChain  # noqa: PLC0415
@@ -375,7 +390,7 @@ class TwoPhaseEvaluation(CompositeModel):
         ac = self.aircraft
         weight = ac.download_factor * ac.total_mass_kg * GRAVITY
         tests = default_tests()
-        u_bus = ac.battery.open_circuit_voltage
+        u_bus = u_open = ac.battery.ocv_v(soc)
         chain = None
         full_throttle: dict[str, float] = {}
         factors = [
@@ -414,9 +429,7 @@ class TwoPhaseEvaluation(CompositeModel):
                 ratio = climb_speed_m_s / (2.0 * v_h)
                 k_c = float(ratio + np.sqrt(ratio**2 + 1.0))
             if slot.unit not in full_throttle:
-                full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(
-                    ac.rho, ac.battery.open_circuit_voltage
-                )
+                full_throttle[slot.unit] = ac.unit_of(slot).max_thrust(ac.rho, u_open)
             pair_tests = tests.tests(motor_id, prop_id) if prop_id else []
             lift.append({
                 "i": i,
@@ -522,6 +535,7 @@ class TwoPhaseEvaluation(CompositeModel):
                     motors, "measured_at", lambda v: v == "esc_input", False
                 ),
                 "avionics_power_w": self.p.avionics_power_w,
+                "soc": soc,
             })["result"]
             u_bus = chain.bus_voltage_v
         ratio = chain.chemical_power_w / max(
@@ -615,10 +629,10 @@ class TwoPhaseEvaluation(CompositeModel):
         ac = self.aircraft
         if not ac.wing_borne:
             from predimrc_wrapper.mission.powers import SegmentPower  # noqa: PLC0415
-            from predimrc_wrapper.mission.solver import MissionSolver  # noqa: PLC0415
 
+            seg = SegmentPower(ac)
             if speeds_m_s is None:
-                sweep = MissionSolver(ac).cruise_sweep()
+                sweep = seg.cruise_sweep()
                 speeds_m_s = (sweep.v_endurance, sweep.v_range)
                 if not all(np.isfinite(speeds_m_s)):
                     # No speed within every limit: take the minima of the unconstrained curve; the
@@ -629,7 +643,6 @@ class TwoPhaseEvaluation(CompositeModel):
                         float(v[ok][np.argmin(p[ok])]),
                         float(v[ok][np.argmin(p[ok] / v[ok])]),
                     )
-            seg = SegmentPower(ac)
             out = []
             for k, v in enumerate(speeds_m_s, start=1):
                 y = seg.evaluate({"kind": "cruise", "v_m_s": v})
@@ -782,6 +795,19 @@ class TwoPhaseEvaluation(CompositeModel):
             )
             for vertical, tilts in self.yaw_cases(hover.cg_x_mm, transition is not None)
         ]
+        # The cruise runs until the reserve: the landing is at the reserve state of charge.
+        soc_land = self.p.reserve_fraction
+        landing = self.hover(soc=soc_land)
+        vertical_points = [
+            (name, duration, point)
+            for name, duration, point in (
+                ("climb", h / mission.vertical_climb_speed_m_s, climb),
+                ("hover", hover_time_s, hover),
+                ("transition", t_tr, transition or hover),
+                ("descent", h / mission.vertical_descent_speed_m_s, landing),
+            )
+            if duration > 0 and point is not None
+        ]
         phases = [
             PhaseResult(
                 name,
@@ -789,13 +815,7 @@ class TwoPhaseEvaluation(CompositeModel):
                 point.battery_power_w,
                 point.battery_power_sd_w,
             )
-            for name, duration, point in (
-                ("climb", h / mission.vertical_climb_speed_m_s, climb),
-                ("hover", hover_time_s, hover),
-                ("transition", t_tr, transition or hover),
-                ("descent", h / mission.vertical_descent_speed_m_s, hover),
-            )
-            if duration > 0 and point is not None
+            for name, duration, point in vertical_points
         ]
         self._curve = self._aero = None
         cruise, iso = self.cruise(speeds_m_s)
@@ -817,8 +837,9 @@ class TwoPhaseEvaluation(CompositeModel):
             c.range_m = c.v_m_s * c.time_s
         if e_left <= 0:
             feasible, limiting = False, "hover_too_long"
-        vertical = [p for p in (hover, climb, transition) if p is not None]
-        steady = [p for p in (hover, climb) if p is not None]
+        discharge = self._discharge(vertical_points, cruise[0])
+        vertical = [p for p in (hover, climb, transition, landing) if p is not None]
+        steady = [p for p in (hover, climb, landing) if p is not None]
         thrust_margins = [m.thrust_margin for p in vertical for m in p.motors]
         margins: dict[str, float] = {
             "motor_power": min(
@@ -844,7 +865,10 @@ class TwoPhaseEvaluation(CompositeModel):
             "hover_thrust": float(np.nanmin(thrust_margins))
             if any(np.isfinite(t) for t in thrust_margins)
             else float("nan"),
-            "thrust_to_weight": ac.lift_thrust_to_weight() / self.p.min_thrust_to_weight
+            "thrust_to_weight": min(
+                ac.lift_thrust_to_weight(), ac.lift_thrust_to_weight(soc_land)
+            )
+            / self.p.min_thrust_to_weight
             - 1.0,
             "battery_c": 1.0
             - max(
@@ -869,6 +893,8 @@ class TwoPhaseEvaluation(CompositeModel):
                 feasible, limiting = False, name
         if not all(p.chain.feasible for p in vertical):
             feasible, limiting = False, limiting or "battery_power"
+        if not landing.chain.cutoff_ok:
+            feasible, limiting = False, limiting or "battery_cutoff"
         untrusted = [
             f"motor {m.index + 1}: {m.reason}" for m in hover.motors if not m.trusted
         ]
@@ -920,6 +946,30 @@ class TwoPhaseEvaluation(CompositeModel):
             climb,
             transition,
             yaw_cases,
+            landing,
+            discharge,
+        )
+
+    def _discharge(
+        self,
+        vertical_points: list[tuple[str, float, HoverResult]],
+        cruise: CruiseResult,
+    ) -> DischargeProfile:
+        """Battery discharge along the flight with the cruise at the first target speed."""
+        sequence = [(n, t, p.chain.battery_power_w) for n, t, p in vertical_points]
+        p_cruise = (
+            cruise.chain.battery_power_w
+            if cruise.chain is not None
+            else cruise.terminal_power_w
+        )
+        if np.isfinite(cruise.time_s) and cruise.time_s > 0:
+            descent_last = bool(sequence) and sequence[-1][0] == "descent"
+            at = len(sequence) - 1 if descent_last else len(sequence)
+            sequence.insert(at, (f"cruise V{cruise.index}", cruise.time_s, p_cruise))
+        return self.aircraft.battery.discharge(
+            [t for _, t, _ in sequence],
+            [p for _, _, p in sequence],
+            [n for n, _, _ in sequence],
         )
 
     def evaluate(self, x):

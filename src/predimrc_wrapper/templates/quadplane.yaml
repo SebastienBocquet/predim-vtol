@@ -69,12 +69,3 @@ drag_sources:
 max_takeoff_mass_kg: 3.5
 sizing:
   target_mass_kg: [2.2, 2.8]
-scenarios:
-  hover_90s:
-    segments:
-      - {kind: vertical_climb, altitude_change_m: 30, vertical_speed_m_s: 2.0}
-      - {kind: hover, duration_s: 90}
-      - {kind: transition, duration_s: 15}
-      - {kind: cruise, until_reserve: true, speed: optimal_range}
-      - {kind: transition, duration_s: 15}
-      - {kind: vertical_descent, altitude_change_m: -30, vertical_speed_m_s: 1.5}

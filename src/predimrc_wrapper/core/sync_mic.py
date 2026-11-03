@@ -21,7 +21,7 @@ def main(cards: Path = DEFAULT_CARDS) -> None:
     for module in (
         "propulsion",
         "aircraft",
-        "mission.solver",
+        "mission.powers",
         "mission.two_phase",
         "sizing",
     ):

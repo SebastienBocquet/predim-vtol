@@ -2,7 +2,7 @@
 
 A template is a complete project file: geometry, propulsion unit types, motors with their
 positions and roles (tilt mask), booms, battery, masses, drag sources, wiring, mission,
-scenarios, sizing and test data. The shipped templates come with the tool; the user ones are
+sizing and test data. The shipped templates come with the tool; the user ones are
 saved from the GUI in the templates folder of the settings and named ``user:<file stem>``.
 """
 

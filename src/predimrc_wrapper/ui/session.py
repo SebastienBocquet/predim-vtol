@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import atexit
 from typing import TYPE_CHECKING
 
 import streamlit as st
@@ -37,14 +36,11 @@ def predimrc_session(profile: str, folder: str):
 
     One Excel at a time (another profile or folder releases the previous one); recreated when
     Excel no longer answers (closed outside). ``on_release`` closes Excel as the ``__exit__``
-    of a context manager would; it is not called at shutdown, hence ``atexit`` (``close`` is
-    idempotent).
+    of a context manager would; at shutdown, ``ExcelThreadBackend`` closes it itself.
     """
     from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
 
-    backend = open_backend(profile, folder)
-    atexit.register(backend.close)
-    return backend
+    return open_backend(profile, folder)
 
 
 def backend_for(project: Project):
