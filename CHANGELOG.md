@@ -5,6 +5,18 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Changed
+- Static rotation speed of the blade-element propeller in closed form: C_T does not depend
+  on n at V = 0, so n = √(T / (ρ C_T0 D⁴)) with one evaluation instead of about 13 (halvings,
+  then regula falsi). Same result to 1e-15. `evaluate_two_phase` about 4 times faster on a
+  tricopter with a hover calibration, where the static search took 80 % of the time
+  (13.7 → 3.1 s, both versions alternated on the same machine). Forward flight keeps the
+  root finding.
+- Hover: one surrogate prediction per motor + propeller pair and per bus-voltage pass, on the
+  stacked nominal and safety thrusts of its motors, instead of two per motor (12 → 4 per hover
+  on a tricopter with two identical front motors). Same results to 1e-14; `evaluate_two_phase`
+  2.9 → 1.5 s on the same tricopter.
+
 ### Fixed
 - GUI: stopping `predimrc-ui` (Ctrl+C) left Excel running. The session was closed by an
   `atexit` handler, which runs after `concurrent.futures` has stopped the Excel thread, so the
