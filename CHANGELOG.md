@@ -6,6 +6,10 @@ versions from git tags (setuptools-scm).
 ## Unreleased
 
 ### Fixed
+- GUI: stopping `predimrc-ui` (Ctrl+C) left Excel running. The session was closed by an
+  `atexit` handler, which runs after `concurrent.futures` has stopped the Excel thread, so the
+  close was refused. `ExcelThreadBackend` now closes itself before that thread stops, and kills
+  Excel by its process id if the thread is already gone.
 - Cruise power at the target speeds (two-phase): near the stall edge V₁ could be overestimated
   by 10–40 % (−12 % reported between the curve and V₁ on a quadplane with large drag sources).
   The PredimRC imposed-speed grid (airfoil Cz step 0.15) keeps one node in the stall drag rise,
