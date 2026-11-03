@@ -1282,6 +1282,18 @@ with tabs["Hover"]:
                     "k_c = v_c/(2v_h) + √((v_c/(2v_h))² + 1) on its power."
                 )
                 table(tpv.hover_rows(two, two.climb))
+        if two.landing is not None:
+            with st.expander(
+                f"Landing, battery at the reserve ({two.reserve_fraction:.0%} state of "
+                f"charge): {two.landing.battery_power_w:.0f} W, bus "
+                f"{two.landing.chain.bus_voltage_v:.2f} V (hover "
+                f"{two.hover.chain.bus_voltage_v:.2f} V)"
+            ):
+                st.caption(
+                    "Hover at the end of the flight: open-circuit voltage and internal "
+                    "resistance of the pack at the reserve state of charge (MIC-PROP-BAT)."
+                )
+                table(tpv.hover_rows(two, two.landing))
         for pair, motors in hv.pairs(two).items():
             with st.container(border=True):
                 st.plotly_chart(
@@ -1665,9 +1677,6 @@ with tabs["Test data"]:
                     )
                 else:
                     calibration.pop(point, None)
-        calibration.pop(
-            "cruise_parameter", None
-        )  # the two-phase calibration sets the drag
         data["calibration"] = (
             calibration
             if (calibration.get("hover") or calibration.get("cruise"))
@@ -1802,6 +1811,14 @@ with tabs["Results"]:
         table(tpv.phase_rows(two))
         for c in two.cruise:
             st.caption(f"V{c.index}: " + two.hand_check(c.index))
+        if two.discharge is not None and two.discharge.time_s:
+            st.plotly_chart(tpv.discharge_figure(two), width="stretch")
+            st.caption(
+                "Open-circuit voltage from the discharge curve of the chemistry, internal "
+                "resistance growing below 20 % (MIC-PROP-BAT). The landing is evaluated at the "
+                f"reserve, {two.reserve_fraction:.0%} state of charge: its margins are in the "
+                "tiles above (worst case of the flight) and its rows in the hover table."
+            )
         st.markdown(
             f"Front / rear thrust ratio **{tpv.fmt(two.hover.front_rear_ratio, '.2f')}** — data behind each "
             "power: Hover tab (test points, surrogate), Cruise tab (PredimRC), Power chain tab (losses)."

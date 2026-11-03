@@ -69,7 +69,12 @@
   hover thrust, power × k_c = v_c/(2v_h) + √((v_c/(2v_h))² + 1), v_h = √(T/(2ρA)), momentum
   theory); hover t_h; transition t_tr of a winged aircraft (tilting motors at the tilt angle
   θ: T_i = F_i / sin θ, no wing lift; without tilting motor, at hover power); descent from h
-  at v_d at hover power. Calibration factor k_h on every vertical point.
+  at v_d at the landing hover power. Calibration factor k_h on every vertical point.
+- End of the flight (battery discharge, MIC-PROP-BAT): the cruise runs until the reserve,
+  so the descent and the landing are at the state of charge s = r. Landing hover at the
+  open-circuit voltage V₀(s) and resistance R(s) of the pack; the other points at the
+  nominal voltage. Landing infeasible below the cut-off voltage (`battery_cutoff`).
+  Discharge profile along the flight (cruise at V₁) for the voltage chart.
 - Yaw tilt worst case (optional, `mission.yaw_tilt` front or rear): the lift motors ahead of
   (front) or behind (rear) the CG tilt up to δ = `yaw_tilt_max_deg` for yaw, during the
   transition when there is one (θ the transition tilt of a tilting motor, else 90°). Front
@@ -82,14 +87,14 @@
 - t_c,k = (E_avail − Σ P_j·t_j) / P_c,k over the vertical phases j; flight time Σ t_j + t_c,k;
   range V_k·t_c,k; σ_t from the surrogate σ of the vertical powers (motor errors fully
   correlated).
-- Margins: motor power and current (hover, climb and cruise), transition (worst power or
-  current margin of the motors during the transition), hover thrust versus the tested
-  maximum (data coverage, every vertical point), lift T/W (control, MVP physics), battery
+- Margins, worst over the flight: motor power and current (hover, climb, landing and
+  cruise), transition (worst power or current margin of the motors during the transition),
+  hover thrust versus the tested maximum (data coverage, every vertical point), lift T/W
+  (control, MVP physics, at the nominal and at the landing open-circuit voltage), battery
   C-rate (every point), take-off mass.
 
 ### Model limitations
 
-- No climb, descent or transition segments (scenario mode of the MVP for those).
 - Cruise uncertainty not propagated (physics models).
 - Constant mass, no wind.
 

@@ -51,8 +51,7 @@ origin, physical bounds, source.
 | [MIC-PROP-UNIT](MIC-PROP-UNIT.md) | Propulsion unit, constant ESC efficiency (MVP) | MVP-003 |
 | [MIC-CFG-MASS](MIC-CFG-MASS.md) | Mass budget | MVP-004 |
 | [MIC-CFG-DRAG](MIC-CFG-DRAG.md) | Parasitic drag and drag polar | MVP-004 |
-| [MIC-MIS-SEG](MIC-MIS-SEG.md) | Segment powers | MVP-005 |
-| [MIC-MIS-SOL](MIC-MIS-SOL.md) | Mission integration and optimal speeds | MVP-005 |
+| [MIC-MIS-SEG](MIC-MIS-SEG.md) | Segment powers and multicopter cruise speed sweep | MVP-005 |
 | [MIC-CFG-SIZ](MIC-CFG-SIZ.md) | Motor power law (pre-selection from a target mass) | to write |
 | [MIC-CAL-REF](MIC-CAL-REF.md) | Calibration on measured hover and cruise points (procedure) | to write |
 
@@ -71,10 +70,10 @@ flowchart LR
   UNIT --> SEG
   DRAG --> SEG
   MASS --> SEG
-  SEG --> SOL[MIC-MIS-SOL]
-  BAT --> SOL
+  SEG -->|multicopter cruise| TWO[MIC-MIS-TWO]
+  BAT --> TWO
   SIZ[MIC-CFG-SIZ] -.->|motor choice| P
   CAL[MIC-CAL-REF] -.->|factors| P
-  SEG -.-> CAL
+  TWO -.-> CAL
   BEM[MIC-PROP-BEM] -.->|pitch study| P
 ```

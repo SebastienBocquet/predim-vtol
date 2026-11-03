@@ -22,8 +22,6 @@ from pydantic import ValidationError
 from pydantic import field_validator
 from pydantic import model_validator
 
-from predimrc_wrapper.mission.scenario import Scenario
-
 FORMAT_VERSION = 2
 
 
@@ -424,10 +422,7 @@ class MissionSettings(_Strict):
         0.20,
         ge=0,
         le=0.5,
-        description=(
-            "Energy reserve: fraction of the nominal energy kept at landing (two-phase flight time; "
-            "of the usable energy in the scenario mode of the Python API)"
-        ),
+        description=("Energy reserve: fraction of the nominal energy kept at landing"),
     )
     hover_time_s: float = opt(
         60.0,
@@ -716,13 +711,6 @@ class CalibrationSpec(_Strict):
 
     hover: HoverReference | None = opt(None, description="Hover reference point")
     cruise: CruiseReference | None = opt(None, description="Cruise reference point")
-    cruise_parameter: Literal["auto", "propeller_efficiency", "drag"] = adv(
-        "auto",
-        description=(
-            "Factor set by the cruise point in the scenario mode (auto: propeller efficiency if "
-            "wing-borne, else drag); the two-phase calibration always sets the drag factor"
-        ),
-    )
 
 
 class Project(_Strict):
@@ -792,10 +780,6 @@ class Project(_Strict):
         MissionSettings(),
         description="Mission settings: hover time, target speeds, reserve, limits",
     )
-    scenarios: dict[str, Scenario] = req(
-        min_length=1,
-        description="Flight scenarios of the scenario mode (MVP solver), by name",
-    )
     sizing: SizingSpec | None = opt(
         None, description="Motor pre-selection from a target mass range"
     )
@@ -823,6 +807,7 @@ class Project(_Strict):
             data = migrate_v1(data)
         if isinstance(data, dict):
             data = migrate_accessory(data)
+            data = migrate_scenario_mode(data)
         return data
 
     @field_validator("propulsion_units")
@@ -1116,6 +1101,19 @@ def migrate_accessory(data: dict[str, Any]) -> dict[str, Any]:
     return data
 
 
+def migrate_scenario_mode(data: dict[str, Any]) -> dict[str, Any]:
+    """Drop the inputs of the removed scenario mode: ``scenarios`` and
+    ``calibration.cruise_parameter``."""
+    calibration = data.get("calibration") or {}
+    if "scenarios" not in data and "cruise_parameter" not in calibration:
+        return data
+    data = copy.deepcopy(data)
+    data.pop("scenarios", None)
+    if isinstance(data.get("calibration"), dict):
+        data["calibration"].pop("cruise_parameter", None)
+    return data
+
+
 def _valid_paths(model_cls: type[BaseModel], prefix: str = "") -> list[str]:
     paths = []
     for name, info in model_cls.model_fields.items():
@@ -1147,9 +1145,7 @@ def _set_path(data: dict, path: str, value: Any, valid: list[str]) -> None:
                 node[int(key)] = value
                 return
             node = node[int(key)]
-        elif isinstance(node, dict) and (
-            key in node or (keys[0] == "scenarios" and i == 1)
-        ):
+        elif isinstance(node, dict) and key in node:
             if last:
                 node[key] = value
                 return

@@ -22,7 +22,7 @@ from predimrc_wrapper.core.mic import START
 for _module in (
     "propulsion",
     "aircraft",
-    "mission.solver",
+    "mission.powers",
     "mission.two_phase",
     "sizing",
 ):

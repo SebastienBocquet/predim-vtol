@@ -80,7 +80,6 @@ def explore(
     method: str = "lhs",
     n_samples: int = 20,
     seed: int = 0,
-    mode: str = "two_phase",
     backend: AeroBackend | None = None,
     name: str = "exploration",
     progress: Callable[[int, int], None] | None = None,
@@ -105,7 +104,6 @@ def explore(
                 project.with_overrides(expand_overrides(choice)),
                 variables,
                 backend=backend,
-                mode=mode,
             )
             for x in design:
                 if progress is not None:
@@ -140,7 +138,7 @@ def explore(
     definition = StudyDefinition(
         "exploration",
         name,
-        mode,
+        "two_phase",
         [asdict(v) | {"mapping": None} for v in variables],
         choices,
         doe=method,
@@ -187,7 +185,7 @@ def study_from_optimisation(
     definition = StudyDefinition(
         "optimisation",
         name,
-        summary.mode,
+        "two_phase",
         [asdict(v) | {"mapping": None} for v in variables],
         choices,
         summary.objective,

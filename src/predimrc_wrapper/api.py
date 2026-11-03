@@ -1,4 +1,4 @@
-"""Single entry point used by GEMSEO and the GUI: ``evaluate(project)``."""
+"""Single entry point used by GEMSEO and the GUI: ``evaluate_two_phase(project)``."""
 
 from __future__ import annotations
 
@@ -6,8 +6,6 @@ from typing import TYPE_CHECKING
 
 from predimrc_wrapper.aircraft import AircraftModel
 from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.mission.solver import MissionResult
-from predimrc_wrapper.mission.solver import MissionSolver
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -20,50 +18,6 @@ def profiles_dir() -> Path:
     from predimrc_wrapper.settings import predimrc_folder  # noqa: PLC0415
 
     return predimrc_folder()
-
-
-def evaluate(
-    project: Project | str | Path,
-    scenario_name: str | None = None,
-    backend: AeroBackend | None = None,
-) -> MissionResult:
-    """Evaluate one scenario of a project.
-
-    Args:
-        project: The project, or the path of a project file.
-        scenario_name: The scenario; the first one of the project by default.
-        backend: The PredimRC backend; for a quadplane without backend, a PredimRC
-            session is opened for this call and closed afterwards.
-
-    Returns:
-        The mission result.
-    """
-    if not isinstance(project, Project):
-        project = Project.load(project)
-    name = scenario_name or next(iter(project.scenarios))
-    if name not in project.scenarios:
-        msg = f"Unknown scenario '{name}'. Available: {list(project.scenarios)}"
-        raise KeyError(msg)
-    if project.architecture == "quadplane" and backend is None:
-        from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
-
-        with open_backend(project.aero.profile, profiles_dir()) as session:
-            return _solve(project, name, session)
-    return _solve(project, name, backend)
-
-
-def _solve(project: Project, name: str, backend: AeroBackend | None) -> MissionResult:
-    """Solve a scenario; a project with a ``calibration`` block is calibrated first."""
-    report = None
-    if project.calibration is not None:
-        from predimrc_wrapper.calibration import calibrate  # noqa: PLC0415
-
-        project, report = calibrate(project, backend)
-    aircraft = AircraftModel(project, aero_backend=backend)
-    result = MissionSolver(aircraft).solve(project.scenarios[name], name)
-    if report is not None:
-        result.metadata["calibration"] = report.to_dict()
-    return result
 
 
 def evaluate_two_phase(

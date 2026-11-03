@@ -9,7 +9,6 @@ pytest.importorskip("plotly")
 
 from predimrc_wrapper.aircraft import AircraftModel  # noqa: E402
 from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.api import evaluate  # noqa: E402
 from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
 from predimrc_wrapper.cost import cost  # noqa: E402
 from predimrc_wrapper.data import default_database  # noqa: E402
@@ -17,7 +16,6 @@ from predimrc_wrapper.mission.power_budget import budget_rows  # noqa: E402
 from predimrc_wrapper.mission.power_budget import power_budget  # noqa: E402
 from predimrc_wrapper.reliability import motor_out  # noqa: E402
 from predimrc_wrapper.sizing import motor_power_ranges  # noqa: E402
-from predimrc_wrapper.ui import charts  # noqa: E402
 from predimrc_wrapper.ui import cost_view as cov  # noqa: E402
 from predimrc_wrapper.ui import drag_view as dv  # noqa: E402
 from predimrc_wrapper.ui import hover_view as hv  # noqa: E402
@@ -85,11 +83,6 @@ def _displayed_labels() -> set[str]:
         (
             rows(pc.range_rows(motor_power_ranges(p))),
             rows(pc.motor_rows(default_database(), motor_power_ranges(p))),
-        )
-        result = evaluate(p, backend=backend)
-        (
-            labels.update(k.label for k in charts.kpis(result)),
-            rows(charts.segment_rows(result)),
         )
     return labels
 
@@ -276,7 +269,9 @@ def test_hover_tilt_rows_add_the_tilting_motors_in_transition():
     tilting = {i for i, m in enumerate(p.motors) if m.role == "tilt"}
     rows = tpv.hover_tilt_rows(r, tilting, p.mission.transition_tilt_deg)
     hover = [row for row in rows if row["phase"] == "hover"]
-    tilted = [row for row in rows if row["phase"] != "hover"]
+    tilted = [row for row in rows if row["phase"].startswith("transition")]
+    landing = [row for row in rows if row["phase"].startswith("landing")]
+    assert len(landing) == len(r.landing.motors)
     assert len(hover) == len(r.hover.motors)
     assert {row["motor"] - 1 for row in tilted} == tilting
     by_motor = {row["motor"]: row for row in hover}

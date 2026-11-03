@@ -20,8 +20,6 @@ OUTPUT_LABELS = {
     "hover_power": ("Hover power (battery)", "W", 1.0),
     "cruise_power_v1": ("Cruise power V1 (battery)", "W", 1.0),
     "cruise_power_v2": ("Cruise power V2 (battery)", "W", 1.0),
-    "flight_time": ("Flight time (scenario)", "min", 1 / 60),
-    "range": ("Range (scenario)", "km", 1e-3),
     "cost_purchase": ("Purchase cost", "EUR", 1.0),
     "cost_per_hour": ("Cost per flight hour", "EUR/h", 1.0),
     "motor_out_tw": ("Motor-out T/W (worst)", "", 1.0),

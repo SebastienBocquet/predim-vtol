@@ -1,18 +1,13 @@
-"""Motor pre-selection from a target mass range, and calibration on measured points."""
+"""Motor pre-selection from a target mass range (the calibration: test_feedback_2026_10_19)."""
 
 from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
 from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.api import evaluate
-from predimrc_wrapper.calibration import calibrate
 from predimrc_wrapper.data import default_database
-from predimrc_wrapper.mission.powers import SegmentPower
 from predimrc_wrapper.sizing import hover_power_w
 from predimrc_wrapper.sizing import motor_power_ranges
-from tests.helpers import ParabolicAero
 
 
 def test_hover_power_law_reference_point():
@@ -61,71 +56,3 @@ def test_no_sizing_block():
         motor_power_ranges(
             Project.template("tricopter").with_overrides({"sizing": None})
         )
-
-
-def test_hover_calibration_matches_the_measurement():
-    project = Project.template("tricopter")
-    calibrated, report = calibrate(project)
-    point = report.points[0]
-    assert point.model_after_w == pytest.approx(280.0, rel=1e-6)
-    fm = {u: s.figure_of_merit for u, s in calibrated.propulsion_units.items()}
-    assert fm["front"] == pytest.approx(fm["rear"])
-    assert fm["front"] == pytest.approx(0.65 * point.factor)
-    assert calibrated.calibration is None
-    aircraft = AircraftModel(calibrated, total_mass_kg=1.87)
-    assert float(
-        SegmentPower(aircraft).evaluate({"kind": "hover"})["battery_power_w"]
-    ) == pytest.approx(280.0, rel=1e-6)
-
-
-def test_measurement_out_of_range_is_reported():
-    project = Project.template("tricopter").with_overrides({
-        "calibration.hover.battery_power_w": 20.0
-    })
-    _, report = calibrate(project)
-    assert "bound" in report.points[0].note
-
-
-@pytest.mark.parametrize(
-    ("parameter", "name"), [("auto", "cruise_efficiency"), ("drag", "drag_factor")]
-)
-def test_quadplane_cruise_calibration(parameter, name):
-    project = Project.template("quadplane").with_overrides({
-        "calibration": {
-            "hover": {"battery_power_w": 360.0},
-            "cruise": {"speed_m_s": 15.0, "battery_power_w": 90.0},
-            "cruise_parameter": parameter,
-        }
-    })
-    calibrated, report = calibrate(project, ParabolicAero())
-    _hover, cruise = report.points
-    assert cruise.parameter == name
-    assert cruise.model_after_w == pytest.approx(90.0, rel=1e-6)
-    # The cruise factor leaves the hover point unchanged.
-    aircraft = AircraftModel(calibrated, aero_backend=ParabolicAero())
-    assert float(
-        SegmentPower(aircraft).evaluate({"kind": "hover"})["battery_power_w"]
-    ) == pytest.approx(360.0, rel=1e-6)
-
-
-def test_multicopter_cruise_calibrates_the_drag():
-    project = Project.template("multicopter").with_overrides({
-        "calibration": {"cruise": {"speed_m_s": 12.0, "battery_power_w": 260.0}}
-    })
-    _, report = calibrate(project)
-    assert report.points[0].parameter == "drag_factor"
-    assert report.points[0].model_after_w == pytest.approx(260.0, rel=1e-6)
-    with pytest.raises(ValueError, match="wing-borne"):
-        calibrate(
-            project.with_overrides({
-                "calibration.cruise_parameter": "propeller_efficiency"
-            })
-        )
-
-
-def test_evaluate_reports_the_calibration():
-    result = evaluate(Project.template("tricopter"))
-    assert result.metadata["calibration"][0]["point"] == "hover"
-    assert result.metadata["calibration"][0]["model_after_w"] == pytest.approx(
-        280.0, rel=1e-6
-    )
