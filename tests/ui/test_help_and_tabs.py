@@ -260,7 +260,7 @@ def test_first_tab_mission_and_battery_after_feedback_2026_10_19():
 
 @requires_excel
 def test_hover_tilt_rows_add_the_tilting_motors_in_transition():
-    """Results hover table: every lift motor in hover, then only the tilting ones tilted."""
+    """Hover tab table: every lift motor in hover, then only the tilting ones tilted."""
     p = Project.template("tiltrotor").with_overrides({
         "test_data": [{"kind": "hover", "battery_power_w": 280.0}]
     })

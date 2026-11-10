@@ -51,6 +51,7 @@ import signal
 import string
 import threading
 import time
+import weakref
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -878,6 +879,24 @@ def _co_initialize() -> None:
     pythoncom.CoInitialize()
 
 
+_BACKENDS: weakref.WeakSet[ExcelThreadBackend] = weakref.WeakSet()
+"""The Excel thread backends of the process, to kill their Excel at an abrupt exit."""
+
+
+def kill_open_excel() -> int:
+    """Kill the Excel instances of the open backends and return their number.
+
+    For an abrupt exit (console window closed), when the ``atexit`` handlers will not run:
+    no time to quit Excel cleanly, and nothing to save (workbook opened read-only).
+    """
+    killed = 0
+    for backend in list(_BACKENDS):
+        if not backend._closed and backend._excel_pid is not None:  # noqa: SLF001
+            backend._kill_excel()  # noqa: SLF001
+            killed += 1
+    return killed
+
+
 class ExcelThreadBackend:
     """A PredimRC session living in its own thread, usable from any thread.
 
@@ -917,6 +936,7 @@ class ExcelThreadBackend:
         # Closed at interpreter exit before concurrent.futures stops its threads (``atexit``
         # handlers run after, when the Excel thread no longer takes work).
         threading._register_atexit(self.close)  # noqa: SLF001
+        _BACKENDS.add(self)
 
     def __enter__(self) -> Self:
         return self
@@ -983,3 +1003,4 @@ class ExcelThreadBackend:
         with contextlib.suppress(OSError):  # already gone
             os.kill(self._excel_pid, signal.SIGTERM)
         self._wrapper = None
+        self._excel_pid = None

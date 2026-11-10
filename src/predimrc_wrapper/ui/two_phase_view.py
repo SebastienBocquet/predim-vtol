@@ -91,8 +91,43 @@ def phase_rows(r: TwoPhaseResult) -> list[dict]:
     return rows
 
 
+LABEL_FONT_PX = 13
+"""Font size of the phase labels of the discharge figure."""
+_CHAR_PX = 7.5
+"""Mean width of a character of the phase labels."""
+_PLOT_PX = 800
+"""Width of the plot area assumed to place the labels (the chart stretches to the page)."""
+
+
+def label_levels(
+    centers: list[float], names: list[str], span: float, plot_px: float = _PLOT_PX
+) -> list[int]:
+    """Level of each phase label, 0 the lowest, so that labels of a level do not overlap.
+
+    Greedy, from left to right: a label goes to the lowest level whose last label ends
+    before it starts (widths estimated from the number of characters).
+    """
+    ends: list[float] = []
+    levels = []
+    for center, name in zip(centers, names, strict=True):
+        half = (len(name) + 2) * _CHAR_PX / plot_px * span / 2
+        level = next(
+            (i for i, end in enumerate(ends) if end < center - half), len(ends)
+        )
+        if level == len(ends):
+            ends.append(center + half)
+        else:
+            ends[level] = center + half
+        levels.append(level)
+    return levels
+
+
 def discharge_figure(r: TwoPhaseResult):
-    """Pack voltage (open-circuit and under load) and state of charge along the flight."""
+    """Pack voltage (open-circuit and under load) and state of charge along the flight.
+
+    One shaded band per phase, labelled above the plot; close labels are stacked on
+    several levels (the vertical phases last seconds, the cruise tens of minutes).
+    """
     import plotly.graph_objects as go  # noqa: PLC0415
 
     d = r.discharge
@@ -109,10 +144,37 @@ def discharge_figure(r: TwoPhaseResult):
             line={"dash": "dot"},
         ),
     ])
-    for name, end in zip(d.names, d.segment_end, strict=True):
-        fig.add_vline(x=t[end], line={"width": 1, "dash": "dot"}, annotation_text=name)
+    starts = [t[0], *(t[end] for end in d.segment_end[:-1])]
+    stops = [t[end] for end in d.segment_end]
+    centers = [(a + b) / 2 for a, b in zip(starts, stops, strict=True)]
+    levels = label_levels(centers, list(d.names), max(t[-1] - t[0], 1e-9))
+    row_px = LABEL_FONT_PX + 10
+    for i, (name, start, stop, center, level) in enumerate(
+        zip(d.names, starts, stops, centers, levels, strict=True)
+    ):
+        fig.add_vrect(
+            x0=start,
+            x1=stop,
+            fillcolor="grey",
+            opacity=0.12 if i % 2 == 0 else 0.04,
+            line_width=0,
+            layer="below",
+        )
+        fig.add_annotation(
+            x=center,
+            xref="x",
+            y=1,
+            yref="paper",
+            yanchor="bottom",
+            yshift=4 + level * row_px,
+            text=name,
+            showarrow=False,
+            font={"size": LABEL_FONT_PX},
+        )
+    top = 50 + (max(levels, default=0) + 1) * row_px
     fig.update_layout(
-        title="Battery discharge (cruise at V1)",
+        title={"text": "Battery discharge (cruise at V1)", "y": 0.98, "yanchor": "top"},
+        font={"size": 14},
         xaxis_title="time (min)",
         yaxis_title="pack voltage (V)",
         yaxis2={
@@ -120,9 +182,11 @@ def discharge_figure(r: TwoPhaseResult):
             "overlaying": "y",
             "side": "right",
             "range": [0, 100],
+            "showgrid": False,
         },
-        legend={"orientation": "h"},
-        height=360,
+        legend={"orientation": "h", "y": -0.2, "yanchor": "top", "x": 0},
+        height=420 + top - 50,
+        margin={"l": 10, "r": 10, "t": top, "b": 10},
     )
     return fig
 

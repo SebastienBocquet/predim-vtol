@@ -224,6 +224,27 @@ def test_excel_thread_backend_kills_excel_when_its_thread_is_gone():
         excel.kill()
 
 
+@pytest.mark.parametrize(("event", "killed"), [(2, True), (0, False)])
+def test_closing_the_console_kills_excel(event, killed):
+    """Closing the console window (2) kills Excel; Ctrl+C (0) leaves it to the clean exit."""
+    from predimrc_wrapper.ui.cli import on_console_event  # noqa: PLC0415
+
+    excel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    try:
+        fake = FakeWrapper()
+        fake._app = type("App", (), {"pid": excel.pid})()
+        backend = ExcelThreadBackend(wrapper_factory=lambda: fake)
+        backend._call(backend._session)
+        assert on_console_event(event) is False  # the next handler still runs
+        if killed:
+            assert excel.wait(timeout=10) is not None
+        else:
+            assert excel.poll() is None
+        backend.close()
+    finally:
+        excel.kill()
+
+
 def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_path):
     pytest.importorskip("gemseo")
     from predimrc_wrapper.aero_cache import CachedBackend  # noqa: PLC0415

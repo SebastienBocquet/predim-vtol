@@ -1257,20 +1257,67 @@ with tabs["Hover"]:
             f"{tpv.fmt(two.hover.front_rear_ratio, '.2f')}**; hover battery power "
             f"{two.hover.battery_power_w:.0f} ± {two.hover.battery_power_sd_w:.0f} W."
         )
-        table(tpv.hover_rows(two))
         mission = checked.project.mission if checked.project is not None else None
-        if two.transition is not None and mission is not None:
-            st.subheader(
-                f"Transition: tilting motors at {mission.transition_tilt_deg:g}° "
-                f"for {mission.transition_time_s:g} s"
+        tilting = {
+            i
+            for i, m in enumerate(checked.project.motors if mission else [])
+            if m.role == "tilt"
+        }
+        notes = []
+        if two.landing is not None:
+            notes.append(
+                f"**landing**, hover at the end of the flight with the battery at the "
+                f"reserve ({two.reserve_fraction:.0%} state of charge): open-circuit voltage "
+                "and internal resistance of the pack at that state of charge, bus "
+                f"{two.landing.chain.bus_voltage_v:.2f} V (hover "
+                f"{two.hover.chain.bus_voltage_v:.2f} V), {two.landing.battery_power_w:.0f} W "
+                "(MIC-PROP-BAT)"
             )
+        if two.transition is not None and mission is not None and tilting:
+            notes.append(
+                f"**transition**, the tilting motors at {mission.transition_tilt_deg:g}° for "
+                f"{mission.transition_time_s:g} s: a tilting motor gives T·sin θ vertically, so "
+                "to carry its hover share F it gives T = F / sin θ = F × "
+                f"{1 / np.sin(np.radians(mission.transition_tilt_deg)):.3f} (no wing lift "
+                f"yet, start of the transition), {two.transition.battery_power_w:.0f} W"
+            )
+        if two.yaw_cases and mission is not None:
+            notes.append(
+                f"**worst case yaw**, the {mission.yaw_tilt} yaw-tilting motors at the yaw "
+                f"tilt {mission.yaw_tilt_max_deg:g}° "
+                + (
+                    "differential, added to the transition tilt on one side (sin(θ − δ)) "
+                    "and taken off on the other (sin(θ + δ))"
+                    if mission.yaw_tilt == "front"
+                    else "lateral, orthogonal to the transition tilt (sin θ · cos δ)"
+                )
+                + " (T = F / k)"
+            )
+        if notes:
             st.markdown(
-                "A tilting motor gives T·sin θ vertically: to carry its hover share F it "
-                f"gives T = F / sin θ = F × {1 / np.sin(np.radians(mission.transition_tilt_deg)):.3f} "
-                "(no wing lift yet, start of the transition). Battery power "
-                f"{two.transition.battery_power_w:.0f} W; margins of each motor below."
+                "Rows after the hover ones: "
+                + "; ".join(notes)
+                + ". The worst values of this table are the margin tiles of the Results tab."
             )
-            table(tpv.hover_rows(two, two.transition))
+        if mission is not None:
+            st.caption(
+                "**Margins without safety factor**: power, current and thrust margin, at the "
+                "thrust of the row. **Margins with the safety factor T/W min = "
+                f"{mission.min_thrust_to_weight:g}** (Mission tab): the 'with T/W min' columns, "
+                "at the thrust of the row × T/W min (download factor removed); they must stay "
+                "≥ 0, and the worst hover row is the 'Margin thrust-to-weight' tile."
+            )
+        table(
+            tpv.hover_tilt_rows(
+                two,
+                tilting,
+                mission.transition_tilt_deg,
+                mission.yaw_tilt,
+                mission.yaw_tilt_max_deg,
+            )
+            if mission is not None
+            else tpv.hover_rows(two)
+        )
         if two.climb is not None and mission is not None:
             with st.expander(
                 f"Climb to {mission.transition_altitude_m:g} m at "
@@ -1282,18 +1329,6 @@ with tabs["Hover"]:
                     "k_c = v_c/(2v_h) + √((v_c/(2v_h))² + 1) on its power."
                 )
                 table(tpv.hover_rows(two, two.climb))
-        if two.landing is not None:
-            with st.expander(
-                f"Landing, battery at the reserve ({two.reserve_fraction:.0%} state of "
-                f"charge): {two.landing.battery_power_w:.0f} W, bus "
-                f"{two.landing.chain.bus_voltage_v:.2f} V (hover "
-                f"{two.hover.chain.bus_voltage_v:.2f} V)"
-            ):
-                st.caption(
-                    "Hover at the end of the flight: open-circuit voltage and internal "
-                    "resistance of the pack at the reserve state of charge (MIC-PROP-BAT)."
-                )
-                table(tpv.hover_rows(two, two.landing))
         for pair, motors in hv.pairs(two).items():
             with st.container(border=True):
                 st.plotly_chart(
@@ -1817,58 +1852,12 @@ with tabs["Results"]:
                 "Open-circuit voltage from the discharge curve of the chemistry, internal "
                 "resistance growing below 20 % (MIC-PROP-BAT). The landing is evaluated at the "
                 f"reserve, {two.reserve_fraction:.0%} state of charge: its margins are in the "
-                "tiles above (worst case of the flight) and its rows in the hover table."
+                "tiles above (worst case of the flight) and its rows in the Hover tab."
             )
         st.markdown(
-            f"Front / rear thrust ratio **{tpv.fmt(two.hover.front_rear_ratio, '.2f')}** — data behind each "
-            "power: Hover tab (test points, surrogate), Cruise tab (PredimRC), Power chain tab (losses)."
-        )
-        mission = checked.project.mission if checked.project is not None else None
-        tilting = {
-            i
-            for i, m in enumerate(checked.project.motors if mission else [])
-            if m.role == "tilt"
-        }
-        st.markdown(
-            "**Hover**"
-            + (
-                f" — then the tilting motors at {mission.transition_tilt_deg:g}° at the start "
-                "of the transition (T = F / sin θ)"
-                if two.transition is not None and tilting
-                else ""
-            )
-            + (
-                f" — then the worst case of the {mission.yaw_tilt} yaw-tilting motors at the "
-                f"yaw tilt {mission.yaw_tilt_max_deg:g}° "
-                + (
-                    "differential, added to the transition tilt on one side (sin(θ − δ)) "
-                    "and taken off on the other (sin(θ + δ))"
-                    if mission.yaw_tilt == "front"
-                    else "lateral, orthogonal to the transition tilt (sin θ · cos δ)"
-                )
-                + " (T = F / k)"
-                if two.yaw_cases
-                else ""
-            )
-        )
-        if mission is not None:
-            st.caption(
-                "**Margins without safety factor**: power, current and thrust margin, at the "
-                "thrust of the row. **Margins with the safety factor T/W min = "
-                f"{mission.min_thrust_to_weight:g}** (Mission tab): the 'with T/W min' columns, "
-                "at the thrust of the row × T/W min (download factor removed); they must stay "
-                "≥ 0, and the worst hover row is the 'Margin thrust-to-weight' tile."
-            )
-        table(
-            tpv.hover_tilt_rows(
-                two,
-                tilting,
-                mission.transition_tilt_deg,
-                mission.yaw_tilt,
-                mission.yaw_tilt_max_deg,
-            )
-            if mission is not None
-            else tpv.hover_rows(two)
+            f"Front / rear thrust ratio **{tpv.fmt(two.hover.front_rear_ratio, '.2f')}** — "
+            "margins of each lift motor (hover, landing, transition, yaw): Hover tab, with "
+            "the test points and the surrogate; Cruise tab (PredimRC), Power chain tab (losses)."
         )
         st.markdown("**Cruise**")
         table(tpv.cruise_rows(two))

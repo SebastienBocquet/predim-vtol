@@ -5,7 +5,17 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Fixed
+- Closing the console window of `predimrc-ui` left the Excel of PredimRC running in the
+  background (Python is killed without its exit handlers): Excel is now killed when the
+  console closes.
+
 ### Changed
+- GUI: one table of the motor margins in hover (hover, landing, transition, worst-case
+  yaw), in the Hover tab; it was repeated in the Results tab, which keeps the margin tiles.
+- GUI: battery discharge chart readable: one shaded band per phase, labels above the plot
+  stacked when close (the vertical phases last seconds, the cruise tens of minutes),
+  larger fonts, legend below the axis.
 - Static rotation speed of the blade-element propeller in closed form: C_T does not depend
   on n at V = 0, so n = √(T / (ρ C_T0 D⁴)) with one evaluation instead of about 13 (halvings,
   then regula falsi). Same result to 1e-15. `evaluate_two_phase` about 4 times faster on a
