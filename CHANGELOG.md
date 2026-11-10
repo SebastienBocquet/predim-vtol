@@ -10,6 +10,15 @@ versions from git tags (setuptools-scm).
   background (Python is killed without its exit handlers): Excel is now killed when the
   console closes.
 
+### Added
+- One-click Windows package: `packaging/windows/build_zip.py` builds a zip whose `install.bat`
+  installs Python, the locked dependencies and a desktop shortcut, without administrator
+  rights. PredimRC is left out unless given with a notice of its author and terms
+  (`--predimrc-dir`, `--predimrc-notice`), then copied into the PredimRC folder.
+- Licensing: `THIRD_PARTY_NOTICES.md` (PredimRC, Excel, VIMSEO, uv, Python packages), the GNU
+  GPL text that the LGPL supplements, and the IRT Saint Exupery notice on the files ported
+  from VIMSEO.
+
 ### Changed
 - GUI: one table of the motor margins in hover (hover, landing, transition, worst-case
   yaw), in the Hover tab; it was repeated in the Results tab, which keeps the margin tiles.

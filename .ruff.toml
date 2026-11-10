@@ -141,6 +141,7 @@ convention = "google"
 
 [lint.per-file-ignores]
 "*.ipynb" = ["unnecessary-assign", "PTH"]
+"packaging/*/*.py" = ["implicit-namespace-package"]
 "tests/*.py" = ["D", "float-equality-comparison", "pytest-unittest-assertion", "pytest-raises-too-broad", "pytest-unittest-raises-assertion", "PTH"]
 "docs/*.py" = [
   "T",

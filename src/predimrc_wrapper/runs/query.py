@@ -1,3 +1,10 @@
+# Ported from VIMSEO (vimseo.results), modified for predimrc_wrapper.
+# Copyright 2021 IRT Saint Exupery, https://www.irt-saintexupery.com
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU Lesser General Public
+# License version 3 as published by the Free Software Foundation.
+
 """The queries selecting runs from their summaries (ported from ``vimseo.results.query``).
 
 A query is a string with the syntax of :meth:`pandas.DataFrame.query`, evaluated on the
