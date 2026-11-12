@@ -28,6 +28,12 @@ MULTICOPTER_V_MIN = 1.0
 MULTICOPTER_V_MAX = 40.0
 """Highest cruise speed swept for a multicopter (m/s)."""
 
+INDUCED_POWER_FACTOR = 1.15
+"""κ, real / ideal induced power of a rotor (non-uniform inflow, tip losses)."""
+
+PROFILE_ADVANCE_FACTOR = 4.65
+"""K of the profile power P_0·(1 + K·μ²) in forward flight."""
+
 
 @dataclass
 class SpeedSweep:
@@ -76,6 +82,26 @@ def _multicopter_zero_speed_is_hover(_: SegmentPower) -> bool:
     return abs(cruise - hover) <= 1e-9 * hover
 
 
+def _rotor_forward_power(thrust, v, alpha, v_h, v_i, figure_of_merit, tip_speed):
+    """Shaft power of a rotor in forward flight (W).
+
+    The hover power T·v_h/FM is split into the induced power κ·T·v_h and the profile
+    power P_0 = T·v_h·(1/FM − κ). In forward flight the induced part follows v_i, the
+    profile part grows as 1 + K·μ², and the tilted disc adds T·V·sin α = D·V. Dividing
+    the whole power by FM would scale the profile power down with v_i.
+    κ is capped at 1/FM so that P_0 ≥ 0.
+    """
+    kappa = min(INDUCED_POWER_FACTOR, 1.0 / figure_of_merit)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        mu = np.where(tip_speed > 0.0, v * np.cos(alpha) / tip_speed, 0.0)
+    profile = thrust * v_h * (1.0 / figure_of_merit - kappa)
+    return (
+        kappa * thrust * v_i
+        + thrust * v * np.sin(alpha)
+        + profile * (1.0 + PROFILE_ADVANCE_FACTOR * mu**2)
+    )
+
+
 def _worst(ys: list[dict]) -> dict:
     """Element-wise worst margins over several units."""
     return {
@@ -91,7 +117,10 @@ class SegmentPower(CompositeModel):
     P_b = Σ UNIT_i(T_i, 0) + P_av. Transition: κ_tr·P_hover. Wing-borne cruise: T = D(V)
     shared by disc area among the cruise and tilt motors, lift-only rotors stopped.
     Multicopter cruise: tan α = D/(m·g), T_i = f_i·√((mg)² + D²), Glauert induced velocity
-    v_i = v_h² / √((V·cos α)² + (V·sin α + v_i)²), P_i = T_i·(V·sin α + v_i)/FM_i.
+    v_i = v_h² / √((V·cos α)² + (V·sin α + v_i)²),
+    P_i = κ·T_i·v_i + T_i·V·sin α + P_0,i·(1 + K·μ²), with the profile power
+    P_0,i = T_i·v_h,i·(1/FM_i − κ) and the advance ratio μ = V·cos α / (Ω·R): at V = 0,
+    P_i = T_i·v_h,i/FM_i, the hover power.
 
     Args:
         aircraft: The aircraft model.
@@ -239,11 +268,19 @@ class SegmentPower(CompositeModel):
                     v_i = new
                     break
                 v_i = 0.5 * (v_i + new)
-            shaft = thrust_r * (v * np.sin(alpha) + v_i) / prop.p.figure_of_merit
             n = prop.evaluate({"thrust_n": thrust_r, "v_m_s": 0.0, "rho": ac.rho})[
                 "n_rev_s"
             ]
             omega = 2.0 * np.pi * n
+            shaft = _rotor_forward_power(
+                thrust_r,
+                v,
+                alpha,
+                v_h,
+                v_i,
+                prop.p.figure_of_merit,
+                omega * np.sqrt(prop.disc_area_m2 / np.pi),
+            )
             motors.append((
                 unit,
                 unit.motor.evaluate({"torque_nm": shaft / omega, "omega_rad_s": omega}),
