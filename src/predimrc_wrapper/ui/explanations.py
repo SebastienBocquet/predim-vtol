@@ -77,12 +77,20 @@ CRUISE_MULTICOPTER = [
     ),
     (
         (
-            "3. Rotor power in forward flight (Glauert induced velocity, figure of merit FM), then the "
-            "motor, ESC and battery"
+            "3. Induced velocity in forward flight (Glauert): the rotor meets fresh air, v_i drops "
+            "below its hover value v_h"
+        ),
+        r"v_i = \frac{v_h^2}{\sqrt{(V\cos\alpha)^2 + (V\sin\alpha + v_i)^2}}",
+    ),
+    (
+        (
+            "4. Rotor power: induced (κ = 1.15), drag (T sin α = D) and blade profile, the profile "
+            "power P_0 taken from the hover figure of merit FM; then the motor, ESC and battery"
         ),
         (
-            r"v_i = \frac{v_h^2}{\sqrt{(V\cos\alpha)^2 + (V\sin\alpha + v_i)^2}},\qquad"
-            r" P_{shaft,i} = \frac{T_i\,(V\sin\alpha + v_i)}{FM}"
+            r"P_{shaft,i} = \kappa T_i v_i + T_i V\sin\alpha + P_{0,i}\,(1 + 4.65\,\mu^2),\qquad"
+            r" P_{0,i} = T_i v_{h,i}\Big(\frac{1}{FM} - \kappa\Big),\quad"
+            r" \mu = \frac{V\cos\alpha}{\Omega R}"
         ),
     ),
 ]

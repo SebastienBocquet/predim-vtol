@@ -66,14 +66,23 @@
   motors; lift-only rotors at 0 W; P_b = Σ UNIT_j(T_j, V) + P_av.
 - Multicopter cruise / loiter: tan α = D/(m·g); T_i = f_i·√((mg)² + D²);
   v_h,i = √(T_i/(2ρA_i)); v_i = v_h² / √((V·cos α)² + (V·sin α + v_i)²) by fixed point;
-  P_i = T_i·(V·sin α + v_i)/FM_i, then motor and ESC.
+  P_i = κ·T_i·v_i + T_i·V·sin α + P_0,i·(1 + K·μ²), then motor and ESC. The hover power
+  T_i·v_h,i/FM_i is split into the induced power κ·T_i·v_h,i and the profile power
+  P_0,i = T_i·v_h,i·(1/FM_i − κ); μ = V·cos α/(Ω_i·R_i), Ω_i at the hover rotation speed
+  for T_i. κ = 1.15 (capped at 1/FM_i so that P_0 ≥ 0) and K = 4.65 are constants of the
+  model (rotorcraft literature). T_i·V·sin α sums to D·V. At V = 0, P_i is the hover power.
+  Dividing the whole power by FM (earlier versions) scaled the profile power down with v_i and
+  overstated the power saved in cruise (−35 % instead of about −25 % at V1 for the
+  `multicopter` template).
 - D includes `mission.drag_factor` (1 unless calibrated, MIC-CAL-REF).
 
 ### Model limitations
 
 - Vertical climb and descent at hover power (momentum-theory climb after the MVP).
 - No transition dynamics, no vortex ring state, no wind, constant mass.
-- Multicopter forward flight by Glauert momentum theory + FM.
+- Multicopter forward flight by Glauert momentum theory, κ and P_0 from the hover FM:
+  κ constant with speed, no rotor-rotor interference (rear rotors in the wake of the front
+  ones), rotation speed of the static propeller for μ.
 
 ### Model classification
 

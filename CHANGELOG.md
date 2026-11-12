@@ -18,6 +18,13 @@ versions from git tags (setuptools-scm).
   2.9 → 1.5 s on the same tricopter.
 
 ### Fixed
+- Multicopter cruise power overstated the saving on hover (−35 % at the minimum-power speed
+  V₁ on the `multicopter` template, 229 W hover against 142 W cruise). The rotor power in
+  forward flight was T·(V sin α + v_i)/FM, so dividing by FM scaled the blade profile power
+  down with the induced velocity. It is now split as induced κ·T·v_i (κ = 1.15), drag
+  T·V sin α = D·V and profile P₀·(1 + 4.65 μ²), with P₀ taken from the hover figure of merit:
+  the power at V = 0 is still the hover power. On the template the shaft power at V₁ goes from
+  −35 % to −25 % of hover. Multicopter flight times and optimal speeds change (MIC-MIS-SEG).
 - GUI: stopping `predimrc-ui` (Ctrl+C) left Excel running. The session was closed by an
   `atexit` handler, which runs after `concurrent.futures` has stopped the Excel thread, so the
   close was refused. `ExcelThreadBackend` now closes itself before that thread stops, and kills
