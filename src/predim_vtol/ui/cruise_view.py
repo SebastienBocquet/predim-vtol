@@ -165,8 +165,18 @@ def palier_figure(r: TwoPhaseResult) -> go.Figure:
     return fig
 
 
+def model_name(r: TwoPhaseResult) -> str:
+    """Name of the aerodynamic backend of a result."""
+    return (
+        "PredimRC"
+        if (r.metadata or {}).get("aero_backend") == "predimrc"
+        else "simple model"
+    )
+
+
 def power_figure(r: TwoPhaseResult) -> go.Figure:
-    """Aerodynamic power versus speed: PredimRC, drag sources, total; V₁, V₂ from the imposed-speed blocks."""
+    """Aerodynamic power versus speed: airframe, drag sources, total; V₁, V₂ from the
+    imposed-speed blocks."""
     c = r.curve
     fig = go.Figure()
     v = 3.6 * c.v_m_s
@@ -175,7 +185,7 @@ def power_figure(r: TwoPhaseResult) -> go.Figure:
         go.Scatter(
             x=v[keep],
             y=np.asarray(c.power_predimrc_w)[keep],
-            name="PredimRC (P (W) column)",
+            name=f"airframe ({model_name(r)})",
             line={"dash": "dot"},
         )
     )
@@ -202,7 +212,7 @@ def power_figure(r: TwoPhaseResult) -> go.Figure:
                 mode="markers+text",
                 text=[f"V{p.index}"],
                 textposition="top center",
-                name=f"V{p.index} (PredimRC vitesse imposée)",
+                name=f"V{p.index} (vitesse imposée, {model_name(r)})",
                 marker={"size": 12, "color": V_COLORS[p.index]},
             )
         )
@@ -260,14 +270,14 @@ def iso_text(r: TwoPhaseResult) -> tuple[bool | None, str]:
     """(passed or None when not available, message) of the iso-model check."""
     iso = r.iso_check
     if iso is None:
-        return None, "No PredimRC evaluation (multicopter)."
+        return None, "No airframe aerodynamics (multicopter)."
     if not iso.available:
-        return None, "Iso-model check not available (no PredimRC blocks)."
+        return None, "Iso-model check not available (no imposed-speed blocks)."
     gaps = ", ".join(f"V{i + 1} {100 * g:+.2f} %" for i, g in enumerate(iso.curve_gaps))
     warnings = "".join(f" ⚠ {w}." for w in iso.warnings)
     return iso.passed, (
-        f"Iso-model with PredimRC: curve {iso.curve_max_rel_dev:.1e}, imposed speeds "
-        f"{iso.imposed_max_rel_dev:.1e} (tolerance 1e-6). Interpolated curve versus PredimRC at the "
+        f"Iso-model with the {model_name(r)}: curve {iso.curve_max_rel_dev:.1e}, imposed speeds "
+        f"{iso.imposed_max_rel_dev:.1e} (tolerance 1e-6). Interpolated curve versus the blocks at the "
         f"target speeds: {gaps} (warning above {100 * CURVE_GAP_TOLERANCE:g} %; both are "
         f"interpolations, on the polar in speed and on the imposed-speed block in Cz).{warnings}"
     )

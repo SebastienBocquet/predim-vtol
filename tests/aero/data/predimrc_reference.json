@@ -1,0 +1,4605 @@
+{
+ "meta": {
+  "source": "PredimRC v2.64 workbook PredimRC_SD7003.xls (Franck Aguerre), evaluated through Excel on 2026-11-14 by predim_vtol.aero.predimrc; outputs only, the workbook is not distributed.",
+  "metrics": "S dm2, mac mm, foyer % MAC, Vt tail volume, vmin m/s, v_pmin and p_min: minimum power speed (m/s) and power (W), parabola on the polar; f_max: max L/D; p15: power at 15 m/s (W)."
+ },
+ "cases": {
+  "reference": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.42378,
+    "p_min": 15.77069,
+    "f_max": 17.57326,
+    "p15": 16.35435,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "wing_0": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0
+     ],
+     "length": [
+      800.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 32.0,
+    "mac": 200.0,
+    "foyer": 38.09262,
+    "Vt": 0.50467,
+    "vmin": 10.97734,
+    "v_pmin": 13.58191,
+    "p_min": 16.85296,
+    "f_max": 16.65625,
+    "p15": 17.30795,
+    "span_aero": 1600.0,
+    "span_total": 1685.0,
+    "aspect_ratio": 8.0,
+    "neutral_point_mm": 76.1852,
+    "cg_mm": 66.1852
+   }
+  },
+  "wing_1": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      800.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 24.0,
+    "mac": 155.55556,
+    "foyer": 52.81371,
+    "Vt": 0.888,
+    "vmin": 12.02606,
+    "v_pmin": 14.86545,
+    "p_min": 17.53788,
+    "f_max": 17.39847,
+    "p15": 17.56839,
+    "span_aero": 1600.0,
+    "span_total": 1685.0,
+    "aspect_ratio": 10.666667,
+    "neutral_point_mm": 82.1547,
+    "cg_mm": 74.3769
+   }
+  },
+  "wing_2": {
+   "inputs": {
+    "wing": {
+     "root_chord": 250.0,
+     "tip_chord": [
+      125.0
+     ],
+     "length": [
+      1000.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 37.5,
+    "mac": 194.44444,
+    "foyer": 37.52012,
+    "Vt": 0.44442,
+    "vmin": 9.86482,
+    "v_pmin": 12.089,
+    "p_min": 13.57677,
+    "f_max": 18.39973,
+    "p15": 15.41585,
+    "span_aero": 2000.0,
+    "span_total": 2085.0,
+    "aspect_ratio": 10.666667,
+    "neutral_point_mm": 72.9558,
+    "cg_mm": 63.2336
+   }
+  },
+  "wing_3": {
+   "inputs": {
+    "wing": {
+     "root_chord": 150.0,
+     "tip_chord": [
+      150.0
+     ],
+     "length": [
+      600.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 18.0,
+    "mac": 150.0,
+    "foyer": 61.00232,
+    "Vt": 1.2318,
+    "vmin": 14.12399,
+    "v_pmin": 17.62747,
+    "p_min": 23.42396,
+    "f_max": 15.40075,
+    "p15": 25.30199,
+    "span_aero": 1200.0,
+    "span_total": 1285.0,
+    "aspect_ratio": 8.0,
+    "neutral_point_mm": 91.5035,
+    "cg_mm": 84.0035
+   }
+  },
+  "wing_4": {
+   "inputs": {
+    "wing": {
+     "root_chord": 300.0,
+     "tip_chord": [
+      150.0
+     ],
+     "length": [
+      750.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 33.75,
+    "mac": 233.33333,
+    "foyer": 33.63156,
+    "Vt": 0.40201,
+    "vmin": 11.08067,
+    "v_pmin": 13.63729,
+    "p_min": 18.31655,
+    "f_max": 15.47073,
+    "p15": 18.79476,
+    "span_aero": 1500.0,
+    "span_total": 1585.0,
+    "aspect_ratio": 6.666667,
+    "neutral_point_mm": 78.4736,
+    "cg_mm": 66.807
+   }
+  },
+  "wing_5": {
+   "inputs": {
+    "wing": {
+     "root_chord": 180.0,
+     "tip_chord": [
+      90.0
+     ],
+     "length": [
+      1200.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 32.4,
+    "mac": 140.0,
+    "foyer": 51.32805,
+    "Vt": 0.73745,
+    "vmin": 10.03984,
+    "v_pmin": 12.21754,
+    "p_min": 12.4617,
+    "f_max": 19.98384,
+    "p15": 14.17082,
+    "span_aero": 2400.0,
+    "span_total": 2485.0,
+    "aspect_ratio": 17.777778,
+    "neutral_point_mm": 71.8593,
+    "cg_mm": 64.8593
+   }
+  },
+  "wing_6": {
+   "inputs": {
+    "wing": {
+     "root_chord": 220.0,
+     "tip_chord": [
+      220.0
+     ],
+     "length": [
+      1100.0
+     ],
+     "le_offset": [
+      0.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 48.4,
+    "mac": 220.0,
+    "foyer": 32.27279,
+    "Vt": 0.29972,
+    "vmin": 8.84311,
+    "v_pmin": 10.79366,
+    "p_min": 12.21599,
+    "f_max": 18.36856,
+    "p15": 15.91386,
+    "span_aero": 2200.0,
+    "span_total": 2285.0,
+    "aspect_ratio": 10.0,
+    "neutral_point_mm": 71.0001,
+    "cg_mm": 60.0001
+   }
+  },
+  "sweep_le_100": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      800.0
+     ],
+     "le_offset": [
+      100.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 24.0,
+    "mac": 155.55556,
+    "foyer": 45.87796,
+    "Vt": 0.79657,
+    "vmin": 12.14215,
+    "v_pmin": 14.97081,
+    "p_min": 17.93916,
+    "f_max": 17.13349,
+    "p15": 17.98575,
+    "span_aero": 1600.0,
+    "span_total": 1685.0,
+    "aspect_ratio": 10.666667,
+    "neutral_point_mm": 115.8102,
+    "cg_mm": 108.0324
+   }
+  },
+  "sweep_le_300": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      800.0
+     ],
+     "le_offset": [
+      300.0
+     ],
+     "twist": [
+      0.0
+     ],
+     "dihedral": [
+      0.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 24.0,
+    "mac": 155.55556,
+    "foyer": 32.36496,
+    "Vt": 0.61371,
+    "vmin": 12.65581,
+    "v_pmin": 15.44856,
+    "p_min": 19.74139,
+    "f_max": 16.06566,
+    "p15": 19.8053,
+    "span_aero": 1600.0,
+    "span_total": 1685.0,
+    "aspect_ratio": 10.666667,
+    "neutral_point_mm": 183.6788,
+    "cg_mm": 175.901
+   }
+  },
+  "mass_1000": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1000.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 7.86552,
+    "v_pmin": 9.60622,
+    "p_min": 6.40547,
+    "f_max": 16.01568,
+    "p15": 10.75026,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "mass_1500": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1500.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 9.63326,
+    "v_pmin": 11.82533,
+    "p_min": 11.20671,
+    "f_max": 16.97359,
+    "p15": 13.16635,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "mass_2500": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 2500.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 12.43648,
+    "v_pmin": 15.37575,
+    "p_min": 22.74522,
+    "f_max": 18.15191,
+    "p15": 22.8396,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "mass_3500": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 3500.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 14.71504,
+    "v_pmin": 18.17652,
+    "p_min": 36.39767,
+    "f_max": 18.85898,
+    "p15": 41.02558,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "margin_0": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 0.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.78244,
+    "v_pmin": 13.31528,
+    "p_min": 15.36975,
+    "f_max": 17.88236,
+    "p15": 16.05095,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 85.3456
+   }
+  },
+  "margin_10": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 10.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 11.01898,
+    "v_pmin": 13.54541,
+    "p_min": 16.25102,
+    "f_max": 17.21613,
+    "p15": 16.7427,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 66.9501
+   }
+  },
+  "margin_20": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 20.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 11.2718,
+    "v_pmin": 13.83107,
+    "p_min": 17.48186,
+    "f_max": 16.36794,
+    "p15": 17.86663,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 48.5545
+   }
+  },
+  "czreg_0.1": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.1,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.41589,
+    "p_min": 18.10092,
+    "f_max": 15.71855,
+    "p15": 18.63743,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "czreg_0.5": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.5,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 12.98877,
+    "p_min": 14.60771,
+    "f_max": 17.9119,
+    "p15": 15.81293,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "czreg_0.7": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.7,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 12.38434,
+    "p_min": 14.35962,
+    "f_max": 17.09839,
+    "p15": 17.01318,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "lever_250": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 250.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 32.41491,
+    "Vt": 0.41127,
+    "vmin": 11.10967,
+    "v_pmin": 13.57309,
+    "p_min": 16.75332,
+    "f_max": 16.76158,
+    "p15": 17.25851,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 70.8359,
+    "cg_mm": 61.6382
+   }
+  },
+  "lever_500": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 500.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 50.0694,
+    "Vt": 0.7502,
+    "vmin": 10.76318,
+    "v_pmin": 13.32509,
+    "p_min": 15.26799,
+    "f_max": 18.00538,
+    "p15": 15.94986,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 103.3123,
+    "cg_mm": 94.1145
+   }
+  },
+  "lever_700": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 700.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 63.71054,
+    "Vt": 1.02134,
+    "vmin": 10.66414,
+    "v_pmin": 13.25515,
+    "p_min": 14.96459,
+    "f_max": 18.2663,
+    "p15": 15.70808,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 128.4059,
+    "cg_mm": 119.2081
+   }
+  },
+  "stab_root_100": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 100.0,
+     "tip_chord": [
+      70.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 34.92618,
+    "Vt": 0.38822,
+    "vmin": 11.02799,
+    "v_pmin": 13.64042,
+    "p_min": 16.08148,
+    "f_max": 17.52037,
+    "p15": 16.51149,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 75.4555,
+    "cg_mm": 66.2578
+   }
+  },
+  "stab_root_200": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      140.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 46.59295,
+    "Vt": 0.81769,
+    "vmin": 10.76097,
+    "v_pmin": 13.18824,
+    "p_min": 15.53951,
+    "f_max": 17.51808,
+    "p15": 16.33419,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 96.9172,
+    "cg_mm": 87.7194
+   }
+  },
+  "stab_span_200": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      200.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 29.03918,
+    "Vt": 0.35025,
+    "vmin": 11.17531,
+    "v_pmin": 13.87078,
+    "p_min": 16.60997,
+    "f_max": 17.26125,
+    "p15": 16.94982,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 64.6261,
+    "cg_mm": 55.4283
+   }
+  },
+  "stab_span_450": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      450.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 51.96243,
+    "Vt": 0.78806,
+    "vmin": 10.6331,
+    "v_pmin": 12.94358,
+    "p_min": 15.27249,
+    "f_max": 17.47665,
+    "p15": 16.31021,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 106.7946,
+    "cg_mm": 97.5968
+   }
+  },
+  "stab_profile_Planche": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Planche",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.42378,
+    "p_min": 15.77069,
+    "f_max": 17.57326,
+    "p15": 16.35435,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "stab_profile_Biconvexe fin": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.42378,
+    "p_min": 15.77069,
+    "f_max": 17.57326,
+    "p15": 16.35435,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "stab_profile_Biconvexe épais": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe épais",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.3066,
+    "p_min": 16.07205,
+    "f_max": 17.10082,
+    "p15": 16.75126,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "stab_profile_Asymétrique fin": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Asymétrique fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.38925,
+    "p_min": 15.7918,
+    "f_max": 17.49653,
+    "p15": 16.40357,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "stab_profile_Asymétrique épais": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Asymétrique épais",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.16397,
+    "p_min": 16.3363,
+    "f_max": 16.57031,
+    "p15": 17.19861,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "opening_120": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "120",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 35.09836,
+    "Vt": 0.4203,
+    "vmin": 11.02397,
+    "v_pmin": 13.67802,
+    "p_min": 15.96062,
+    "f_max": 17.69716,
+    "p15": 16.36496,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 75.7723,
+    "cg_mm": 66.5745
+   }
+  },
+  "opening_95": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "95",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 30.49669,
+    "Vt": 0.30462,
+    "vmin": 11.13833,
+    "v_pmin": 13.89665,
+    "p_min": 16.24661,
+    "f_max": 17.67483,
+    "p15": 16.56228,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 67.3073,
+    "cg_mm": 58.1095
+   }
+  },
+  "opening_90": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "90",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 29.48804,
+    "Vt": 0.2802,
+    "vmin": 11.16388,
+    "v_pmin": 13.94313,
+    "p_min": 16.33638,
+    "f_max": 17.64064,
+    "p15": 16.63518,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 65.4518,
+    "cg_mm": 56.254
+   }
+  },
+  "fus_shape_Profilée": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.42378,
+    "p_min": 15.77069,
+    "f_max": 17.57326,
+    "p15": 16.35435,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "fus_shape_Caisse arrondie": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Caisse arrondie",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 14.14699,
+    "p_min": 17.73344,
+    "f_max": 16.26268,
+    "p15": 17.97835,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "fus_shape_Caisse": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Caisse",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 14.9122,
+    "p_min": 19.83923,
+    "f_max": 15.09901,
+    "p15": 19.89491,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "fus_beam_Fine": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Fine",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.88229,
+    "Vt": 0.5604,
+    "vmin": 10.8851,
+    "v_pmin": 13.32231,
+    "p_min": 15.19007,
+    "f_max": 18.16897,
+    "p15": 15.80959,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 86.4121,
+    "cg_mm": 77.2144
+   }
+  },
+  "fus_beam_Normale": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.42378,
+    "p_min": 15.77069,
+    "f_max": 17.57326,
+    "p15": 16.35435,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "fus_beam_Epaisse": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Epaisse",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.40759,
+    "Vt": 0.5604,
+    "vmin": 10.8963,
+    "v_pmin": 13.49972,
+    "p_min": 16.29025,
+    "f_max": 17.05705,
+    "p15": 16.85502,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.5389,
+    "cg_mm": 76.3411
+   }
+  },
+  "fus_beam_Jet (entrées air latérales)": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Jet (entrées air latérales)",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 47.72082,
+    "Vt": 0.5604,
+    "vmin": 10.72749,
+    "v_pmin": 13.40496,
+    "p_min": 16.20661,
+    "f_max": 16.97688,
+    "p15": 16.9053,
+    "span_aero": 1740.0,
+    "span_total": 1901.5,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 98.9919,
+    "cg_mm": 89.7942
+   }
+  },
+  "fus_incidence_aile": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 13.42378,
+    "p_min": 15.77069,
+    "f_max": 17.57326,
+    "p15": 16.35435,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "fus_incidence_stab": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "stab",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 12.54177,
+    "p_min": 14.41819,
+    "f_max": 17.96266,
+    "p15": 15.77714,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "fus_length_500": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 500.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 41.81189,
+    "Vt": 0.5604,
+    "vmin": 10.86327,
+    "v_pmin": 13.21594,
+    "p_min": 14.85541,
+    "f_max": 18.43725,
+    "p15": 15.55412,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 88.1222,
+    "cg_mm": 78.9244
+   }
+  },
+  "fus_length_1000": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 1000.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.25962,
+    "Vt": 0.5604,
+    "vmin": 10.8998,
+    "v_pmin": 13.57695,
+    "p_min": 16.45922,
+    "f_max": 16.95798,
+    "p15": 16.98044,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.2667,
+    "cg_mm": 76.0689
+   }
+  },
+  "fus_section_60": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 60.0,
+     "height": 81.17647058823529,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 41.09397,
+    "Vt": 0.5604,
+    "vmin": 10.88012,
+    "v_pmin": 13.28186,
+    "p_min": 14.97453,
+    "f_max": 18.40018,
+    "p15": 15.60784,
+    "span_aero": 1740.0,
+    "span_total": 1800.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 86.8015,
+    "cg_mm": 77.6037
+   }
+  },
+  "fus_section_120": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 120.0,
+     "height": 162.35294117647058,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 39.21319,
+    "Vt": 0.5604,
+    "vmin": 10.92464,
+    "v_pmin": 13.59354,
+    "p_min": 16.89027,
+    "f_max": 16.52534,
+    "p15": 17.4097,
+    "span_aero": 1740.0,
+    "span_total": 1860.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 83.3417,
+    "cg_mm": 74.144
+   }
+  },
+  "nose_150": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 150.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 45.29151,
+    "Vt": 0.5604,
+    "vmin": 10.78269,
+    "v_pmin": 13.3155,
+    "p_min": 15.37055,
+    "f_max": 17.88173,
+    "p15": 16.05156,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 94.5231,
+    "cg_mm": 85.3253
+   }
+  },
+  "nose_400": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 400.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 34.89776,
+    "Vt": 0.5604,
+    "vmin": 11.02888,
+    "v_pmin": 13.55585,
+    "p_min": 16.29361,
+    "f_max": 17.18518,
+    "p15": 16.78185,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 75.4033,
+    "cg_mm": 66.2055
+   }
+  },
+  "accessory_1": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 1.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 250.0,
+     "temperature_c": 20.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 10.89878,
+    "v_pmin": 11.34572,
+    "p_min": 26.62107,
+    "f_max": 8.27247,
+    "p15": 38.01745,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  },
+  "altitude_2000": {
+   "inputs": {
+    "wing": {
+     "root_chord": 200.0,
+     "tip_chord": [
+      200.0,
+      185.0,
+      140.0,
+      50.0
+     ],
+     "length": [
+      285.0,
+      300.0,
+      180.0,
+      105.0
+     ],
+     "le_offset": [
+      0.0,
+      7.0,
+      40.0,
+      150.0
+     ],
+     "twist": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+     ],
+     "dihedral": [
+      0.0,
+      1.0,
+      1.0,
+      20.0
+     ]
+    },
+    "stab": {
+     "root_chord": 140.0,
+     "tip_chord": [
+      100.0
+     ],
+     "length": [
+      320.0
+     ],
+     "le_offset": [
+      170.0
+     ],
+     "lever": 360.0,
+     "stab_height": 0.0,
+     "profile": "Biconvexe fin",
+     "opening": "--- / 180",
+     "lateral_gap": 20.0
+    },
+    "fus": {
+     "length": 760.0,
+     "width": 85.0,
+     "height": 115.0,
+     "nose_lever": 270.0,
+     "shape": "Profilée",
+     "beam": "Normale",
+     "wing_pos": "médiane",
+     "incidence": "aile",
+     "accessory_surface": 0.0,
+     "accessory_shape": "Non profilé"
+    },
+    "settings": {
+     "mass": 1920.0,
+     "static_margin": 5.0,
+     "cz_reg": 0.3,
+     "altitude_m": 2000.0,
+     "temperature_c": 2.0,
+     "vx1_kmh": null,
+     "vx2_kmh": null
+    }
+   },
+   "outputs": {
+    "S": 30.795,
+    "mac": 183.95519,
+    "foyer": 40.30251,
+    "Vt": 0.5604,
+    "vmin": 11.69885,
+    "v_pmin": 14.43824,
+    "p_min": 16.6584,
+    "f_max": 17.89546,
+    "p15": 16.77265,
+    "span_aero": 1740.0,
+    "span_total": 1825.0,
+    "aspect_ratio": 9.831466,
+    "neutral_point_mm": 85.3456,
+    "cg_mm": 76.1478
+   }
+  }
+ }
+}

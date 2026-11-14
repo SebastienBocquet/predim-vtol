@@ -1,7 +1,8 @@
 # Model Identity Cards (MIC)
 
 Every model of predim-vtol has a card here. PredimRC, the optional aerodynamic backend
-of the winged configurations, is an external model used as is and has no card.
+of the winged configurations (the default being MIC-AERO-SIMPLE), is an external model
+used as is and has no card.
 
 ## Format
 
@@ -37,6 +38,7 @@ origin, physical bounds, source.
 
 | Identifier | Model |
 |---|---|
+| [MIC-AERO-SIMPLE](MIC-AERO-SIMPLE.md) | Simple aerodynamic model of the winged aircraft |
 | [MIC-ATM-ISA](MIC-ATM-ISA.md) | ISA atmosphere |
 | [MIC-PROP-BAT](MIC-PROP-BAT.md) | Battery pack |
 | [MIC-PROP-MOT](MIC-PROP-MOT.md) | Brushless motor, 3 constants |
@@ -61,7 +63,7 @@ origin, physical bounds, source.
 flowchart LR
   P[Project YAML] --> MASS[MIC-CFG-MASS]
   P --> DRAG[MIC-CFG-DRAG]
-  MASS -->|mass| PR[(PredimRC, quadplane)]
+  MASS -->|mass| PR[(MIC-AERO-SIMPLE or PredimRC, quadplane)]
   PR -->|speed polar| DRAG
   ATM[MIC-ATM-ISA] --> SEG[MIC-MIS-SEG]
   BAT[MIC-PROP-BAT] --> UNIT[MIC-PROP-UNIT]

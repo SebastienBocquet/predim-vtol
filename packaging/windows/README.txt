@@ -13,12 +13,13 @@ No administrator rights and no existing Python are needed. Internet access is ne
 the installation, which downloads Python and about 100 packages (about 1 GB once installed).
 The application then starts in your browser. Afterwards, use the "Predim VTOL" shortcut
 on the desktop. To stop the application, close its console window (or press Ctrl+C in
-it): this also ends the Excel started for PredimRC. Closing the browser tab does not stop
+it): this also ends the Excel started for PredimRC, if any. Closing the browser tab does not stop
 it.
 
-Quadplane aerodynamics: PredimRC and Excel
-------------------------------------------
-Multicopters work without them. The quadplane architecture needs:
+Wing aerodynamics: simple model, or PredimRC (optional)
+-------------------------------------------------------
+The winged aircraft (quadplane) use the built-in simple aerodynamic model: nothing else is
+needed. To use PredimRC instead (field "Aerodynamic model" = predimrc), you need:
 - Microsoft Excel, which is not included;
 - PredimRC, by Franck Aguerre, a separate program with its own terms of use (see
   THIRD_PARTY_NOTICES.md). When this package includes it (folder predimrc), the installer

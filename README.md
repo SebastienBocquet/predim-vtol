@@ -1,13 +1,14 @@
 # predim-vtol
 
-Pre-sizing of RC VTOL aircraft (quadplane, tiltrotor) and multicopters, with the PredimRC
-Excel workbook in the loop for the wing aerodynamics.
+Pre-sizing of RC VTOL aircraft (quadplane, tiltrotor) and multicopters. The wing
+aerodynamics use a built-in Python model on any platform, or optionally the PredimRC Excel
+workbook (Windows).
 
 - Model cards (MIC): [`src/predim_vtol/mic/`](src/predim_vtol/mic/index.md), also shown in
   the application.
 - Contributing: [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Install (Python 3.10–3.12; PredimRC needs Windows and Excel):
+Install (Python 3.10–3.12; add the `predimrc` extra for PredimRC, Windows and Excel):
 
 ```bash
 uv venv .venv --python 3.12

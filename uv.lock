@@ -1923,12 +1923,14 @@ dependencies = [
     { name = "pyyaml" },
     { name = "scikit-learn" },
     { name = "scipy" },
-    { name = "xlwings", marker = "sys_platform == 'win32'" },
 ]
 
 [package.optional-dependencies]
 mdo = [
     { name = "gemseo", extra = ["all"] },
+]
+predimrc = [
+    { name = "xlwings", marker = "sys_platform == 'win32'" },
 ]
 ui = [
     { name = "plotly" },
@@ -1979,9 +1981,9 @@ requires-dist = [
     { name = "scikit-learn", specifier = ">=1.3" },
     { name = "scipy" },
     { name = "streamlit", marker = "extra == 'ui'" },
-    { name = "xlwings", marker = "sys_platform == 'win32'", specifier = ">=0.30" },
+    { name = "xlwings", marker = "sys_platform == 'win32' and extra == 'predimrc'", specifier = ">=0.30" },
 ]
-provides-extras = ["mdo", "ui"]
+provides-extras = ["mdo", "ui", "predimrc"]
 
 [package.metadata.requires-dev]
 dev = [

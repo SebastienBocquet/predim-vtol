@@ -59,6 +59,9 @@ def data_hashes() -> dict[str, str]:
         for name, file in DATA_FILES.items()
     }
     hashes["thrust_tests"] = _folder_digest(Path(str(data.joinpath("thrust_tests"))))
+    hashes["airfoils"] = _digest([
+        files("predim_vtol.aero").joinpath("airfoils.yaml").read_bytes()
+    ])
     user = user_data_dir()
     hashes["user_data"] = _folder_digest(user) if user.is_dir() else _digest([])
     return hashes
@@ -77,7 +80,8 @@ def _workbook_hash(profile: str) -> str | None:
 def reproducibility_metadata(
     project: Any, seconds: float = float("nan")
 ) -> dict[str, Any]:
-    """Tool version, data hashes, PredimRC profile and workbook hash, date."""
+    """Tool version, data hashes, aerodynamic backend, profile and workbook or airfoil
+    hash, date."""
     from predim_vtol import __version__  # noqa: PLC0415
     from predim_vtol.aircraft.project import FORMAT_VERSION  # noqa: PLC0415
     from predim_vtol.data import default_tests  # noqa: PLC0415
@@ -93,8 +97,16 @@ def reproducibility_metadata(
         "data_hashes": hashes,
     }
     if getattr(project, "aero", None) is not None:
-        meta["predimrc_profile"] = project.aero.profile
-        meta["predimrc_workbook_hash"] = _workbook_hash(project.aero.profile)
+        from predim_vtol.aero import backend_status  # noqa: PLC0415
+        from predim_vtol.api import profiles_dir  # noqa: PLC0415
+
+        backend, _ = backend_status(project.aero, profiles_dir())
+        meta["aero_backend"] = backend
+        if backend == "predimrc":
+            meta["predimrc_profile"] = project.aero.profile
+            meta["predimrc_workbook_hash"] = _workbook_hash(project.aero.profile)
+        else:
+            meta["airfoil"] = project.aero.profile
     return meta
 
 

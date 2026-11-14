@@ -127,12 +127,18 @@ class FuselageSpec(_Strict):
 
 
 class AeroSpec(_Strict):
-    """Wing-borne aerodynamics, evaluated by PredimRC."""
+    """Wing-borne aerodynamics, evaluated by the simple model or by PredimRC."""
 
+    backend: Literal["simple", "predimrc"] = opt(
+        "simple",
+        description="Aerodynamic model: simple (Python, any platform) or predimrc "
+        "(PredimRC workbook: Windows and Excel; the simple model is used where it cannot run)",
+    )
     profile: str = opt(
         "SD7003",
         min_length=1,
-        description="Wing airfoil: PredimRC workbook PredimRC_<profile>.xls of the PredimRC folder",
+        description="Wing airfoil: an airfoil of the simple model, or the workbook "
+        "PredimRC_<profile>.xls of the PredimRC folder",
     )
     wing: WingSpec = req(description="Wing panels (PredimRC Aile block)")
     stab: StabSpec = req(
@@ -143,7 +149,11 @@ class AeroSpec(_Strict):
         5.0, ge=0, le=50, description="Static margin (% of MAC)"
     )
     cz_reg: float = adv(
-        0.30, gt=0, le=1.5, description="Trim lift coefficient, multiple of 0.05"
+        0.30,
+        gt=0,
+        le=1.5,
+        description="Trim lift coefficient, multiple of 0.05 (PredimRC: stabiliser setting; "
+        "simple model: fuselage aligned with the flow and incidences at this C_z)",
     )
 
 

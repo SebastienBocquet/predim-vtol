@@ -22,7 +22,7 @@ from predim_vtol.propulsion import PropulsionUnit
 from predim_vtol.propulsion import density
 
 if TYPE_CHECKING:
-    from predim_vtol.aero.predimrc import AeroBackend
+    from predim_vtol.aero.base import AeroBackend
     from predim_vtol.aircraft.project import MotorSlot
     from predim_vtol.aircraft.project import Project
     from predim_vtol.aircraft.project import PropulsionSpec
@@ -79,7 +79,7 @@ class AircraftModel:
     Args:
         project: The project.
         db: The motor database (default: shipped one).
-        aero_backend: The PredimRC backend, required to compute the quadplane drag.
+        aero_backend: The aerodynamic backend, required to compute the quadplane drag.
         total_mass_kg: A mass replacing the mass budget (calibration points measured at
             another mass).
     """
@@ -292,12 +292,12 @@ class AircraftModel:
         """Total drag at the flight density and total mass, times the mission drag factor.
 
         Raises:
-            ProjectError: For a quadplane without PredimRC backend.
+            ProjectError: For a quadplane without aerodynamic backend.
         """
         x = {"sources": self.drag_sources(), "v_m_s": v_m_s, "rho": self.rho}
         if self.wing_borne:
             if self.aero is None:
-                msg = "A quadplane needs a PredimRC backend to compute its drag."
+                msg = "A quadplane needs an aerodynamic backend to compute its drag."
                 raise ProjectError(msg)
             x["polar"] = self.aero.polar(self.total_mass_kg)
         else:

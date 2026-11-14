@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import sys
 from dataclasses import dataclass
 from dataclasses import field
 from pathlib import Path
@@ -109,25 +108,27 @@ def project_key(data: dict[str, Any]) -> str:
     ).hexdigest()
 
 
-def excel_available(profile: str = "SD7003") -> str | None:
-    """None when PredimRC can run, else the reason to show."""
-    if sys.platform != "win32":
-        return (
-            "PredimRC needs Windows and Excel: the quadplane cannot be evaluated here."
-        )
-    try:
-        import winreg  # noqa: PLC0415
+def aero_status(aero: dict[str, Any] | None) -> tuple[str, str | None, bool]:
+    """Aerodynamic backend of the project being edited.
 
-        winreg.OpenKey(winreg.HKEY_CLASSES_ROOT, r"Excel.Application")
-    except OSError:
-        return "Excel is not installed: the quadplane cannot be evaluated."
-    from predim_vtol.aero.predimrc import workbook_path  # noqa: PLC0415
+    Returns:
+        ``(backend, message, blocking)``: the backend that will run (``simple`` or
+        ``predimrc``), the message to show (None when the requested backend runs) and
+        whether the evaluation cannot run (airfoil unknown to the simple model).
+    """
+    from predim_vtol.aero import backend_status  # noqa: PLC0415
+    from predim_vtol.aircraft.project import AeroSpec  # noqa: PLC0415
 
-    try:
-        workbook_path(profiles_dir(), profile)
-    except FileNotFoundError as error:
-        return f"{error} Set the PredimRC folder in the settings."
-    return None
+    aero = aero or {}
+    spec = AeroSpec.model_construct(
+        backend=aero.get("backend") or "simple", profile=aero.get("profile") or "SD7003"
+    )
+    from predim_vtol.aero.airfoils import airfoils  # noqa: PLC0415
+
+    backend, message = backend_status(spec, profiles_dir())
+    known = {name.casefold() for name in airfoils("wing")}
+    blocking = backend == "simple" and spec.profile.casefold() not in known
+    return backend, message, blocking
 
 
 def rename_unit(data: dict[str, Any], old: str, new: str) -> None:

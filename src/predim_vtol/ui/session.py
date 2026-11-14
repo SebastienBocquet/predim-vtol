@@ -1,4 +1,5 @@
-"""The PredimRC session of the GUI, kept between reruns (``st.cache_resource``)."""
+"""The aerodynamic backend of the GUI; the PredimRC session is kept between reruns
+(``st.cache_resource``)."""
 
 from __future__ import annotations
 
@@ -44,7 +45,15 @@ def predimrc_session(profile: str, folder: str):
 
 
 def backend_for(project: Project):
-    """The PredimRC session of a quadplane (None for the other architectures)."""
+    """The aerodynamic backend of a quadplane (None for the other architectures): the
+    PredimRC session when the project asks for it and it can run, else the simple model."""
     if project.architecture != "quadplane":
         return None
-    return predimrc_session(project.aero.profile, str(profiles_dir()))
+    from predim_vtol.aero import backend_status  # noqa: PLC0415
+
+    backend, _ = backend_status(project.aero, profiles_dir())
+    if backend == "predimrc":
+        return predimrc_session(project.aero.profile, str(profiles_dir()))
+    from predim_vtol.aero.simple import SimpleAeroBackend  # noqa: PLC0415
+
+    return SimpleAeroBackend(project.aero.profile)

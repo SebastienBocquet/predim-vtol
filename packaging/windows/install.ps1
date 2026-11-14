@@ -83,7 +83,7 @@ try {
         $shortcut.Save()
     }
 
-    Write-Host "[4/4] Checking the PredimRC prerequisites"
+    Write-Host "[4/4] Checking the optional PredimRC prerequisites"
     # Workbooks shipped with their notice (build_zip.py --predimrc-notice); never replaced.
     $bundled = Join-Path $PSScriptRoot "predimrc"
     if (Test-Path $bundled) {
@@ -92,12 +92,13 @@ try {
             Copy-Item -Destination $profiles
     }
     if (-not (Test-Path "Registry::HKEY_CLASSES_ROOT\Excel.Application")) {
-        Write-Warning "Microsoft Excel was not found: the quadplane aerodynamics (PredimRC) will not run."
+        Write-Host "Microsoft Excel was not found: the winged aircraft use the simple aerodynamic model (PredimRC needs Excel)."
     }
     if (-not (Get-ChildItem -Path $profiles -File -Filter "PredimRC_*")) {
         Write-Host ""
-        Write-Host "PredimRC is not included. The quadplane architecture needs it (multicopters do not):"
-        Write-Host "get PredimRC from its author, then copy it into this folder as PredimRC_<profile>.xls:"
+        Write-Host "PredimRC is not included: the winged aircraft use the simple aerodynamic model."
+        Write-Host "To use PredimRC instead (optional, Excel needed), get it from its author and copy it"
+        Write-Host "into this folder as PredimRC_<profile>.xls:"
         Write-Host "  $profiles"
     }
 

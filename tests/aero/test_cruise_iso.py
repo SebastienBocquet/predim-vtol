@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predim_vtol.aero.predimrc import ImposedSpeed
+from predim_vtol.aero.base import ImposedSpeed
 from predim_vtol.aero.predimrc import PredimRCError
 from predim_vtol.aero.predimrc import discover_profiles
 from predim_vtol.aero.predimrc import workbook_path

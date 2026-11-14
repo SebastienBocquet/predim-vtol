@@ -88,6 +88,8 @@ def build(output: Path, workbooks: list[Path], notice: Path | None, uv: str) -> 
             "mdo",
             "--extra",
             "ui",
+            "--extra",
+            "predimrc",
             "--no-emit-project",
             "--format",
             "requirements-txt",

@@ -142,7 +142,7 @@ def test_drag_with_polar_equal_dynamic_pressure():
 
 def test_quadplane_without_backend():
     model = AircraftModel(Project.template("quadplane"))
-    with pytest.raises(ProjectError, match="PredimRC backend"):
+    with pytest.raises(ProjectError, match="aerodynamic backend"):
         model.drag(15.0)
 
 

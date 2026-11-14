@@ -13,6 +13,7 @@ import plotly.graph_objects as go
 import streamlit as st
 import yaml
 
+from predim_vtol.aero import profiles as aero_profiles
 from predim_vtol.aircraft import AircraftModel
 from predim_vtol.aircraft import Project
 from predim_vtol.aircraft import templates as user_templates
@@ -50,7 +51,6 @@ from predim_vtol.data.tests import USER_FOLDER as USER_TEST_FOLDER
 from predim_vtol.mission.power_budget import budget_rows
 from predim_vtol.mission.power_budget import power_budget
 from predim_vtol.settings import Settings
-from predim_vtol.settings import available_profiles
 from predim_vtol.sizing import motor_power_ranges
 from predim_vtol.ui import cg_view
 from predim_vtol.ui import cost_view as cov
@@ -72,7 +72,7 @@ from predim_vtol.ui import units as un
 from predim_vtol.ui.help import HelpRegistry
 from predim_vtol.ui.session import backend_for
 
-st.set_page_config(page_title="PredimRC pre-sizing", layout="wide")
+st.set_page_config(page_title="Predim VTOL", layout="wide")
 HELP = HelpRegistry.default()
 forms.HELP = HELP.tooltip
 
@@ -353,41 +353,48 @@ with tabs[config_label]:
             f"Architecture **{architecture}** ({TEMPLATES.get(st.session_state.get('configuration'), 'project file')})."
         )
         if architecture == "quadplane":
+            aero_data = data.get("aero") or {}
+            requested = aero_data.get("backend") or "simple"
             with st.container(border=True):
-                st.markdown("**PredimRC workbooks** (wing aerodynamics)")
-                settings = Settings.load()
-                c1, c2 = st.columns([4, 1])
-                folder = c1.text_input(
-                    "PredimRC folder",
-                    settings.predimrc_folder,
-                    key="settings.predimrc",
-                    help="Folder of the PredimRC workbooks, one per wing airfoil, named "
-                    "PredimRC_<profile>.xls (.xlsx, .xlsm accepted). Saved in your settings, "
-                    "not in the project file.",
-                )
-                if c2.button("Use this folder", key="settings.predimrc.save"):
-                    settings.predimrc_folder = folder
-                    settings.save()
-                    st.rerun()
-                profiles = available_profiles()
-                current = (data.get("aero") or {}).get("profile", "SD7003")
+                st.markdown("**Wing aerodynamics**")
+                used, message, blocking = ui_state.aero_status(aero_data)
                 st.caption(
-                    f"Naming rule: `PredimRC_<profile>.xls` → profiles found in "
-                    f"`{profiles_dir().resolve()}`: **{', '.join(profiles) or 'none'}**. "
-                    f"Profile of this project: **{current}** (chosen with the wing geometry, "
-                    "below)."
-                    + (
-                        ""
-                        if current in profiles
-                        else f" :red[No workbook PredimRC_{current}.xls in this folder.]"
-                    )
+                    "Model: **simple** (Python, MIC-AERO-SIMPLE: any platform) by default, or "
+                    "**PredimRC** (Excel workbook, Windows) with *Aerodynamic model* = predimrc "
+                    f"in the geometry below. This project is evaluated with: **{used}**."
                 )
+                if message:
+                    (st.error if blocking else st.warning)(message)
+                if requested == "predimrc":
+                    settings = Settings.load()
+                    c1, c2 = st.columns([4, 1])
+                    folder = c1.text_input(
+                        "PredimRC folder",
+                        settings.predimrc_folder,
+                        key="settings.predimrc",
+                        help="Folder of the PredimRC workbooks, one per wing airfoil, named "
+                        "PredimRC_<profile>.xls (.xlsx, .xlsm accepted). Saved in your "
+                        "settings, not in the project file.",
+                    )
+                    if c2.button("Use this folder", key="settings.predimrc.save"):
+                        settings.predimrc_folder = folder
+                        settings.save()
+                        st.rerun()
+                    workbooks = aero_profiles("predimrc", profiles_dir())
+                    st.caption(
+                        f"Naming rule: `PredimRC_<profile>.xls` → profiles found in "
+                        f"`{profiles_dir().resolve()}`: **{', '.join(workbooks) or 'none'}**."
+                    )
             with st.expander(
-                "Wing, stabiliser and fuselage (PredimRC geometry)", expanded=False
+                "Wing, stabiliser and fuselage (geometry, PredimRC labels)",
+                expanded=False,
             ):
                 st.caption(
-                    "Labels as in PredimRC (page 3-Geometrie). The accessory surface (S.ac) is "
-                    "forced to 0: the parasitic drag is in the Drag tab."
+                    "Labels as in PredimRC (page 3-Geometrie), for both models. The accessory "
+                    "surface (S.ac) is forced to 0: the parasitic drag is in the Drag tab."
+                )
+                choices = aero_profiles(requested, profiles_dir()) or aero_profiles(
+                    "simple", profiles_dir()
                 )
                 data["aero"] = forms.render_model(
                     st,
@@ -395,7 +402,7 @@ with tabs[config_label]:
                     data.get("aero"),
                     "aero",
                     errors,
-                    {"aero.profile": available_profiles() or ["SD7003"]},
+                    {"aero.profile": choices},
                     gen,
                 )
         winged = architecture == "quadplane"
@@ -581,7 +588,7 @@ with tabs[config_label]:
             )
             show(text + (" (last Run)" if two is not None and app.outdated else ""))
             if level in ("unset", "warning") and st.button(
-                "Use the PredimRC CG", key=f"{gen}:cg.use_predimrc"
+                "Use the computed CG", key=f"{gen}:cg.use_predimrc"
             ):
                 app.data["cg_x_mm"] = round(two.aero_results.cg_mm, 1)
                 app.generation += 1
@@ -1026,24 +1033,23 @@ with tabs["Mission"]:
 with tabs["Cruise"]:
     if architecture != "quadplane":
         st.info(
-            "A multicopter does not use PredimRC: its cruise uses the body drag area (Drag tab) and the "
+            "A multicopter does not use PredimRC nor the wing model: its cruise uses the body drag area (Drag tab) and the "
             "forward-flight model; the target speeds are its best-endurance and best-range speeds."
         )
     else:
         st.caption(
-            f"PredimRC folder `{profiles_dir().resolve()}` — profiles: {', '.join(available_profiles()) or 'none'}. "
-            "Accessory surface (S.ac) forced to 0: the parasitic drag is in the Drag tab."
-        )
-        st.caption(
-            "Wing, stabiliser and fuselage are entered in the first tab (PredimRC geometry)."
+            "Wing, stabiliser and fuselage are entered in the first tab; accessory surface "
+            "(S.ac) forced to 0: the parasitic drag is in the Drag tab."
         )
         if two is None or two.curve is None:
-            st.info("Press Run to compute the PredimRC curves.")
+            st.info("Press Run to compute the cruise curves.")
         else:
             passed, message = cv.iso_text(two)
             (st.success if passed else st.warning)(message)
             table(cv.results_rows(two))
-            st.subheader("Stabilité longitudinale (PredimRC, Cz de réglage)")
+            st.subheader(
+                f"Stabilité longitudinale ({cv.model_name(two)}, Cz de réglage)"
+            )
             table(cv.stability_rows(two))
             c1, c2 = st.columns(2)
             c1.plotly_chart(cv.power_figure(two), width="stretch")
@@ -1052,8 +1058,9 @@ with tabs["Cruise"]:
 
 with tabs["Drag"]:
     st.caption(
-        "The PredimRC accessory drag is set to 0: every parasitic drag outside the PredimRC airframe is a "
-        "source below (shapes Profilé / Mixte / Non profilé with the PredimRC C_d)."
+        "The accessory drag of the airframe model is set to 0: every parasitic drag outside the "
+        "wing, stabiliser and fuselage is a source below (shapes Profilé / Mixte / Non profilé "
+        "with the PredimRC C_d)."
     )
     if architecture == "multicopter":
         st.subheader("Body drag in cruise")
@@ -1666,11 +1673,7 @@ with tabs["Test data"]:
         and st.button("Compare with the model")
     ):
         try:
-            backend = (
-                backend_for(checked.project)
-                if ui_state.excel_available() is None
-                else None
-            )
+            backend = backend_for(checked.project)
             st.session_state["comparison"] = tdv.compare_points(
                 checked.project, backend
             )
@@ -1736,17 +1739,17 @@ with st.sidebar:
             "Invalid project:\n\n"
             + "\n\n".join(f"`{p or 'project'}`: {m}" for p, m in checked.errors.items())
         )
-    excel_reason = (
-        ui_state.excel_available(data.get("aero", {}).get("profile", "SD7003"))
+    aero_used, aero_message, aero_blocking = (
+        ui_state.aero_status(data.get("aero"))
         if architecture == "quadplane"
-        else None
+        else (None, None, False)
     )
-    if excel_reason:
-        st.info(excel_reason)
+    if aero_message:
+        (st.error if aero_blocking else st.info)(aero_message)
     run = st.button(
         "Run",
         type="primary",
-        disabled=not ui_state.run_enabled(checked) or bool(excel_reason),
+        disabled=not ui_state.run_enabled(checked) or aero_blocking,
         help="Two-phase flight time: hover, then cruise at V1 and V2 (calibrated first when "
         "measured points are given for the calibration).",
     )
@@ -1777,7 +1780,7 @@ with st.sidebar:
 
 if run:
     with st.spinner(
-        "Evaluating…" + (" (PredimRC)" if architecture == "quadplane" else "")
+        "Evaluating…" + (f" ({aero_used} aerodynamics)" if aero_used else "")
     ):
         try:
             backend = backend_for(checked.project)

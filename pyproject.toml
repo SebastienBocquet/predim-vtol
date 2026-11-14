@@ -21,7 +21,6 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    "xlwings >=0.30; sys_platform == 'win32'",
     "numpy",
     "pandas",
     "scipy",
@@ -34,6 +33,8 @@ dependencies = [
 [project.optional-dependencies]
 mdo = ["gemseo[all] >=6"]
 ui = ["streamlit", "plotly"]
+# PredimRC aerodynamics through Excel (Windows): the simple model needs nothing.
+predimrc = ["xlwings >=0.30; sys_platform == 'win32'"]
 
 [project.scripts]
 predim-vtol = "predim_vtol.ui.cli:main"
@@ -75,7 +76,7 @@ build-backend = "setuptools.build_meta"
 fallback_version = "0.1.0.dev0"
 
 [tool.setuptools.package-data]
-predim_vtol = ["data/*.yaml", "data/*.md", "data/thrust_tests/*.yaml", "templates/*.yaml", "ui/*.yaml", "mic/*.md"]
+predim_vtol = ["data/*.yaml", "data/*.md", "data/thrust_tests/*.yaml", "templates/*.yaml", "ui/*.yaml", "mic/*.md", "aero/*.yaml"]
 
 [tool.pytest.ini_options]
 # show extra info on xfailed, xpassed, and skipped tests

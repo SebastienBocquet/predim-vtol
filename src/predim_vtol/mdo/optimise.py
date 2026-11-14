@@ -23,7 +23,7 @@ from predim_vtol.mdo.parameters import build_design_space
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from predim_vtol.aero.predimrc import AeroBackend
+    from predim_vtol.aero.base import AeroBackend
     from predim_vtol.aircraft import Project
     from predim_vtol.mdo.parameters import Parameter
 

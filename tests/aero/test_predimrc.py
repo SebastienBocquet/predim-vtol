@@ -8,10 +8,10 @@ import hashlib
 import numpy as np
 import pytest
 
+from predim_vtol.aero.base import Settings
+from predim_vtol.aero.base import WingGeometry
+from predim_vtol.aero.base import derive_drag
 from predim_vtol.aero.predimrc import PredimRCError
-from predim_vtol.aero.predimrc import Settings
-from predim_vtol.aero.predimrc import WingGeometry
-from predim_vtol.aero.predimrc import derive_drag
 from tests.conftest import PROFILES
 from tests.conftest import requires_excel
 
@@ -25,7 +25,7 @@ def test_derive_drag():
 
 
 def test_too_many_panels():
-    with pytest.raises(ValueError, match="at most 5 panels"):
+    with pytest.raises(ValueError, match="At most 5 panels"):
         WingGeometry(200.0, [1] * 6, [1] * 6, [1] * 6, [1] * 6, [1] * 6)
 
 

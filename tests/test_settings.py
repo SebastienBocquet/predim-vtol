@@ -12,6 +12,7 @@ from predim_vtol.settings import home_dir
 
 @pytest.fixture
 def home(tmp_path, monkeypatch):
+    monkeypatch.delenv("PREDIM_VTOL_HOME")
     monkeypatch.setattr(Path, "home", lambda: tmp_path)
     return tmp_path
 
@@ -45,6 +46,11 @@ def test_no_folder(home):
     assert not (home / ".predim_vtol").exists()
 
 
+def test_home_from_the_environment(tmp_path, monkeypatch):
+    monkeypatch.setenv("PREDIM_VTOL_HOME", str(tmp_path / "portable"))
+    assert home_dir() == tmp_path / "portable"
+
+
 def test_tests_do_not_touch_the_user_folder():
-    """The session fixture gives the tests a home of their own."""
-    assert "pytest" in str(Path.home()).lower() or "tmp" in str(Path.home()).lower()
+    """The session fixture gives the tests a tool folder of their own."""
+    assert home_dir() != Path.home() / ".predim_vtol"

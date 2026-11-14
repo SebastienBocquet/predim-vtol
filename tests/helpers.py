@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from predim_vtol.aero.predimrc import AeroResults
+from predim_vtol.aero.base import AeroResults
 
 
 class ParabolicAero:

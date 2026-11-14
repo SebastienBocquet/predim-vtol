@@ -31,7 +31,7 @@ from predim_vtol.aircraft.model import AircraftModel
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from predim_vtol.aero.predimrc import AeroBackend
+    from predim_vtol.aero.base import AeroBackend
     from predim_vtol.aircraft.project import Project
 
 

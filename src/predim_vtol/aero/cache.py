@@ -28,19 +28,19 @@ from typing import Any
 
 import numpy as np
 
-from predim_vtol.aero.predimrc import AeroResults
+from predim_vtol.aero.base import AeroResults
+from predim_vtol.aero.base import FuselageGeometry
+from predim_vtol.aero.base import ImposedSpeed
+from predim_vtol.aero.base import Settings
+from predim_vtol.aero.base import StabGeometry
+from predim_vtol.aero.base import WingGeometry
 from predim_vtol.aero.predimrc import ExcelThreadBackend
-from predim_vtol.aero.predimrc import FuselageGeometry
-from predim_vtol.aero.predimrc import ImposedSpeed
-from predim_vtol.aero.predimrc import Settings
-from predim_vtol.aero.predimrc import StabGeometry
-from predim_vtol.aero.predimrc import WingGeometry
 from predim_vtol.aero.predimrc import workbook_path
 
 if TYPE_CHECKING:
     from typing_extensions import Self
 
-    from predim_vtol.aero.predimrc import AeroBackend
+    from predim_vtol.aero.base import AeroBackend
 
 LOGGER = logging.getLogger(__name__)
 
@@ -194,6 +194,8 @@ class CachedBackend:
         cache_path: The HDF5 file.
         node: The node of the workbook (``workbook_key``).
     """
+
+    name = "predimrc"
 
     def __init__(self, backend: AeroBackend, cache_path: str | Path, node: str) -> None:
         self.backend = backend

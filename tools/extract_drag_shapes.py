@@ -16,11 +16,11 @@ from pathlib import Path
 
 import yaml
 
-from predim_vtol.aero.predimrc import FuselageGeometry
+from predim_vtol.aero.base import FuselageGeometry
+from predim_vtol.aero.base import Settings
+from predim_vtol.aero.base import StabGeometry
+from predim_vtol.aero.base import WingGeometry
 from predim_vtol.aero.predimrc import PredimRCWrapper
-from predim_vtol.aero.predimrc import Settings
-from predim_vtol.aero.predimrc import StabGeometry
-from predim_vtol.aero.predimrc import WingGeometry
 
 OUT = (
     Path(__file__).resolve().parents[1]

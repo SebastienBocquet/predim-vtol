@@ -26,7 +26,7 @@ from predim_vtol.runs.summary import two_phase_outputs
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from predim_vtol.aero.predimrc import AeroBackend
+    from predim_vtol.aero.base import AeroBackend
     from predim_vtol.mdo.parameters import Parameter
 
 LOGGER = logging.getLogger(__name__)
@@ -96,10 +96,10 @@ class PresizingDiscipline(Discipline):
         if self.base_project.architecture != "quadplane":
             return None
         if self._backend is None:
-            from predim_vtol.aero.cache import open_backend  # noqa: PLC0415
+            from predim_vtol.aero import open_aero_backend  # noqa: PLC0415
 
-            self._owned_backend = open_backend(
-                self.base_project.aero.profile, profiles_dir()
+            self._owned_backend = open_aero_backend(
+                self.base_project.aero, profiles_dir()
             )
             self._backend = self._owned_backend
         return self._backend

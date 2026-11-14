@@ -1,4 +1,5 @@
-"""CG entered versus the CG given by PredimRC for the static margin entered (no Streamlit)."""
+"""CG entered versus the CG given by the aerodynamic model for the static margin entered
+(no Streamlit)."""
 
 from __future__ import annotations
 
@@ -6,7 +7,7 @@ import math
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from predim_vtol.aero.predimrc import AeroResults
+    from predim_vtol.aero.base import AeroResults
 
 TOLERANCE_MAC = 0.02
 """Warning above this distance between both CGs, as a fraction of the MAC (2 points of static margin)."""
@@ -15,9 +16,9 @@ TOLERANCE_MAC = 0.02
 def cg_check(
     aero: AeroResults | None, cg_x_mm: float | None, static_margin_pct: float | None
 ) -> tuple[str, str]:
-    """(level, text): level ``none`` (no PredimRC result), ``unset``, ``ok`` or ``warning``.
+    """(level, text): level ``none`` (no aerodynamic result), ``unset``, ``ok`` or ``warning``.
 
-    PredimRC places the CG ahead of its neutral point by the static margin entered:
+    The aerodynamic model places the CG ahead of its neutral point by the static margin entered:
     x_CG = x_NP − SM·MAC. With the CG entered instead, the static margin would be
     SM' = (x_NP − x_CG,entered) / MAC.
     """
@@ -25,14 +26,14 @@ def cg_check(
         return (
             "none",
             (
-                "PredimRC gives the CG for the static margin entered with the wing: press Run to "
-                "compare it with the CG entered."
+                "The aerodynamic model gives the CG for the static margin entered with the wing: "
+                "press Run to compare it with the CG entered."
             ),
         )
     mac = aero.mac_mm
     margin = "" if static_margin_pct is None else f" of {static_margin_pct:g} %"
     text = (
-        f"PredimRC CG for the static margin{margin}: **{aero.cg_mm:.1f} mm** from the wing "
+        f"Aerodynamic model CG for the static margin{margin}: **{aero.cg_mm:.1f} mm** from the wing "
         f"root leading edge (neutral point {aero.neutral_point_mm:.1f} mm, MAC {mac:.1f} mm)."
     )
     if cg_x_mm is None:

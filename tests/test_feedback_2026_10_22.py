@@ -11,9 +11,9 @@ import time
 import numpy as np
 import pytest
 
-from predim_vtol.aero.predimrc import AeroResults
+from predim_vtol.aero.base import AeroResults
+from predim_vtol.aero.base import ImposedSpeed
 from predim_vtol.aero.predimrc import ExcelThreadBackend
-from predim_vtol.aero.predimrc import ImposedSpeed
 from predim_vtol.aircraft import AircraftModel
 from predim_vtol.aircraft import Project
 from predim_vtol.aircraft.project import DragSource

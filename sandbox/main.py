@@ -1,11 +1,11 @@
 """Evaluate the reference case tricoptere_short_2 with PredimRC (visible Excel)."""
 
 from predim_vtol import SRC_DIR
-from predim_vtol.aero.predimrc import FuselageGeometry
+from predim_vtol.aero.base import FuselageGeometry
 from predim_vtol.aero.predimrc import PredimRCWrapper
-from predim_vtol.aero.predimrc import Settings
-from predim_vtol.aero.predimrc import StabGeometry
-from predim_vtol.aero.predimrc import WingGeometry
+from predim_vtol.aero.base import Settings
+from predim_vtol.aero.base import StabGeometry
+from predim_vtol.aero.base import WingGeometry
 
 with PredimRCWrapper(
     profile="SD7003", template_dir=SRC_DIR / "../../profiles", visible=True

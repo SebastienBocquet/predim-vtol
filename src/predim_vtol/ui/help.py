@@ -39,7 +39,7 @@ CARDS = {
     "calibration": "MIC-CAL-REF",
     "test_data": "MIC-CAL-REF",
     "environment": "MIC-ATM-ISA",
-    "aero": "PredimRC (external model)",
+    "aero": "MIC-AERO-SIMPLE",
 }
 """MIC card of the model using each top-level project block."""
 

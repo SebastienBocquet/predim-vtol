@@ -1,6 +1,7 @@
 """User settings kept outside the project files (INC2-005, INC2-008).
 
-File ``~/.predim_vtol/settings.yaml`` (or ``$PREDIM_VTOL_SETTINGS``); environment
+File ``settings.yaml`` of the tool folder (``$PREDIM_VTOL_HOME``, else ``~/.predim_vtol``)
+or ``$PREDIM_VTOL_SETTINGS``; environment
 variables override it: ``$PREDIMRC_PROFILES`` (PredimRC folder), ``$PREDIM_VTOL_STUDIES``
 (studies root), ``$PREDIM_VTOL_USER_DATA`` (user data folder), ``$PREDIM_VTOL_TEMPLATES`` (user
 templates folder), ``$PREDIMRC_CACHE`` (cache file of the PredimRC evaluations).
@@ -25,12 +26,15 @@ running may be writing; it is rebuilt."""
 
 
 def home_dir() -> Path:
-    """The tool folder ``~/.predim_vtol``.
+    """The tool folder: ``$PREDIM_VTOL_HOME``, else ``~/.predim_vtol``.
 
-    When it does not exist yet, the folder of the former name ``~/.predimrc_wrapper`` is
-    copied to it (settings, user data, templates), so that they are kept. The legacy
-    folder is left as is: a former version may still be installed and running.
+    When ``~/.predim_vtol`` does not exist yet, the folder of the former name
+    ``~/.predimrc_wrapper`` is copied to it (settings, user data, templates), so that they
+    are kept. The legacy folder is left as is: a former version may still be installed and
+    running.
     """
+    if "PREDIM_VTOL_HOME" in os.environ:
+        return Path(os.environ["PREDIM_VTOL_HOME"])
     home = Path.home() / ".predim_vtol"
     legacy = Path.home() / LEGACY_HOME
     if not home.exists() and legacy.is_dir():
@@ -88,13 +92,6 @@ class Settings:
 def predimrc_folder() -> Path:
     """The PredimRC folder of the settings."""
     return Path(Settings.load().predimrc_folder)
-
-
-def available_profiles() -> list[str]:
-    """Profiles found in the PredimRC folder."""
-    from predim_vtol.aero.predimrc import discover_profiles  # noqa: PLC0415
-
-    return sorted(discover_profiles(predimrc_folder()))
 
 
 def templates_folder() -> Path:

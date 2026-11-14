@@ -20,7 +20,7 @@ from predim_vtol.mdo.studies import reproducibility_metadata
 if TYPE_CHECKING:
     from collections.abc import Callable
 
-    from predim_vtol.aero.predimrc import AeroBackend
+    from predim_vtol.aero.base import AeroBackend
     from predim_vtol.aircraft import Project
 
 

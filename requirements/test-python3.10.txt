@@ -22,13 +22,24 @@ joblib==1.6.0
     # via
     #   predim-vtol (pyproject.toml)
     #   scikit-learn
-numpy==2.2.6
+numpy==2.2.6 ; python_full_version < '3.14'
     # via
     #   predim-vtol (pyproject.toml)
+    #   pandas
+    #   scikit-learn
+    #   scipy
+numpy==2.5.4 ; python_full_version >= '3.14'
+    # via
+    #   predim-vtol (pyproject.toml)
+    #   pandas
     #   scikit-learn
     #   scipy
 packaging==26.3
     # via pytest
+pandas==2.3.3 ; python_full_version < '3.11'
+    # via predim-vtol (pyproject.toml)
+pandas==3.1.1 ; python_full_version >= '3.11'
+    # via predim-vtol (pyproject.toml)
 pluggy==1.7.0
     # via
     #   pytest
@@ -48,16 +59,26 @@ pytest-cov==7.1.0
     # via predim-vtol (pyproject.toml:dev)
 pytest-xdist==3.8.0
     # via predim-vtol (pyproject.toml:dev)
-pywin32==312 ; sys_platform == 'win32'
-    # via xlwings
+python-dateutil==3.0.0 ; python_full_version < '3.11'
+    # via pandas
+python-dateutil==4.0.0 ; python_full_version >= '3.11'
+    # via pandas
+pytz==2026.6 ; python_full_version < '3.11'
+    # via pandas
 pyyaml==6.0.3
     # via predim-vtol (pyproject.toml)
 scikit-learn==1.7.2
     # via predim-vtol (pyproject.toml)
-scipy==1.15.3
+scipy==1.15.3 ; python_full_version < '3.14'
     # via
     #   predim-vtol (pyproject.toml)
     #   scikit-learn
+scipy==1.18.1 ; python_full_version >= '3.14'
+    # via
+    #   predim-vtol (pyproject.toml)
+    #   scikit-learn
+six==1.17.0 ; python_full_version < '3.11'
+    # via python-dateutil
 threadpoolctl==3.7.0
     # via scikit-learn
 tomli==2.5.0 ; python_full_version <= '3.11'
@@ -72,5 +93,7 @@ typing-extensions==4.16.0
     #   typing-inspection
 typing-inspection==0.4.4
     # via pydantic
-xlwings==0.37.0 ; sys_platform == 'win32'
-    # via predim-vtol (pyproject.toml)
+tzdata==2026.6
+    # via
+    #   pandas
+    #   python-dateutil

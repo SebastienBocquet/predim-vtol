@@ -699,9 +699,9 @@ class TwoPhaseEvaluation(CompositeModel):
                     motors,
                     chain,
                     chain.chemical_power_w,
-                    "PredimRC imposed speed + drag sources"
+                    "imposed speed + drag sources"
                     if point.source == "block"
-                    else "PredimRC polar (stall edge) + drag sources",
+                    else "polar (stall edge) + drag sources",
                 )
             )
         return out, iso

@@ -1,18 +1,18 @@
-"""Adapter between the project and the PredimRC backend (external model, no MIC card)."""
+"""Adapter between the project and the aerodynamic backend (simple model or PredimRC)."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from predim_vtol.aero.predimrc import FuselageGeometry
-from predim_vtol.aero.predimrc import Settings
-from predim_vtol.aero.predimrc import StabGeometry
-from predim_vtol.aero.predimrc import WingGeometry
+from predim_vtol.aero.base import FuselageGeometry
+from predim_vtol.aero.base import Settings
+from predim_vtol.aero.base import StabGeometry
+from predim_vtol.aero.base import WingGeometry
 from predim_vtol.aircraft.drag import SpeedPolar
 
 if TYPE_CHECKING:
-    from predim_vtol.aero.predimrc import AeroBackend
-    from predim_vtol.aero.predimrc import AeroResults
+    from predim_vtol.aero.base import AeroBackend
+    from predim_vtol.aero.base import AeroResults
     from predim_vtol.aircraft.project import AeroSpec
     from predim_vtol.aircraft.project import EnvironmentSpec
 
@@ -83,7 +83,7 @@ class AeroModel:
 
     Args:
         aero: The project aero block.
-        backend: The PredimRC backend (injected).
+        backend: The aerodynamic backend (injected).
     """
 
     def __init__(
