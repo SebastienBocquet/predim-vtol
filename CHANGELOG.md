@@ -15,7 +15,8 @@ versions from git tags (setuptools-scm).
   - environment variables `$PREDIM_VTOL_SETTINGS`, `$PREDIM_VTOL_STUDIES`,
     `$PREDIM_VTOL_TEMPLATES`, `$PREDIM_VTOL_USER_DATA` (were `$PREDIMRC_*`);
     `$PREDIMRC_PROFILES` and `$PREDIMRC_CACHE`, about PredimRC, are unchanged;
-  - user folder `~/.predim_vtol`: `~/.predimrc_wrapper` is renamed to it at first use;
+  - user folder `~/.predim_vtol`: at first use, `~/.predimrc_wrapper` is copied to it
+    (settings, user data, templates; not the PredimRC cache) and left as is;
   - Windows: application in `%LOCALAPPDATA%\Programs\predim_vtol`, studies in
     `Documents\predim_vtol`, shortcut "Predim VTOL"; the installer moves the studies of a
     former installation and removes the former application and shortcut.

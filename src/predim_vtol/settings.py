@@ -9,6 +9,7 @@ templates folder), ``$PREDIMRC_CACHE`` (cache file of the PredimRC evaluations).
 from __future__ import annotations
 
 import os
+import shutil
 from dataclasses import asdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,20 +19,27 @@ import yaml
 LEGACY_HOME = ".predimrc_wrapper"
 """Folder of the tool before its renaming to predim-vtol (0.x)."""
 
+LEGACY_SKIPPED = ("*.h5",)
+"""Not copied from the legacy folder: the PredimRC cache, which a former version still
+running may be writing; it is rebuilt."""
+
 
 def home_dir() -> Path:
     """The tool folder ``~/.predim_vtol``.
 
-    The folder of the former name ``~/.predimrc_wrapper`` is renamed to it when the new
-    one does not exist yet, so that the settings, user data and templates are kept.
+    When it does not exist yet, the folder of the former name ``~/.predimrc_wrapper`` is
+    copied to it (settings, user data, templates), so that they are kept. The legacy
+    folder is left as is: a former version may still be installed and running.
     """
     home = Path.home() / ".predim_vtol"
     legacy = Path.home() / LEGACY_HOME
     if not home.exists() and legacy.is_dir():
         try:
-            legacy.rename(home)
-        except OSError:  # Another process holds a file: keep the legacy folder.
-            return legacy
+            shutil.copytree(
+                legacy, home, ignore=shutil.ignore_patterns(*LEGACY_SKIPPED)
+            )
+        except OSError:  # A file being written: use the new folder from scratch.
+            shutil.rmtree(home, ignore_errors=True)
     return home
 
 

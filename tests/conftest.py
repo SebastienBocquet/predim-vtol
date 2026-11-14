@@ -30,9 +30,13 @@ requires_excel = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _predimrc_cache(tmp_path_factory):
-    """The PredimRC evaluations of the tests are cached in a file of their own."""
+def _isolated_user_folders(tmp_path_factory):
+    """The tests use a home, a PredimRC cache and user data of their own."""
     mp = pytest.MonkeyPatch()
+    # A home of their own: the tests never read nor migrate the user folder of the machine.
+    home = tmp_path_factory.mktemp("home")
+    mp.setenv("HOME", str(home))
+    mp.setenv("USERPROFILE", str(home))
     mp.setenv("PREDIMRC_CACHE", str(tmp_path_factory.mktemp("cache") / "predimrc.h5"))
     # The user motors, propellers and tests of the machine do not leak into the tests.
     mp.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path_factory.mktemp("user_data")))
