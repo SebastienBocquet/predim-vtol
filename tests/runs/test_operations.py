@@ -8,8 +8,8 @@ import operator
 import pytest
 from pandas import DataFrame
 
-from predimrc_wrapper.runs import RunResults
-from predimrc_wrapper.runs.query import apply_query
+from predim_vtol.runs import RunResults
+from predim_vtol.runs.query import apply_query
 
 
 def _runs(rows) -> RunResults:

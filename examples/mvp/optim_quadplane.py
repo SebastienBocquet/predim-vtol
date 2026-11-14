@@ -14,10 +14,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 from _optim import optimise  # noqa: E402
 
-from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.data import default_database  # noqa: E402
-from predimrc_wrapper.mdo import Parameter  # noqa: E402
-from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: E402
+from predim_vtol.aero.predimrc import PredimRCWrapper  # noqa: E402
+from predim_vtol.aircraft import Project  # noqa: E402
+from predim_vtol.data import default_database  # noqa: E402
+from predim_vtol.mdo import Parameter  # noqa: E402
 
 PROFILES = Path(__file__).resolve().parents[2] / "profiles"
 

@@ -5,11 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.mission.powers import INDUCED_POWER_FACTOR
-from predimrc_wrapper.mission.powers import SegmentPower
-from predimrc_wrapper.mission.powers import _rotor_forward_power
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.mission.powers import INDUCED_POWER_FACTOR
+from predim_vtol.mission.powers import SegmentPower
+from predim_vtol.mission.powers import _rotor_forward_power
 from tests.helpers import ConstantEfficiencyUnit
 from tests.helpers import ParabolicAero
 

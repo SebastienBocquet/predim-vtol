@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.core import Model
-from predimrc_wrapper.core import Param
-from predimrc_wrapper.core import Port
-from predimrc_wrapper.core import ScalingLaw
-from predimrc_wrapper.core import params
-from predimrc_wrapper.core import ports
-from predimrc_wrapper.core.mic import write_interface
+from predim_vtol.core import Model
+from predim_vtol.core import Param
+from predim_vtol.core import Port
+from predim_vtol.core import ScalingLaw
+from predim_vtol.core import params
+from predim_vtol.core import ports
+from predim_vtol.core.mic import write_interface
 
 
 class _Square(Model):

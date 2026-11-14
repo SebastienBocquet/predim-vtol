@@ -13,11 +13,11 @@ from pathlib import Path
 
 from gemseo import create_scenario
 
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.mdo import Parameter
-from predimrc_wrapper.mdo import PresizingDiscipline
-from predimrc_wrapper.mdo import build_design_space
-from predimrc_wrapper.mdo import from_database
+from predim_vtol.aircraft import Project
+from predim_vtol.mdo import Parameter
+from predim_vtol.mdo import PresizingDiscipline
+from predim_vtol.mdo import build_design_space
+from predim_vtol.mdo import from_database
 
 PROFILES = Path(__file__).resolve().parents[2] / "profiles"
 OUT = Path(__file__).parent / "outputs"
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         parameters.append(
             Parameter("span_t2_mm", "aero.wing.length_mm.1", "float", 250.0, 350.0)
         )
-        from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper
+        from predim_vtol.aero.predimrc import PredimRCWrapper
 
         context = PredimRCWrapper(template_dir=PROFILES)
         backend = context.__enter__()

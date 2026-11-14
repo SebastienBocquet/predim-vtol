@@ -10,11 +10,11 @@ import copy
 import statistics
 from pathlib import Path
 
-from predimrc_wrapper.predimrc_wrapper import FuselageGeometry
-from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper
-from predimrc_wrapper.predimrc_wrapper import Settings
-from predimrc_wrapper.predimrc_wrapper import StabGeometry
-from predimrc_wrapper.predimrc_wrapper import WingGeometry
+from predim_vtol.aero.predimrc import FuselageGeometry
+from predim_vtol.aero.predimrc import PredimRCWrapper
+from predim_vtol.aero.predimrc import Settings
+from predim_vtol.aero.predimrc import StabGeometry
+from predim_vtol.aero.predimrc import WingGeometry
 
 PROFILES = Path(__file__).resolve().parents[2] / "profiles"
 

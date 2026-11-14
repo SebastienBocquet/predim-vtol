@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.data import DatabaseError
-from predimrc_wrapper.data import MotorDatabase
-from predimrc_wrapper.data import add_user_motor
-from predimrc_wrapper.data import default_database
+from predim_vtol.data import DatabaseError
+from predim_vtol.data import MotorDatabase
+from predim_vtol.data import add_user_motor
+from predim_vtol.data import default_database
 
 
 def test_shipped_database_complete():
@@ -62,7 +62,7 @@ CUSTOM = {
 
 @pytest.fixture
 def user_data(tmp_path, monkeypatch):
-    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    monkeypatch.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path))
     default_database.cache_clear()
     yield tmp_path
     default_database.cache_clear()

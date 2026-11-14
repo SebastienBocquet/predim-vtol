@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.data import default_database
-from predimrc_wrapper.sizing import hover_power_w
-from predimrc_wrapper.sizing import motor_power_ranges
+from predim_vtol.aircraft import Project
+from predim_vtol.data import default_database
+from predim_vtol.sizing import hover_power_w
+from predim_vtol.sizing import motor_power_ranges
 
 
 def test_hover_power_law_reference_point():

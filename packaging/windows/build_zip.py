@@ -97,7 +97,7 @@ def build(output: Path, workbooks: list[Path], notice: Path | None, uv: str) -> 
         )
         version = wheel.name.split("-")[1]
         output.mkdir(parents=True, exist_ok=True)
-        path = output / f"predimrc_wrapper-{version}-windows.zip"
+        path = output / f"predim-vtol-{version}-windows.zip"
         prefix = path.stem
         with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as archive:
             for name in TEXT_FILES:

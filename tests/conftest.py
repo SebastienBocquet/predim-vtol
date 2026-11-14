@@ -35,7 +35,7 @@ def _predimrc_cache(tmp_path_factory):
     mp = pytest.MonkeyPatch()
     mp.setenv("PREDIMRC_CACHE", str(tmp_path_factory.mktemp("cache") / "predimrc.h5"))
     # The user motors, propellers and tests of the machine do not leak into the tests.
-    mp.setenv("PREDIMRC_USER_DATA", str(tmp_path_factory.mktemp("user_data")))
+    mp.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path_factory.mktemp("user_data")))
     yield
     mp.undo()
 
@@ -45,7 +45,7 @@ def predimrc():
     """One PredimRC session shared by the slow tests."""
     if not EXCEL:
         pytest.skip("Excel and PredimRC workbook required")
-    from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+    from predim_vtol.aero.predimrc import PredimRCWrapper  # noqa: PLC0415
 
     with PredimRCWrapper(profile="SD7003", template_dir=PROFILES) as wrapper:
         yield wrapper
@@ -54,10 +54,10 @@ def predimrc():
 @pytest.fixture
 def reference_case():
     """The tricoptere_short_2 geometry of the PredimRC screenshot."""
-    from predimrc_wrapper.predimrc_wrapper import FuselageGeometry  # noqa: PLC0415
-    from predimrc_wrapper.predimrc_wrapper import Settings  # noqa: PLC0415
-    from predimrc_wrapper.predimrc_wrapper import StabGeometry  # noqa: PLC0415
-    from predimrc_wrapper.predimrc_wrapper import WingGeometry  # noqa: PLC0415
+    from predim_vtol.aero.predimrc import FuselageGeometry  # noqa: PLC0415
+    from predim_vtol.aero.predimrc import Settings  # noqa: PLC0415
+    from predim_vtol.aero.predimrc import StabGeometry  # noqa: PLC0415
+    from predim_vtol.aero.predimrc import WingGeometry  # noqa: PLC0415
 
     return {
         "wing": WingGeometry(

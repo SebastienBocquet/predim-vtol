@@ -1,14 +1,14 @@
-# Install predimrc_wrapper for the current user, without administrator rights.
+# Install predim-vtol for the current user, without administrator rights.
 # Keep this file ASCII: Windows PowerShell 5.1 reads a script without BOM as ANSI.
 param(
-    [string]$AppDir = (Join-Path $env:LOCALAPPDATA "Programs\predimrc_wrapper"),
-    [string]$WorkDir = (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "predimrc_wrapper"),
+    [string]$AppDir = (Join-Path $env:LOCALAPPDATA "Programs\predim_vtol"),
+    [string]$WorkDir = (Join-Path ([Environment]::GetFolderPath("MyDocuments")) "predim_vtol"),
     [switch]$NoShortcut,
     [switch]$NoLaunch
 )
 
 $ErrorActionPreference = "Stop"
-$ShortcutName = "PredimRC wrapper.lnk"
+$ShortcutName = "Predim VTOL.lnk"
 $PythonVersion = "3.12"
 
 function Invoke-Uv {
@@ -25,6 +25,17 @@ try {
     $script:Uv = Join-Path $PSScriptRoot "uv.exe"
     $wheel = Get-ChildItem -Path $PSScriptRoot -Filter "*.whl" | Select-Object -First 1
     if ($null -eq $wheel) { throw "No wheel next to install.ps1: extract the whole zip." }
+
+    # Former name (predimrc_wrapper): keep the studies, remove the old application.
+    $legacyWork = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "predimrc_wrapper"
+    if ((Test-Path $legacyWork) -and -not (Test-Path $WorkDir)) {
+        Move-Item -Path $legacyWork -Destination $WorkDir
+        Write-Host "Your studies moved from $legacyWork to $WorkDir"
+    }
+    $legacyApp = Join-Path $env:LOCALAPPDATA "Programs\predimrc_wrapper"
+    if (Test-Path $legacyApp) { Remove-Item -Recurse -Force $legacyApp }
+    $legacyShortcut = Join-Path ([Environment]::GetFolderPath("Desktop")) "PredimRC wrapper.lnk"
+    Remove-Item -Force -ErrorAction SilentlyContinue $legacyShortcut
 
     New-Item -ItemType Directory -Force -Path $AppDir | Out-Null
     $profiles = Join-Path $WorkDir "profiles"
@@ -60,7 +71,7 @@ try {
         Set-Content -Path $credentials -Encoding Ascii -Value "[general]`r`nemail = `"`""
     }
 
-    $ui = Join-Path $venv "Scripts\predimrc-ui.exe"
+    $ui = Join-Path $venv "Scripts\predim-vtol.exe"
     $uiArgs = "--browser.gatherUsageStats=false"
     if (-not $NoShortcut) {
         $desktop = [Environment]::GetFolderPath("Desktop")

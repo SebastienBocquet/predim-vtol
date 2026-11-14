@@ -7,18 +7,18 @@ import pytest
 
 pytest.importorskip("gemseo")
 
-from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
-from predimrc_wrapper.mdo import Parameter  # noqa: E402
-from predimrc_wrapper.mdo import PresizingDiscipline  # noqa: E402
-from predimrc_wrapper.mdo.discipline import OUTPUTS_TWO_PHASE  # noqa: E402
-from predimrc_wrapper.mdo.explore import explore  # noqa: E402
-from predimrc_wrapper.mdo.explore import pareto_mask  # noqa: E402
-from predimrc_wrapper.mdo.explore import samples  # noqa: E402
-from predimrc_wrapper.mdo.explore import study_from_optimisation  # noqa: E402
-from predimrc_wrapper.mdo.optimise import optimise  # noqa: E402
-from predimrc_wrapper.mdo.parameters import expand_overrides  # noqa: E402
-from predimrc_wrapper.mdo.studies import StudyStore  # noqa: E402
+from predim_vtol.aircraft import Project  # noqa: E402
+from predim_vtol.api import evaluate_two_phase  # noqa: E402
+from predim_vtol.mdo import Parameter  # noqa: E402
+from predim_vtol.mdo import PresizingDiscipline  # noqa: E402
+from predim_vtol.mdo.discipline import OUTPUTS_TWO_PHASE  # noqa: E402
+from predim_vtol.mdo.explore import explore  # noqa: E402
+from predim_vtol.mdo.explore import pareto_mask  # noqa: E402
+from predim_vtol.mdo.explore import samples  # noqa: E402
+from predim_vtol.mdo.explore import study_from_optimisation  # noqa: E402
+from predim_vtol.mdo.optimise import optimise  # noqa: E402
+from predim_vtol.mdo.parameters import expand_overrides  # noqa: E402
+from predim_vtol.mdo.studies import StudyStore  # noqa: E402
 
 BATTERY = Parameter("battery_mass_g", "battery.mass_g", "float", 400.0, 1200.0)
 

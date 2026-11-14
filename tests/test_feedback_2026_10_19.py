@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.api import evaluate_two_phase
-from predimrc_wrapper.calibration import calibrate_two_phase
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
+from predim_vtol.calibration import calibrate_two_phase
 from tests.helpers import ParabolicAero
 
 
@@ -39,7 +39,7 @@ def test_mac_from_predimrc_equals_the_wing_mac():
 
 def test_cg_check_levels():
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui.cg_view import cg_check  # noqa: PLC0415
+    from predim_vtol.ui.cg_view import cg_check  # noqa: PLC0415
 
     aero = _Aero()
     assert cg_check(None, 60.0, 5.0)[0] == "none"

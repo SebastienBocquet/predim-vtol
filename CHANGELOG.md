@@ -5,8 +5,28 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Changed (breaking)
+- Renamed the project `predimrc_wrapper` to **predim-vtol**, with no compatibility alias:
+  - distribution `predim-vtol`, package `predim_vtol`, command `predim-vtol` (was
+    `predimrc-ui`);
+  - the PredimRC modules moved to `predim_vtol.aero.predimrc` (was
+    `predimrc_wrapper.predimrc_wrapper`) and `predim_vtol.aero.cache` (was
+    `predimrc_wrapper.aero_cache`);
+  - environment variables `$PREDIM_VTOL_SETTINGS`, `$PREDIM_VTOL_STUDIES`,
+    `$PREDIM_VTOL_TEMPLATES`, `$PREDIM_VTOL_USER_DATA` (were `$PREDIMRC_*`);
+    `$PREDIMRC_PROFILES` and `$PREDIMRC_CACHE`, about PredimRC, are unchanged;
+  - user folder `~/.predim_vtol`: `~/.predimrc_wrapper` is renamed to it at first use;
+  - Windows: application in `%LOCALAPPDATA%\Programs\predim_vtol`, studies in
+    `Documents\predim_vtol`, shortcut "Predim VTOL"; the installer moves the studies of a
+    former installation and removes the former application and shortcut.
+- The MIC cards moved from `docs/models/` to `src/predim_vtol/mic/`: they are shipped with
+  the package, so the "Model cards" page also works in an installed application. Their
+  Traceability section (links to the specifications) is no longer shown in the application.
+- The stable requirements moved from `docs/requirements/` to `spdd/requirements/`, with the
+  rest of the specifications; the README no longer points to them.
+
 ### Fixed
-- Closing the console window of `predimrc-ui` left the Excel of PredimRC running in the
+- Closing the console window of `predimrc-ui` (now `predim-vtol`) left the Excel of PredimRC running in the
   background (Python is killed without its exit handlers): Excel is now killed when the
   console closes.
 

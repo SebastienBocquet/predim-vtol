@@ -6,10 +6,10 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft.drag_sources import drag_report
-from predimrc_wrapper.aircraft.drag_sources import v_arm_segments
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft.drag_sources import drag_report
+from predim_vtol.aircraft.drag_sources import v_arm_segments
 
 V_ARMS = {
     "name": "V-arms",
@@ -88,7 +88,7 @@ def test_shape_validated():
 
 def test_geometry_draws_the_arms():
     pytest.importorskip("plotly")
-    from predimrc_wrapper.ui import geometry  # noqa: PLC0415
+    from predim_vtol.ui import geometry  # noqa: PLC0415
 
     fig = geometry.top_view(_tricopter())
     assert sum(t.name == "V-arm" for t in fig.data) == 3

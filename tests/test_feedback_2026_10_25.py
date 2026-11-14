@@ -7,13 +7,13 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.api import evaluate_two_phase
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
 from tests.conftest import ROOT
 from tests.conftest import requires_excel
 
-APP = ROOT / "src" / "predimrc_wrapper" / "ui" / "app.py"
+APP = ROOT / "src" / "predim_vtol" / "ui" / "app.py"
 
 
 def test_hover_margins_with_the_safety_factor():
@@ -36,7 +36,7 @@ def test_hover_margins_with_the_safety_factor():
 
 def test_hover_rows_show_the_safety_columns():
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui import two_phase_view as tpv  # noqa: PLC0415
+    from predim_vtol.ui import two_phase_view as tpv  # noqa: PLC0415
 
     p = Project.template("tricopter").with_overrides({
         "test_data": [{"kind": "hover", "battery_power_w": 280.0}]
@@ -54,7 +54,7 @@ def test_hover_rows_show_the_safety_columns():
 def test_editor_base_is_the_same_table_at_every_rerun():
     """The data editor gets back the table it was first given, not the edited rows."""
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui import forms  # noqa: PLC0415
+    from predim_vtol.ui import forms  # noqa: PLC0415
 
     st = SimpleNamespace(session_state={})
     first = forms.editor_base(st, "3:mass_items", 3, lambda: ["initial"])
@@ -120,13 +120,13 @@ def test_four_in_one_needs_its_board_mass():
 @pytest.mark.parametrize("cruise_on_board", [False, True])
 def test_four_in_one_mass_replaces_the_board_escs(cruise_on_board):
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui.mass_view import mass_rows  # noqa: PLC0415
+    from predim_vtol.ui.mass_view import mass_rows  # noqa: PLC0415
 
     board = _four_in_one(cruise_on_board)
     separate = board.with_overrides({"wiring": {"lift_esc": "separate"}})
     on_board = [m for m in board.motors if board.on_four_in_one(m)]
     removed = sum(board.propulsion_units[m.unit].esc_mass_g for m in on_board)
-    from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
+    from predim_vtol.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
 
     delta = AircraftModel(board).total_mass_kg - AircraftModel(separate).total_mass_kg
     cables = wiring_mass_kg(board) - wiring_mass_kg(
@@ -147,7 +147,7 @@ def test_four_in_one_mass_replaces_the_board_escs(cruise_on_board):
 @requires_excel
 @pytest.mark.parametrize("cruise_on_board", [False, True])
 def test_four_in_one_loss_bar(cruise_on_board):
-    from predimrc_wrapper.mission.power_budget import power_budget  # noqa: PLC0415
+    from predim_vtol.mission.power_budget import power_budget  # noqa: PLC0415
 
     p = _four_in_one(cruise_on_board)
     budgets = power_budget(AircraftModel(p), evaluate_two_phase(p))
@@ -165,8 +165,8 @@ def test_four_in_one_loss_bar(cruise_on_board):
 
 
 def test_cruise_on_four_in_one_wiring_and_cost():
-    from predimrc_wrapper.cost.model import cost  # noqa: PLC0415
-    from predimrc_wrapper.propulsion.wiring import default_layout  # noqa: PLC0415
+    from predim_vtol.cost.model import cost  # noqa: PLC0415
+    from predim_vtol.propulsion.wiring import default_layout  # noqa: PLC0415
 
     p = _four_in_one(True)
     layout = default_layout(p)
@@ -176,9 +176,9 @@ def test_cruise_on_four_in_one_wiring_and_cost():
 
 
 def test_mt2216_motors_propellers_and_tests_are_shipped():
-    from predimrc_wrapper.data import default_database  # noqa: PLC0415
-    from predimrc_wrapper.data import default_propellers  # noqa: PLC0415
-    from predimrc_wrapper.data.tests import default_tests  # noqa: PLC0415
+    from predim_vtol.data import default_database  # noqa: PLC0415
+    from predim_vtol.data import default_propellers  # noqa: PLC0415
+    from predim_vtol.data.tests import default_tests  # noqa: PLC0415
 
     for motor in ("tmotor-mt2216-1100kv", "tmotor-mt2216-900kv"):
         assert default_database().motor(motor).mass_kg == pytest.approx(0.075)

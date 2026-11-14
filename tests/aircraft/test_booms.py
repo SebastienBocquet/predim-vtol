@@ -5,15 +5,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft.booms import anchor
-from predimrc_wrapper.aircraft.booms import boom_drag
-from predimrc_wrapper.aircraft.booms import booms
-from predimrc_wrapper.aircraft.drag import DragModel
-from predimrc_wrapper.data.boom_sections import boom_section
-from predimrc_wrapper.data.boom_sections import boom_sections
-from predimrc_wrapper.propulsion.wiring import default_layout
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft.booms import anchor
+from predim_vtol.aircraft.booms import boom_drag
+from predim_vtol.aircraft.booms import booms
+from predim_vtol.aircraft.drag import DragModel
+from predim_vtol.data.boom_sections import boom_section
+from predim_vtol.data.boom_sections import boom_sections
+from predim_vtol.propulsion.wiring import default_layout
 
 CF, CD_END = DragModel().p.boom_cf, DragModel().p.boom_cd_end
 

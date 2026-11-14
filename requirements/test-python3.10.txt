@@ -7,7 +7,7 @@ cloudpickle==3.1.2
 colorama==0.4.6 ; sys_platform == 'win32'
     # via pytest
 covdefaults==2.3.0
-    # via predimrc-wrapper (pyproject.toml:dev)
+    # via predim-vtol (pyproject.toml:dev)
 coverage==7.16.2
     # via
     #   covdefaults
@@ -20,11 +20,11 @@ iniconfig==2.3.1
     # via pytest
 joblib==1.6.0
     # via
-    #   predimrc-wrapper (pyproject.toml)
+    #   predim-vtol (pyproject.toml)
     #   scikit-learn
 numpy==2.2.6
     # via
-    #   predimrc-wrapper (pyproject.toml)
+    #   predim-vtol (pyproject.toml)
     #   scikit-learn
     #   scipy
 packaging==26.3
@@ -34,29 +34,29 @@ pluggy==1.7.0
     #   pytest
     #   pytest-cov
 pydantic==2.14.1
-    # via predimrc-wrapper (pyproject.toml)
+    # via predim-vtol (pyproject.toml)
 pydantic-core==2.50.1
     # via pydantic
 pygments==2.21.0
     # via pytest
 pytest==8.4.2
     # via
-    #   predimrc-wrapper (pyproject.toml:dev)
+    #   predim-vtol (pyproject.toml:dev)
     #   pytest-cov
     #   pytest-xdist
 pytest-cov==7.1.0
-    # via predimrc-wrapper (pyproject.toml:dev)
+    # via predim-vtol (pyproject.toml:dev)
 pytest-xdist==3.8.0
-    # via predimrc-wrapper (pyproject.toml:dev)
+    # via predim-vtol (pyproject.toml:dev)
 pywin32==312 ; sys_platform == 'win32'
     # via xlwings
 pyyaml==6.0.3
-    # via predimrc-wrapper (pyproject.toml)
+    # via predim-vtol (pyproject.toml)
 scikit-learn==1.7.2
-    # via predimrc-wrapper (pyproject.toml)
+    # via predim-vtol (pyproject.toml)
 scipy==1.15.3
     # via
-    #   predimrc-wrapper (pyproject.toml)
+    #   predim-vtol (pyproject.toml)
     #   scikit-learn
 threadpoolctl==3.7.0
     # via scikit-learn
@@ -73,4 +73,4 @@ typing-extensions==4.16.0
 typing-inspection==0.4.4
     # via pydantic
 xlwings==0.37.0 ; sys_platform == 'win32'
-    # via predimrc-wrapper (pyproject.toml)
+    # via predim-vtol (pyproject.toml)

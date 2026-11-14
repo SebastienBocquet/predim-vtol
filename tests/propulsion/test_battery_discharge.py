@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.propulsion.battery import BatteryModel
+from predim_vtol.propulsion.battery import BatteryModel
 
 
 @pytest.fixture(params=["lipo", "li-ion"])

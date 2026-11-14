@@ -5,14 +5,14 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.data import TestDatabase
-from predimrc_wrapper.data import default_tests
-from predimrc_wrapper.data.tests import parse_test
-from predimrc_wrapper.propulsion import ThrustPowerSurrogate
-from predimrc_wrapper.propulsion.surrogate import Pair
-from predimrc_wrapper.propulsion.surrogate import ThrustPowerFit
-from predimrc_wrapper.propulsion.surrogate import default_fit
-from predimrc_wrapper.propulsion.surrogate import physics_mean
+from predim_vtol.data import TestDatabase
+from predim_vtol.data import default_tests
+from predim_vtol.data.tests import parse_test
+from predim_vtol.propulsion import ThrustPowerSurrogate
+from predim_vtol.propulsion.surrogate import Pair
+from predim_vtol.propulsion.surrogate import ThrustPowerFit
+from predim_vtol.propulsion.surrogate import default_fit
+from predim_vtol.propulsion.surrogate import physics_mean
 
 
 def test_shipped_data_meet_the_guarantee():

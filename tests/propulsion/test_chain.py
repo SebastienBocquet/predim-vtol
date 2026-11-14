@@ -5,15 +5,15 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.propulsion import BatteryModel
-from predimrc_wrapper.propulsion import PowerChain
-from predimrc_wrapper.propulsion.chain import BranchSpec
-from predimrc_wrapper.propulsion.wiring import awg_area_mm2
-from predimrc_wrapper.propulsion.wiring import awg_for_current
-from predimrc_wrapper.propulsion.wiring import default_layout
-from predimrc_wrapper.propulsion.wiring import resistance_ohm
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.propulsion import BatteryModel
+from predim_vtol.propulsion import PowerChain
+from predim_vtol.propulsion.chain import BranchSpec
+from predim_vtol.propulsion.wiring import awg_area_mm2
+from predim_vtol.propulsion.wiring import awg_for_current
+from predim_vtol.propulsion.wiring import default_layout
+from predim_vtol.propulsion.wiring import resistance_ohm
 
 
 def test_copper_resistance():

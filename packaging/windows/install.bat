@@ -1,5 +1,5 @@
 @echo off
-rem One-click installer of predimrc_wrapper: double-click after extracting the zip.
+rem One-click installer of predim-vtol: double-click after extracting the zip.
 setlocal
 if not exist "%~dp0uv.exe" goto not_extracted
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0install.ps1" %*

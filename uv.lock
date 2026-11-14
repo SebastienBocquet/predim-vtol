@@ -1912,7 +1912,7 @@ wheels = [
 ]
 
 [[package]]
-name = "predimrc-wrapper"
+name = "predim-vtol"
 source = { editable = "." }
 dependencies = [
     { name = "joblib" },

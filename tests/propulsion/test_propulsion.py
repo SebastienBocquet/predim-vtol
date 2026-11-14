@@ -5,11 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.propulsion import BatteryModel
-from predimrc_wrapper.propulsion import MomentumPropeller
-from predimrc_wrapper.propulsion import MotorModel
-from predimrc_wrapper.propulsion import PropulsionUnit
-from predimrc_wrapper.propulsion import density
+from predim_vtol.propulsion import BatteryModel
+from predim_vtol.propulsion import MomentumPropeller
+from predim_vtol.propulsion import MotorModel
+from predim_vtol.propulsion import PropulsionUnit
+from predim_vtol.propulsion import density
 
 
 def test_isa():
@@ -127,7 +127,7 @@ def test_unit_vectorised():
 
 
 def test_blade_element_thrust_inverse():
-    from predimrc_wrapper.propulsion import BladeElementPropeller  # noqa: PLC0415
+    from predim_vtol.propulsion import BladeElementPropeller  # noqa: PLC0415
 
     prop = BladeElementPropeller(diameter_m=0.3048, pitch_m=0.1016)
     n = prop.n_for_thrust(np.array([3.0, 6.0]), np.array([0.0, 10.0]), 1.225)
@@ -141,7 +141,7 @@ def test_blade_element_thrust_inverse():
 )
 def test_blade_element_static_closed_form(diameter_in, pitch_in):
     """The static closed form gives the root-finding rotation speed, NaN and 0 included."""
-    from predimrc_wrapper.propulsion import BladeElementPropeller  # noqa: PLC0415
+    from predim_vtol.propulsion import BladeElementPropeller  # noqa: PLC0415
 
     prop = BladeElementPropeller(
         diameter_m=diameter_in * 0.0254, pitch_m=pitch_in * 0.0254
@@ -157,7 +157,7 @@ def test_blade_element_static_closed_form(diameter_in, pitch_in):
 
 def test_blade_element_pitch_trends():
     """A higher pitch: more static power at equal thrust, more efficient at speed."""
-    from predimrc_wrapper.propulsion import BladeElementPropeller  # noqa: PLC0415
+    from predim_vtol.propulsion import BladeElementPropeller  # noqa: PLC0415
 
     low, high = (
         BladeElementPropeller(diameter_m=0.254, pitch_m=p * 0.0254) for p in (4.5, 8.0)

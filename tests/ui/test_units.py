@@ -6,7 +6,7 @@ import math
 
 import pytest
 
-from predimrc_wrapper.ui import units
+from predim_vtol.ui import units
 
 
 def test_thrust_text_n_and_kg():
@@ -24,7 +24,7 @@ def test_speeds_km_h():
 
 def test_airspeed_fields_in_km_h():
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui.forms import is_airspeed  # noqa: PLC0415
+    from predim_vtol.ui.forms import is_airspeed  # noqa: PLC0415
 
     assert is_airspeed("speed_m_s")
     assert is_airspeed("cruise_max_speed_m_s")

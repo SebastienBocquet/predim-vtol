@@ -9,13 +9,13 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import DragModel
-from predimrc_wrapper.aircraft import OverrideError
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft import ProjectError
-from predimrc_wrapper.aircraft import SpeedPolar
-from predimrc_wrapper.aircraft import defaults_left
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import DragModel
+from predim_vtol.aircraft import OverrideError
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft import ProjectError
+from predim_vtol.aircraft import SpeedPolar
+from predim_vtol.aircraft import defaults_left
 from tests.conftest import requires_excel
 
 
@@ -86,7 +86,7 @@ def test_defaults_left():
 def test_mass_budget_exact():
     model = AircraftModel(Project.template("multicopter"))
     unit = model.units["lift"].mass_kg
-    from predimrc_wrapper.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
+    from predim_vtol.propulsion.wiring import wiring_mass_kg  # noqa: PLC0415
 
     wiring = wiring_mass_kg(model.project)
     assert model.mass["breakdown"]["wiring"] == pytest.approx(wiring)
@@ -158,7 +158,7 @@ def test_rotor_positions():
 def test_multicopter_without_xlwings():
     code = (
         "import sys; sys.modules['xlwings'] = None\n"
-        "from predimrc_wrapper.aircraft import AircraftModel, Project\n"
+        "from predim_vtol.aircraft import AircraftModel, Project\n"
         "m = AircraftModel(Project.template('multicopter'))\n"
         "print(float(m.drag(10.0)['drag_n']))\n"
     )

@@ -129,7 +129,7 @@ select = [
 [lint.flake8-type-checking]
 runtime-evaluated-base-classes = [
     "pydantic.BaseModel",
-    "predimrc_wrapper.aircraft.project._Strict",
+    "predim_vtol.aircraft.project._Strict",
 ]
 
 [lint.isort]

@@ -5,17 +5,17 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft.aero import to_predimrc
-from predimrc_wrapper.aircraft.cruise import cruise_curve
-from predimrc_wrapper.aircraft.cruise import target_points
-from predimrc_wrapper.core.units import GRAVITY
-from predimrc_wrapper.data.drag_shapes import drag_shapes
-from predimrc_wrapper.predimrc_wrapper import ImposedSpeed
-from predimrc_wrapper.predimrc_wrapper import PredimRCError
-from predimrc_wrapper.predimrc_wrapper import discover_profiles
-from predimrc_wrapper.predimrc_wrapper import workbook_path
+from predim_vtol.aero.predimrc import ImposedSpeed
+from predim_vtol.aero.predimrc import PredimRCError
+from predim_vtol.aero.predimrc import discover_profiles
+from predim_vtol.aero.predimrc import workbook_path
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft.aero import to_predimrc
+from predim_vtol.aircraft.cruise import cruise_curve
+from predim_vtol.aircraft.cruise import target_points
+from predim_vtol.core.units import GRAVITY
+from predim_vtol.data.drag_shapes import drag_shapes
 from tests.conftest import requires_excel
 from tests.helpers import ParabolicAero
 

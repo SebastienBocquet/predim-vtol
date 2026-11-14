@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.api import evaluate_two_phase
-from predimrc_wrapper.mission.power_budget import budget_rows
-from predimrc_wrapper.mission.power_budget import power_budget
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
+from predim_vtol.mission.power_budget import budget_rows
+from predim_vtol.mission.power_budget import power_budget
 from tests.helpers import ParabolicAero
 
 
@@ -33,7 +33,7 @@ def test_hover_useful_power_is_the_ideal_induced_power():
     aircraft = AircraftModel(project)
     import numpy as np  # noqa: PLC0415
 
-    from predimrc_wrapper.core.units import INCH  # noqa: PLC0415
+    from predim_vtol.core.units import INCH  # noqa: PLC0415
 
     area = np.pi * (project.propulsion_units["lift"].prop_diameter_in * INCH) ** 2 / 4
     expected = sum(m.thrust_n**1.5 for m in result.hover.motors) / np.sqrt(

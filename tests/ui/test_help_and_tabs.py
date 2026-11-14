@@ -7,31 +7,31 @@ import pytest
 pytest.importorskip("streamlit")
 pytest.importorskip("plotly")
 
-from predimrc_wrapper.aircraft import AircraftModel  # noqa: E402
-from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
-from predimrc_wrapper.cost import cost  # noqa: E402
-from predimrc_wrapper.data import default_database  # noqa: E402
-from predimrc_wrapper.mission.power_budget import budget_rows  # noqa: E402
-from predimrc_wrapper.mission.power_budget import power_budget  # noqa: E402
-from predimrc_wrapper.reliability import motor_out  # noqa: E402
-from predimrc_wrapper.sizing import motor_power_ranges  # noqa: E402
-from predimrc_wrapper.ui import cost_view as cov  # noqa: E402
-from predimrc_wrapper.ui import drag_view as dv  # noqa: E402
-from predimrc_wrapper.ui import hover_view as hv  # noqa: E402
-from predimrc_wrapper.ui import mic_page  # noqa: E402
-from predimrc_wrapper.ui import prop_sizing as ps  # noqa: E402
-from predimrc_wrapper.ui import propulsion_charts as pc  # noqa: E402
-from predimrc_wrapper.ui import test_data_view as tdv  # noqa: E402
-from predimrc_wrapper.ui import two_phase_view as tpv  # noqa: E402
-from predimrc_wrapper.ui.help import HelpRegistry  # noqa: E402
-from predimrc_wrapper.ui.help import model_entries  # noqa: E402
-from predimrc_wrapper.ui.help import schema_entries  # noqa: E402
+from predim_vtol.aircraft import AircraftModel  # noqa: E402
+from predim_vtol.aircraft import Project  # noqa: E402
+from predim_vtol.api import evaluate_two_phase  # noqa: E402
+from predim_vtol.cost import cost  # noqa: E402
+from predim_vtol.data import default_database  # noqa: E402
+from predim_vtol.mission.power_budget import budget_rows  # noqa: E402
+from predim_vtol.mission.power_budget import power_budget  # noqa: E402
+from predim_vtol.reliability import motor_out  # noqa: E402
+from predim_vtol.sizing import motor_power_ranges  # noqa: E402
+from predim_vtol.ui import cost_view as cov  # noqa: E402
+from predim_vtol.ui import drag_view as dv  # noqa: E402
+from predim_vtol.ui import hover_view as hv  # noqa: E402
+from predim_vtol.ui import mic_page  # noqa: E402
+from predim_vtol.ui import prop_sizing as ps  # noqa: E402
+from predim_vtol.ui import propulsion_charts as pc  # noqa: E402
+from predim_vtol.ui import test_data_view as tdv  # noqa: E402
+from predim_vtol.ui import two_phase_view as tpv  # noqa: E402
+from predim_vtol.ui.help import HelpRegistry  # noqa: E402
+from predim_vtol.ui.help import model_entries  # noqa: E402
+from predim_vtol.ui.help import schema_entries  # noqa: E402
 from tests.conftest import ROOT  # noqa: E402
 from tests.conftest import requires_excel  # noqa: E402
 from tests.helpers import ParabolicAero  # noqa: E402
 
-APP = ROOT / "src" / "predimrc_wrapper" / "ui" / "app.py"
+APP = ROOT / "src" / "predim_vtol" / "ui" / "app.py"
 
 
 def _displayed_labels() -> set[str]:
@@ -120,7 +120,10 @@ def test_mic_cards_listed():
         "MIC-CFG-SIZ",
         "MIC-CAL-REF",
     } <= ids
-    assert "Interface" in mic_page.render_text("MIC-MIS-TWO")
+    text = mic_page.render_text("MIC-MIS-TWO")
+    assert "Interface" in text
+    assert "Traceability" not in text
+    assert "## Verification and validation" in text
 
 
 def test_pages_and_run():
@@ -154,7 +157,7 @@ def test_pages_and_run():
 def test_save_run_and_runs_page(tmp_path, monkeypatch):
     from streamlit.testing.v1 import AppTest  # noqa: PLC0415
 
-    monkeypatch.setenv("PREDIMRC_STUDIES", str(tmp_path))
+    monkeypatch.setenv("PREDIM_VTOL_STUDIES", str(tmp_path))
     at = AppTest.from_file(str(APP), default_timeout=300).run()
     at.selectbox(key="configuration").set_value("tricopter").run()
     next(b for b in at.button if b.label == "Run").click().run()
@@ -203,8 +206,8 @@ def test_mission_speeds_in_kmh():
 
 
 def test_positions_figure_dimensions():
-    from predimrc_wrapper.ui.positions_view import overlapping  # noqa: PLC0415
-    from predimrc_wrapper.ui.positions_view import positions_figure  # noqa: PLC0415
+    from predim_vtol.ui.positions_view import overlapping  # noqa: PLC0415
+    from predim_vtol.ui.positions_view import positions_figure  # noqa: PLC0415
 
     data = Project.template("quadplane").to_dict()
     fig = positions_figure(data["motors"], data["propulsion_units"], True)
@@ -282,7 +285,7 @@ def test_hover_tilt_rows_add_the_tilting_motors_in_transition():
 def test_custom_motor_added_and_chosen_for_a_unit_type(tmp_path, monkeypatch):
     from streamlit.testing.v1 import AppTest  # noqa: PLC0415
 
-    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    monkeypatch.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path))
     default_database.cache_clear()
     try:
         at = AppTest.from_file(str(APP), default_timeout=300).run()
@@ -334,10 +337,10 @@ def test_typed_test_rows_drop_empty_and_fill_power():
 def test_propeller_and_test_forms_of_the_hover_tab(tmp_path, monkeypatch):
     from streamlit.testing.v1 import AppTest  # noqa: PLC0415
 
-    from predimrc_wrapper.data import default_propellers  # noqa: PLC0415
-    from predimrc_wrapper.data import default_tests  # noqa: PLC0415
+    from predim_vtol.data import default_propellers  # noqa: PLC0415
+    from predim_vtol.data import default_tests  # noqa: PLC0415
 
-    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    monkeypatch.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path))
     caches = (default_database, default_propellers, default_tests)
     for c in caches:
         c.cache_clear()

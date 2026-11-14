@@ -1,6 +1,6 @@
 # Third-party notices
 
-predimrc_wrapper is distributed under the GNU LGPL version 3 (`LICENSE.txt`, which
+predim_vtol is distributed under the GNU LGPL version 3 (`LICENSE.txt`, which
 supplements the GNU GPL version 3, `LICENSES/GPL-3.0.txt`). That licence covers this
 project only, not the components below, which keep their own terms.
 
@@ -27,7 +27,7 @@ Its release note says instead "devient open-source (licence GNU)" for v2.50 (201
 licence, and no licence text comes with it. Check the terms given with your own version of
 PredimRC.
 
-`src/predimrc_wrapper/data/drag_shapes.yaml` records three accessory drag coefficients read
+`src/predim_vtol/data/drag_shapes.yaml` records three accessory drag coefficients read
 from PredimRC by `tools/extract_drag_shapes.py`, with their source. They are not covered by
 the LGPL.
 
@@ -37,7 +37,7 @@ Required for the PredimRC evaluations, not included, licensed separately by Micr
 
 ## VIMSEO
 
-`src/predimrc_wrapper/runs/{collection,operations,query}.py` are ported from VIMSEO,
+`src/predim_vtol/runs/{collection,operations,query}.py` are ported from VIMSEO,
 Copyright 2021 IRT Saint Exupery, under the GNU LGPL version 3.
 
 ## uv

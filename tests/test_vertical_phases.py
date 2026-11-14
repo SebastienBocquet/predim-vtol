@@ -5,13 +5,13 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.mission.two_phase import TwoPhaseEvaluation
-from predimrc_wrapper.propulsion.wiring import awg_for_current
-from predimrc_wrapper.propulsion.wiring import conductor_mass_g_per_m
-from predimrc_wrapper.propulsion.wiring import default_gauges
-from predimrc_wrapper.propulsion.wiring import wiring_mass_kg
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.mission.two_phase import TwoPhaseEvaluation
+from predim_vtol.propulsion.wiring import awg_for_current
+from predim_vtol.propulsion.wiring import conductor_mass_g_per_m
+from predim_vtol.propulsion.wiring import default_gauges
+from predim_vtol.propulsion.wiring import wiring_mass_kg
 from tests.helpers import ParabolicAero
 
 
@@ -107,8 +107,8 @@ def test_gauges_from_the_motor_maximum_current_and_mass_budget():
 
 def test_mass_recap_adds_up_to_the_total():
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui.mass_view import battery_text  # noqa: PLC0415
-    from predimrc_wrapper.ui.mass_view import mass_rows  # noqa: PLC0415
+    from predim_vtol.ui.mass_view import battery_text  # noqa: PLC0415
+    from predim_vtol.ui.mass_view import mass_rows  # noqa: PLC0415
 
     for name in ("multicopter", "tricopter", "quadplane", "tiltrotor"):
         aircraft = AircraftModel(Project.template(name))
@@ -125,8 +125,8 @@ def test_tricopter_template_keeps_its_measured_mass():
 
 def test_charts_units_and_range():
     pytest.importorskip("plotly")
-    from predimrc_wrapper.ui import cruise_view as cv  # noqa: PLC0415
-    from predimrc_wrapper.ui import hover_view as hv  # noqa: PLC0415
+    from predim_vtol.ui import cruise_view as cv  # noqa: PLC0415
+    from predim_vtol.ui import hover_view as hv  # noqa: PLC0415
 
     _, r = _solve("tiltrotor")
     for pair in hv.pairs(r):
@@ -141,7 +141,7 @@ def test_charts_units_and_range():
 
 def test_cruise_tab_shows_the_predimrc_stability_with_its_descriptions():
     pytest.importorskip("plotly")
-    from predimrc_wrapper.ui import cruise_view as cv  # noqa: PLC0415
+    from predim_vtol.ui import cruise_view as cv  # noqa: PLC0415
 
     _, r = _solve("tiltrotor")
     rows = {row["quantity"]: row for row in cv.stability_rows(r)}
@@ -186,7 +186,7 @@ def test_front_yaw_tilt_is_differential():
     assert not forward[0] & forward[1]
     assert r.margins["yaw_tilt"] < r.margins["transition"]
     assert [p.name for p in r.phases] == ["climb", "hover", "transition", "descent"]
-    from predimrc_wrapper.ui import two_phase_view as tpv  # noqa: PLC0415
+    from predim_vtol.ui import two_phase_view as tpv  # noqa: PLC0415
 
     rows = tpv.hover_tilt_rows(r, front, theta, "front", delta)
     assert [row["phase"] for row in rows if "worst" in row["phase"]] == [
@@ -208,7 +208,7 @@ def test_yaw_tilt_of_the_tricopter_rear_rotor_is_lateral():
     assert case.vertical == {rear: pytest.approx(k)}
     worst = next(m for m in case.point.motors if m.index == rear)
     assert worst.thrust_n == pytest.approx(r.hover.motors[rear].thrust_n / k, rel=1e-9)
-    from predimrc_wrapper.ui import two_phase_view as tpv  # noqa: PLC0415
+    from predim_vtol.ui import two_phase_view as tpv  # noqa: PLC0415
 
     rows = tpv.hover_tilt_rows(r, set(), 60.0, "rear", delta)
     assert [row["phase"] for row in rows if "worst" in row["phase"]] == [
