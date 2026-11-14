@@ -11,19 +11,19 @@ import time
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft.project import DragSource
-from predimrc_wrapper.cost import cost
-from predimrc_wrapper.data.prices import default_prices
-from predimrc_wrapper.predimrc_wrapper import AeroResults
-from predimrc_wrapper.predimrc_wrapper import ExcelThreadBackend
-from predimrc_wrapper.predimrc_wrapper import ImposedSpeed
+from predim_vtol.aero.base import AeroResults
+from predim_vtol.aero.base import ImposedSpeed
+from predim_vtol.aero.predimrc import ExcelThreadBackend
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft.project import DragSource
+from predim_vtol.cost import cost
+from predim_vtol.data.prices import default_prices
 from tests.conftest import PROFILES
 from tests.conftest import ROOT
 from tests.conftest import requires_excel
 
-APP = ROOT / "src" / "predimrc_wrapper" / "ui" / "app.py"
+APP = ROOT / "src" / "predim_vtol" / "ui" / "app.py"
 FILLED = {
     "count": 2,
     "n_blades": 2,
@@ -41,7 +41,7 @@ FILLED = {
 @pytest.fixture
 def dv():
     pytest.importorskip("streamlit")
-    from predimrc_wrapper.ui import drag_view  # noqa: PLC0415
+    from predim_vtol.ui import drag_view  # noqa: PLC0415
 
     return drag_view
 
@@ -162,7 +162,7 @@ def _in_thread(function):
 
 
 def test_inputs_and_outputs_round_trip(reference_case):
-    from predimrc_wrapper import aero_cache  # noqa: PLC0415
+    from predim_vtol.aero import cache as aero_cache  # noqa: PLC0415
 
     data = aero_cache.encode_inputs(**reference_case)
     assert all(not np.isnan(v).any() for v in data.values() if v.dtype.kind == "f")
@@ -196,7 +196,7 @@ def test_excel_thread_backend_runs_in_one_thread(reference_case):
 def test_excel_thread_backend_closes_excel_at_exit():
     """A session never closed (GUI stopped by Ctrl+C) is closed in its thread at exit."""
     code = (
-        "from predimrc_wrapper.predimrc_wrapper import ExcelThreadBackend\n"
+        "from predim_vtol.aero.predimrc import ExcelThreadBackend\n"
         "class Fake:\n"
         "    def close(self):\n"
         "        print('closed', flush=True)\n"
@@ -224,9 +224,30 @@ def test_excel_thread_backend_kills_excel_when_its_thread_is_gone():
         excel.kill()
 
 
+@pytest.mark.parametrize(("event", "killed"), [(2, True), (0, False)])
+def test_closing_the_console_kills_excel(event, killed):
+    """Closing the console window (2) kills Excel; Ctrl+C (0) leaves it to the clean exit."""
+    from predim_vtol.ui.cli import on_console_event  # noqa: PLC0415
+
+    excel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(60)"])
+    try:
+        fake = FakeWrapper()
+        fake._app = type("App", (), {"pid": excel.pid})()
+        backend = ExcelThreadBackend(wrapper_factory=lambda: fake)
+        backend._call(backend._session)
+        assert on_console_event(event) is False  # the next handler still runs
+        if killed:
+            assert excel.wait(timeout=10) is not None
+        else:
+            assert excel.poll() is None
+        backend.close()
+    finally:
+        excel.kill()
+
+
 def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_path):
     pytest.importorskip("gemseo")
-    from predimrc_wrapper.aero_cache import CachedBackend  # noqa: PLC0415
+    from predim_vtol.aero.cache import CachedBackend  # noqa: PLC0415
 
     path = tmp_path / "c.h5"
     fake = FakeWrapper()
@@ -253,7 +274,7 @@ def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_pa
 @requires_excel
 def test_gui_backend_from_several_threads(reference_case, tmp_path, caplog):
     pytest.importorskip("gemseo")
-    from predimrc_wrapper.aero_cache import open_backend  # noqa: PLC0415
+    from predim_vtol.aero.cache import open_backend  # noqa: PLC0415
 
     backend = open_backend("SD7003", PROFILES, tmp_path / "c.h5")
     first = _in_thread(lambda: backend.evaluate(**reference_case))
@@ -279,8 +300,8 @@ class FakeSession:
 
 def test_gui_session_released_like_a_context_manager(monkeypatch):
     pytest.importorskip("streamlit")
-    from predimrc_wrapper import aero_cache  # noqa: PLC0415
-    from predimrc_wrapper.ui import session  # noqa: PLC0415
+    from predim_vtol.aero import cache as aero_cache  # noqa: PLC0415
+    from predim_vtol.ui import session  # noqa: PLC0415
 
     monkeypatch.setattr(aero_cache, "open_backend", lambda p, f: FakeSession(p))
     session.predimrc_session.clear()
@@ -306,7 +327,7 @@ def _units_data():
 
 
 def test_rename_unit_renames_its_motors_and_keeps_the_order():
-    from predimrc_wrapper.ui import state  # noqa: PLC0415
+    from predim_vtol.ui import state  # noqa: PLC0415
 
     data = _units_data()
     state.rename_unit(data, "front", " nose ")
@@ -319,7 +340,7 @@ def test_rename_unit_renames_its_motors_and_keeps_the_order():
 
 
 def test_remove_unit_moves_its_motors_to_the_replacement():
-    from predimrc_wrapper.ui import state  # noqa: PLC0415
+    from predim_vtol.ui import state  # noqa: PLC0415
 
     data = _units_data()
     with pytest.raises(ValueError, match="choose"):

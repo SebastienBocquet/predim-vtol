@@ -9,18 +9,18 @@ import pytest
 pytest.importorskip("streamlit")
 pytest.importorskip("plotly")
 
-from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.aircraft import layouts  # noqa: E402
-from predimrc_wrapper.aircraft.project import BatterySpec  # noqa: E402
-from predimrc_wrapper.aircraft.project import FlightPoint  # noqa: E402
-from predimrc_wrapper.aircraft.project import PropulsionSpec  # noqa: E402
-from predimrc_wrapper.aircraft.project import WingSpec  # noqa: E402
-from predimrc_wrapper.ui import forms  # noqa: E402
-from predimrc_wrapper.ui import geometry  # noqa: E402
-from predimrc_wrapper.ui import state  # noqa: E402
+from predim_vtol.aircraft import Project  # noqa: E402
+from predim_vtol.aircraft import layouts  # noqa: E402
+from predim_vtol.aircraft.project import BatterySpec  # noqa: E402
+from predim_vtol.aircraft.project import FlightPoint  # noqa: E402
+from predim_vtol.aircraft.project import PropulsionSpec  # noqa: E402
+from predim_vtol.aircraft.project import WingSpec  # noqa: E402
+from predim_vtol.ui import forms  # noqa: E402
+from predim_vtol.ui import geometry  # noqa: E402
+from predim_vtol.ui import state  # noqa: E402
 from tests.conftest import ROOT  # noqa: E402
 
-APP = ROOT / "src" / "predimrc_wrapper" / "ui" / "app.py"
+APP = ROOT / "src" / "predim_vtol" / "ui" / "app.py"
 
 
 # --- geometry -------------------------------------------------------------------
@@ -181,7 +181,7 @@ def test_app_smoke_multicopter():
 
 
 def test_cli_argv():
-    from predimrc_wrapper.ui.cli import streamlit_argv  # noqa: PLC0415
+    from predim_vtol.ui.cli import streamlit_argv  # noqa: PLC0415
 
     argv = streamlit_argv(["p.yaml", "--server.port", "8599", "--server.headless=true"])
     assert argv[:2] == ["streamlit", "run"]
@@ -226,10 +226,10 @@ def test_configuration_switch_updates_the_tabs():
 
 
 def test_pitch_study_and_tables():
-    from predimrc_wrapper.aircraft import AircraftModel  # noqa: PLC0415
-    from predimrc_wrapper.data import default_database  # noqa: PLC0415
-    from predimrc_wrapper.sizing import motor_power_ranges  # noqa: PLC0415
-    from predimrc_wrapper.ui import propulsion_charts as pc  # noqa: PLC0415
+    from predim_vtol.aircraft import AircraftModel  # noqa: PLC0415
+    from predim_vtol.data import default_database  # noqa: PLC0415
+    from predim_vtol.sizing import motor_power_ranges  # noqa: PLC0415
+    from predim_vtol.ui import propulsion_charts as pc  # noqa: PLC0415
 
     project = Project.template("quadplane")
     aircraft = AircraftModel(project)
@@ -261,9 +261,9 @@ def test_pitch_study_and_tables():
 
 def test_optimisation_helpers():
     pytest.importorskip("gemseo")
-    from predimrc_wrapper.mdo.optimise import OptimisationRun  # noqa: PLC0415
-    from predimrc_wrapper.mdo.optimise import OptimisationSummary  # noqa: PLC0415
-    from predimrc_wrapper.ui import optimisation as opt  # noqa: PLC0415
+    from predim_vtol.mdo.optimise import OptimisationRun  # noqa: PLC0415
+    from predim_vtol.mdo.optimise import OptimisationSummary  # noqa: PLC0415
+    from predim_vtol.ui import optimisation as opt  # noqa: PLC0415
 
     rows = opt.default_variables(Project.template("quadplane"))
     paths = [r["path"] for r in rows]

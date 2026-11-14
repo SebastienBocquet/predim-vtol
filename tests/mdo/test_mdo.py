@@ -12,14 +12,14 @@ import pytest
 
 pytest.importorskip("gemseo")
 
-from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.api import evaluate_two_phase  # noqa: E402
-from predimrc_wrapper.mdo import OUTPUTS  # noqa: E402
-from predimrc_wrapper.mdo import Parameter  # noqa: E402
-from predimrc_wrapper.mdo import PresizingDiscipline  # noqa: E402
-from predimrc_wrapper.mdo import build_design_space  # noqa: E402
-from predimrc_wrapper.mdo import categorical  # noqa: E402
-from predimrc_wrapper.mdo import from_database  # noqa: E402
+from predim_vtol.aircraft import Project  # noqa: E402
+from predim_vtol.api import evaluate_two_phase  # noqa: E402
+from predim_vtol.mdo import OUTPUTS  # noqa: E402
+from predim_vtol.mdo import Parameter  # noqa: E402
+from predim_vtol.mdo import PresizingDiscipline  # noqa: E402
+from predim_vtol.mdo import build_design_space  # noqa: E402
+from predim_vtol.mdo import categorical  # noqa: E402
+from predim_vtol.mdo import from_database  # noqa: E402
 from tests.conftest import ROOT  # noqa: E402
 from tests.conftest import requires_excel  # noqa: E402
 from tests.helpers import ParabolicAero  # noqa: E402
@@ -95,7 +95,7 @@ def test_default_inputs_are_base_project(parameters):
 
 
 def test_cache_hit(parameters, monkeypatch):
-    from predimrc_wrapper import api  # noqa: PLC0415
+    from predim_vtol import api  # noqa: PLC0415
 
     calls = []
     original = api.evaluate_two_phase
@@ -112,7 +112,7 @@ def test_cache_hit(parameters, monkeypatch):
 
 
 def test_failure_gives_nan(parameters, monkeypatch):
-    from predimrc_wrapper import api  # noqa: PLC0415
+    from predim_vtol import api  # noqa: PLC0415
 
     def boom(*args, **kwargs):
         msg = "injected"
@@ -170,8 +170,8 @@ def test_optim_quadplane_example():
 
 
 def test_optimise_loop_and_best_design():
-    from predimrc_wrapper.mdo.optimise import available_algorithms  # noqa: PLC0415
-    from predimrc_wrapper.mdo.optimise import optimise  # noqa: PLC0415
+    from predim_vtol.mdo.optimise import available_algorithms  # noqa: PLC0415
+    from predim_vtol.mdo.optimise import optimise  # noqa: PLC0415
 
     assert "SLSQP" in available_algorithms()
     project = Project.template("multicopter")
@@ -195,7 +195,7 @@ def test_optimise_loop_and_best_design():
 
 def test_optimise_drops_not_applicable_constraints():
     """No maximum take-off mass: margin_mass is NaN and must not stop the optimiser."""
-    from predimrc_wrapper.mdo.optimise import optimise  # noqa: PLC0415
+    from predim_vtol.mdo.optimise import optimise  # noqa: PLC0415
 
     project = Project.template("tricopter")
     continuous = [Parameter("battery_mass_g", "battery.mass_g", "float", 250.0, 700.0)]

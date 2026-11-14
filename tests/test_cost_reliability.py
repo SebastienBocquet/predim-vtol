@@ -6,14 +6,14 @@ import copy
 
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft import layouts
-from predimrc_wrapper.cost import cost
-from predimrc_wrapper.data.prices import PriceDatabase
-from predimrc_wrapper.data.prices import default_prices
-from predimrc_wrapper.reliability import default_spins
-from predimrc_wrapper.reliability import motor_out
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft import layouts
+from predim_vtol.cost import cost
+from predim_vtol.data.prices import PriceDatabase
+from predim_vtol.data.prices import default_prices
+from predim_vtol.reliability import default_spins
+from predim_vtol.reliability import motor_out
 
 
 def test_every_price_has_a_source():
@@ -31,7 +31,7 @@ def test_every_price_has_a_source():
         assert r.price > 0
         assert r.source.startswith("https://")
         assert r.status in ("verified", "search")
-    from predimrc_wrapper.data import default_database  # noqa: PLC0415
+    from predim_vtol.data import default_database  # noqa: PLC0415
 
     assert set(default_database().ids()) <= set(prices.motors)
 
@@ -42,9 +42,7 @@ def test_price_without_source_rejected():
     import yaml  # noqa: PLC0415
 
     data = yaml.safe_load(
-        files("predimrc_wrapper.data")
-        .joinpath("prices.yaml")
-        .read_text(encoding="utf-8")
+        files("predim_vtol.data").joinpath("prices.yaml").read_text(encoding="utf-8")
     )
     data = copy.deepcopy(data)
     del data["motors"]["tmotor-mn2212-780kv"]["source"]

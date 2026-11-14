@@ -3,7 +3,7 @@
 For each accessory shape label (Calculs1!D169:D171), evaluate the reference case with a
 known accessory surface S_acc, read Calculs1!AD3 (Cx acc., referred to the wing area
 S_ref = 3-Geometrie!L5) and record C_d = Cx_acc · S_ref / S_acc into
-``src/predimrc_wrapper/data/drag_shapes.yaml``. The workbook is opened read-only and never
+``src/predim_vtol/data/drag_shapes.yaml``. The workbook is opened read-only and never
 saved. Usage: ``python tools/extract_drag_shapes.py [profiles_dir]``.
 """
 
@@ -16,16 +16,16 @@ from pathlib import Path
 
 import yaml
 
-from predimrc_wrapper.predimrc_wrapper import FuselageGeometry
-from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper
-from predimrc_wrapper.predimrc_wrapper import Settings
-from predimrc_wrapper.predimrc_wrapper import StabGeometry
-from predimrc_wrapper.predimrc_wrapper import WingGeometry
+from predim_vtol.aero.base import FuselageGeometry
+from predim_vtol.aero.base import Settings
+from predim_vtol.aero.base import StabGeometry
+from predim_vtol.aero.base import WingGeometry
+from predim_vtol.aero.predimrc import PredimRCWrapper
 
 OUT = (
     Path(__file__).resolve().parents[1]
     / "src"
-    / "predimrc_wrapper"
+    / "predim_vtol"
     / "data"
     / "drag_shapes.yaml"
 )

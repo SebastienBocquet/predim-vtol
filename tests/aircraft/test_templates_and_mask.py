@@ -4,15 +4,15 @@ from __future__ import annotations
 
 import pytest
 
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft import templates
-from predimrc_wrapper.api import evaluate_two_phase
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft import templates
+from predim_vtol.api import evaluate_two_phase
 from tests.helpers import ParabolicAero
 
 
 @pytest.fixture
 def folder(tmp_path, monkeypatch):
-    monkeypatch.setenv("PREDIMRC_TEMPLATES", str(tmp_path))
+    monkeypatch.setenv("PREDIM_VTOL_TEMPLATES", str(tmp_path))
     return tmp_path
 
 

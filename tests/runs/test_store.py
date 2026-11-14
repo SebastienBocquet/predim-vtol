@@ -8,14 +8,14 @@ from pathlib import Path
 import pytest
 import yaml
 
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.api import evaluate_two_phase
-from predimrc_wrapper.provenance import data_changes
-from predimrc_wrapper.provenance import reproducibility_metadata
-from predimrc_wrapper.runs import RunStore
-from predimrc_wrapper.runs import load_runs
-from predimrc_wrapper.runs.summary import OUTPUTS_TWO_PHASE
-from predimrc_wrapper.runs.summary import flatten_inputs
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
+from predim_vtol.provenance import data_changes
+from predim_vtol.provenance import reproducibility_metadata
+from predim_vtol.runs import RunStore
+from predim_vtol.runs import load_runs
+from predim_vtol.runs.summary import OUTPUTS_TWO_PHASE
+from predim_vtol.runs.summary import flatten_inputs
 from tests.aircraft.test_configurations import V1_MULTICOPTER
 
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -101,7 +101,7 @@ def test_data_changes(monkeypatch, tmp_path):
     assert data_changes(meta) == []
     user = tmp_path / "user_data"
     user.mkdir()
-    monkeypatch.setenv("PREDIMRC_USER_DATA", str(user))
+    monkeypatch.setenv("PREDIM_VTOL_USER_DATA", str(user))
     meta = reproducibility_metadata(None)
     (user / "motors.yaml").write_text("motors: []\n", encoding="utf-8")
     assert data_changes(meta) == ["user_data"]

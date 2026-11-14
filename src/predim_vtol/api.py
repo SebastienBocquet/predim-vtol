@@ -1,0 +1,74 @@
+"""Single entry point used by GEMSEO and the GUI: ``evaluate_two_phase(project)``."""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
+    from predim_vtol.aero.base import AeroBackend
+
+
+def profiles_dir() -> Path:
+    """Folder of the PredimRC workbooks: user settings, overridden by $PREDIMRC_PROFILES."""
+    from predim_vtol.settings import predimrc_folder  # noqa: PLC0415
+
+    return predimrc_folder()
+
+
+def evaluate_two_phase(
+    project: Project | str | Path,
+    backend: AeroBackend | None = None,
+    hover_time_s: float | None = None,
+    target_speeds_m_s: tuple[float, float] | None = None,
+):
+    """Two-phase flight time of the designer's process (INC2-007).
+
+    Args:
+        project: The project, or the path of a project file.
+        backend: The aerodynamic backend; for a quadplane without backend, the one of the
+            project (``aero.backend``) is opened for this call and closed afterwards.
+        hover_time_s: The hover time; ``project.mission.hover_time_s`` by default.
+        target_speeds_m_s: The cruise speeds V1, V2; the project ones, else minimum power
+            and maximum L/D.
+
+    Returns:
+        The ``TwoPhaseResult``; a project with a ``calibration`` block is calibrated first
+        (``calibrate_two_phase``), the report in ``metadata["calibration"]``; the backend
+        used in ``metadata["aero_backend"]`` (quadplane).
+    """
+    from predim_vtol.mission.two_phase import TwoPhaseEvaluation  # noqa: PLC0415
+
+    if not isinstance(project, Project):
+        project = Project.load(project)
+    mission = project.mission
+    t_h = mission.hover_time_s if hover_time_s is None else hover_time_s
+    speeds = target_speeds_m_s or (
+        tuple(mission.target_speeds_m_s) if mission.target_speeds_m_s else None
+    )
+
+    def solve(backend):
+        calibrated, report = project, None
+        if project.calibration is not None:
+            from predim_vtol.calibration import calibrate_two_phase  # noqa: PLC0415
+
+            calibrated, report = calibrate_two_phase(project, backend)
+        result = TwoPhaseEvaluation(
+            AircraftModel(calibrated, aero_backend=backend)
+        ).solve(t_h, speeds)
+        if report is not None:
+            result.metadata["calibration"] = report.to_dict()
+        if backend is not None:
+            result.metadata["aero_backend"] = getattr(backend, "name", "")
+        return result
+
+    if project.architecture == "quadplane" and backend is None:
+        from predim_vtol.aero import open_aero_backend  # noqa: PLC0415
+
+        with open_aero_backend(project.aero, profiles_dir()) as session:
+            return solve(session)
+    return solve(backend)

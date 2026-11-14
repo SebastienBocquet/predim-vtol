@@ -21,11 +21,11 @@ from gemseo.disciplines.linear_combination import LinearCombination
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from predimrc_wrapper.aircraft import Project  # noqa: E402
-from predimrc_wrapper.mdo import Parameter  # noqa: E402
-from predimrc_wrapper.mdo import PresizingDiscipline  # noqa: E402
-from predimrc_wrapper.mdo.optimise import CONSTRAINTS  # noqa: E402
-from predimrc_wrapper.mdo.parameters import build_design_space  # noqa: E402
+from predim_vtol.aircraft import Project  # noqa: E402
+from predim_vtol.mdo import Parameter  # noqa: E402
+from predim_vtol.mdo import PresizingDiscipline  # noqa: E402
+from predim_vtol.mdo.optimise import CONSTRAINTS  # noqa: E402
+from predim_vtol.mdo.parameters import build_design_space  # noqa: E402
 from tests.helpers import ParabolicAero  # noqa: E402
 
 CONTINUOUS = [

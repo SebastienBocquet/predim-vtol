@@ -6,13 +6,13 @@ import numpy as np
 import pytest
 from pydantic import ValidationError
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.aircraft import ProjectError
-from predimrc_wrapper.aircraft import layouts
-from predimrc_wrapper.aircraft.model import hover_thrust_split
-from predimrc_wrapper.core.units import GRAVITY
-from predimrc_wrapper.mission.powers import SegmentPower
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.aircraft import ProjectError
+from predim_vtol.aircraft import layouts
+from predim_vtol.aircraft.model import hover_thrust_split
+from predim_vtol.core.units import GRAVITY
+from predim_vtol.mission.powers import SegmentPower
 from tests.helpers import ParabolicAero
 
 V1_MULTICOPTER = {

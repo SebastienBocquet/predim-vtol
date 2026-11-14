@@ -7,25 +7,25 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.core.units import GRAVITY
-from predimrc_wrapper.data import DatabaseError
-from predimrc_wrapper.data import PropellerDatabase
-from predimrc_wrapper.data import TestDatabase
-from predimrc_wrapper.data import add_user_motor
-from predimrc_wrapper.data import add_user_propeller
-from predimrc_wrapper.data import default_database
-from predimrc_wrapper.data import default_propellers
-from predimrc_wrapper.data import default_tests
-from predimrc_wrapper.data.importers import add_user_test
-from predimrc_wrapper.data.importers import csv_table
-from predimrc_wrapper.data.importers import import_csv
-from predimrc_wrapper.data.importers import write_user_test
-from predimrc_wrapper.data.tests import parse_test
-from predimrc_wrapper.propulsion.surrogate import Pair
-from predimrc_wrapper.propulsion.surrogate import ThrustPowerSurrogate
-from predimrc_wrapper.propulsion.surrogate import default_fit
-from predimrc_wrapper.propulsion.surrogate import physics_mean
+from predim_vtol.aircraft import Project
+from predim_vtol.core.units import GRAVITY
+from predim_vtol.data import DatabaseError
+from predim_vtol.data import PropellerDatabase
+from predim_vtol.data import TestDatabase
+from predim_vtol.data import add_user_motor
+from predim_vtol.data import add_user_propeller
+from predim_vtol.data import default_database
+from predim_vtol.data import default_propellers
+from predim_vtol.data import default_tests
+from predim_vtol.data.importers import add_user_test
+from predim_vtol.data.importers import csv_table
+from predim_vtol.data.importers import import_csv
+from predim_vtol.data.importers import write_user_test
+from predim_vtol.data.tests import parse_test
+from predim_vtol.propulsion.surrogate import Pair
+from predim_vtol.propulsion.surrogate import ThrustPowerSurrogate
+from predim_vtol.propulsion.surrogate import default_fit
+from predim_vtol.propulsion.surrogate import physics_mean
 
 HEADER = {
     "id": "my-test",
@@ -168,7 +168,7 @@ PROP = {"id": "my-10x5", "diameter_in": 10, "pitch_in": 5, "n_blades": 2}
 
 @pytest.fixture
 def user_data(tmp_path, monkeypatch):
-    monkeypatch.setenv("PREDIMRC_USER_DATA", str(tmp_path))
+    monkeypatch.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path))
     caches = (default_database, default_propellers, default_tests)
     for c in caches:
         c.cache_clear()

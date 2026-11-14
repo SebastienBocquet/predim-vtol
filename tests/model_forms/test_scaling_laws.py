@@ -8,15 +8,15 @@ from __future__ import annotations
 
 import contextlib
 import importlib
-from pathlib import Path
 
 import pytest
 
-from predimrc_wrapper.core import REGISTRY
-from predimrc_wrapper.core import Invariant
-from predimrc_wrapper.core import ScalingLaw
-from predimrc_wrapper.core.mic import END
-from predimrc_wrapper.core.mic import START
+from predim_vtol.core import REGISTRY
+from predim_vtol.core import Invariant
+from predim_vtol.core import ScalingLaw
+from predim_vtol.core.mic import CARDS_DIR
+from predim_vtol.core.mic import END
+from predim_vtol.core.mic import START
 
 # Import every package declaring models so that they are registered.
 for _module in (
@@ -27,9 +27,8 @@ for _module in (
     "sizing",
 ):
     with contextlib.suppress(ModuleNotFoundError):
-        importlib.import_module(f"predimrc_wrapper.{_module}")
+        importlib.import_module(f"predim_vtol.{_module}")
 
-CARDS = Path(__file__).resolve().parents[2] / "docs" / "models"
 MODELS = {k: v for k, v in REGISTRY.items() if not k.startswith("MIC-TEST")}
 FORMS = [
     pytest.param(model_cls, form, id=f"{mic}:{i}")
@@ -51,11 +50,11 @@ def test_expected_form(model_cls, form):
 @pytest.mark.parametrize("mic_id", sorted(MODELS))
 def test_mic_card_interface_is_generated(mic_id):
     """The Interface section of the card equals the one generated from the code."""
-    card = CARDS / f"{mic_id}.md"
+    card = CARDS_DIR / f"{mic_id}.md"
     assert card.is_file(), f"missing MIC card {card}"
     text = card.read_text(encoding="utf-8")
     current = text.split(START, 1)[1].split(END, 1)[0].strip()
     assert current == MODELS[mic_id].describe().to_markdown().strip(), (
         f"Interface of {card.name} is out of date: run "
-        "`python -m predimrc_wrapper.core.sync_mic`."
+        "`python -m predim_vtol.core.sync_mic`."
     )

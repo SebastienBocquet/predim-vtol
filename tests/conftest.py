@@ -30,12 +30,15 @@ requires_excel = pytest.mark.skipif(
 
 
 @pytest.fixture(scope="session", autouse=True)
-def _predimrc_cache(tmp_path_factory):
-    """The PredimRC evaluations of the tests are cached in a file of their own."""
+def _isolated_user_folders(tmp_path_factory):
+    """The tests use a home, a PredimRC cache and user data of their own."""
     mp = pytest.MonkeyPatch()
+    # A tool folder of their own: the tests never read nor migrate the one of the machine
+    # (not through USERPROFILE, which Excel needs).
+    mp.setenv("PREDIM_VTOL_HOME", str(tmp_path_factory.mktemp("home")))
     mp.setenv("PREDIMRC_CACHE", str(tmp_path_factory.mktemp("cache") / "predimrc.h5"))
     # The user motors, propellers and tests of the machine do not leak into the tests.
-    mp.setenv("PREDIMRC_USER_DATA", str(tmp_path_factory.mktemp("user_data")))
+    mp.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path_factory.mktemp("user_data")))
     yield
     mp.undo()
 
@@ -45,7 +48,7 @@ def predimrc():
     """One PredimRC session shared by the slow tests."""
     if not EXCEL:
         pytest.skip("Excel and PredimRC workbook required")
-    from predimrc_wrapper.predimrc_wrapper import PredimRCWrapper  # noqa: PLC0415
+    from predim_vtol.aero.predimrc import PredimRCWrapper  # noqa: PLC0415
 
     with PredimRCWrapper(profile="SD7003", template_dir=PROFILES) as wrapper:
         yield wrapper
@@ -54,10 +57,10 @@ def predimrc():
 @pytest.fixture
 def reference_case():
     """The tricoptere_short_2 geometry of the PredimRC screenshot."""
-    from predimrc_wrapper.predimrc_wrapper import FuselageGeometry  # noqa: PLC0415
-    from predimrc_wrapper.predimrc_wrapper import Settings  # noqa: PLC0415
-    from predimrc_wrapper.predimrc_wrapper import StabGeometry  # noqa: PLC0415
-    from predimrc_wrapper.predimrc_wrapper import WingGeometry  # noqa: PLC0415
+    from predim_vtol.aero.base import FuselageGeometry  # noqa: PLC0415
+    from predim_vtol.aero.base import Settings  # noqa: PLC0415
+    from predim_vtol.aero.base import StabGeometry  # noqa: PLC0415
+    from predim_vtol.aero.base import WingGeometry  # noqa: PLC0415
 
     return {
         "wing": WingGeometry(

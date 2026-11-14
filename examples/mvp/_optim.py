@@ -1,4 +1,4 @@
-"""Shared optimisation loop of the MVP examples: ``predimrc_wrapper.mdo.optimise`` with
+"""Shared optimisation loop of the MVP examples: ``predim_vtol.mdo.optimise`` with
 the results printed and written to ``outputs/<tag>.json``."""
 
 from __future__ import annotations
@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from predimrc_wrapper.mdo.optimise import optimise as run
+from predim_vtol.mdo.optimise import optimise as run
 
 OUT = Path(__file__).parent / "outputs"
 

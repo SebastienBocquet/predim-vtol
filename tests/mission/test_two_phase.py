@@ -5,11 +5,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from predimrc_wrapper.aircraft import AircraftModel
-from predimrc_wrapper.aircraft import Project
-from predimrc_wrapper.api import evaluate_two_phase
-from predimrc_wrapper.core.units import GRAVITY
-from predimrc_wrapper.mission.two_phase import TwoPhaseEvaluation
+from predim_vtol.aircraft import AircraftModel
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
+from predim_vtol.core.units import GRAVITY
+from predim_vtol.mission.two_phase import TwoPhaseEvaluation
 from tests.conftest import requires_excel
 from tests.helpers import ParabolicAero
 

@@ -1,11 +1,12 @@
 [project]
-name = "predimrc_wrapper"
+name = "predim-vtol"
 authors = [
     {name = "Sebastien Bocquet", email = "sbocquet@gmail.com"}
 ]
-description = "A Python wrapper of PredimRC."
+description = "Pre-sizing of RC VTOL aircraft (quadplane, tiltrotor) and multicopters."
 readme = "README.md"
 license = "LGPL-3.0"
+license-files = ["LICENSE.txt", "LICENSES/*", "THIRD_PARTY_NOTICES.md"]
 classifiers = [
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering",
@@ -20,7 +21,6 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.10, <3.13"
 dependencies = [
-    "xlwings >=0.30; sys_platform == 'win32'",
     "numpy",
     "pandas",
     "scipy",
@@ -33,9 +33,11 @@ dependencies = [
 [project.optional-dependencies]
 mdo = ["gemseo[all] >=6"]
 ui = ["streamlit", "plotly"]
+# PredimRC aerodynamics through Excel (Windows): the simple model needs nothing.
+predimrc = ["xlwings >=0.30; sys_platform == 'win32'"]
 
 [project.scripts]
-predimrc-ui = "predimrc_wrapper.ui.cli:main"
+predim-vtol = "predim_vtol.ui.cli:main"
 
 [dependency-groups]
 dev = [
@@ -74,7 +76,7 @@ build-backend = "setuptools.build_meta"
 fallback_version = "0.1.0.dev0"
 
 [tool.setuptools.package-data]
-predimrc_wrapper = ["data/*.yaml", "data/*.md", "data/thrust_tests/*.yaml", "templates/*.yaml", "ui/*.yaml"]
+predim_vtol = ["data/*.yaml", "data/*.md", "data/thrust_tests/*.yaml", "templates/*.yaml", "ui/*.yaml", "mic/*.md", "aero/*.yaml"]
 
 [tool.pytest.ini_options]
 # show extra info on xfailed, xpassed, and skipped tests
