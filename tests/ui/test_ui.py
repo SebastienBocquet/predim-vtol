@@ -292,3 +292,21 @@ def test_optimisation_helpers():
     assert table[0]["flight_time_v1 (min)"] == 20.0
     assert table[1]["error"] == "boom"
     assert len(opt.history_figure(summary).data) == 1
+
+
+def test_hover_calibration_warning():
+    """The Hover tab warns when k_h is recalibrated on a measured hover point."""
+    from predim_vtol.api import evaluate_two_phase  # noqa: PLC0415
+    from predim_vtol.ui import hover_view as hv  # noqa: PLC0415
+
+    project = Project.template("multicopter")
+    assert hv.calibration_warning(evaluate_two_phase(project).metadata) is None
+    measured = 0.9 * evaluate_two_phase(project).hover.battery_power_w
+    calibrated = project.with_overrides({
+        "calibration": {"hover": {"battery_power_w": measured}}
+    })
+    r = evaluate_two_phase(calibrated)
+    warning = hv.calibration_warning(r.metadata)
+    assert warning is not None
+    assert "other propellers or motors" in warning
+    assert f"{r.metadata['calibration'][0]['factor']:.3f}" in warning
