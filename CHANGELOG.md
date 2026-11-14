@@ -6,6 +6,10 @@ versions from git tags (setuptools-scm).
 ## Unreleased
 
 ### Added
+- MDO: a design parameter can drive several project fields, `Parameter(..., linked=((path,
+  factor), ...))`: the linked paths receive the value times the factor. One variable for
+  symmetric motors (`motors.0.x_mm` and `motors.1.x_mm`), or a propeller diameter and the
+  radius of its stopped-rotor drag source.
 - GUI, Hover tab: a warning when the hover powers are recalibrated on a measured hover point
   (k_h fitted on the motors and propellers of the project): if the measurement was made with
   other propellers or motors, k_h and the vertical-phase powers are possibly wrong.

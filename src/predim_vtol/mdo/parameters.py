@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from dataclasses import field
 from typing import Any
@@ -39,6 +40,11 @@ class Parameter:
         lower: The lower bound (float, integer).
         upper: The upper bound (float, integer).
         mapping: The labels (categorical).
+        linked: Other project paths driven by the same variable, as (path, factor):
+            the path receives the project value times the factor (float parameters),
+            or the project value itself (integer and categorical parameters, factor
+            1 only). For symmetric motors, or a
+            propeller diameter and the radius of its stopped-rotor drag source.
     """
 
     name: str
@@ -47,11 +53,29 @@ class Parameter:
     lower: float = 0.0
     upper: float = 1.0
     mapping: CategoricalMapping | None = field(default=None)
+    linked: tuple[tuple[str, float], ...] = ()
 
     def __post_init__(self) -> None:
         if self.kind == "categorical" and not self.mapping:
             msg = f"Categorical parameter '{self.name}' needs labels."
             raise ValueError(msg)
+        if self.kind != "float" and not all(
+            math.isclose(f, 1.0) for _, f in self.linked
+        ):
+            msg = f"Parameter '{self.name}': a factor on a linked path needs a float parameter."
+            raise ValueError(msg)
+
+    def overrides(self, x: Any) -> dict[str, Any]:
+        """Project overrides of a design value: the path and the linked paths."""
+        value = self.to_project_value(x)
+        scaled = self.kind == "float"
+        return {
+            self.path: value,
+            **{
+                path: value * factor if scaled else value
+                for path, factor in self.linked
+            },
+        }
 
     def bounds(self) -> tuple[float, float]:
         if self.kind == "categorical":

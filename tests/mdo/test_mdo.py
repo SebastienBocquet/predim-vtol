@@ -48,6 +48,30 @@ def test_categorical_round_trip():
         Parameter("x", "y", "categorical")
 
 
+def test_linked_paths():
+    """One variable drives symmetric motors and a scaled drag-source radius."""
+    project = Project.template("quadplane")
+    x = Parameter(
+        "front_x",
+        "motors.0.x_mm",
+        "float",
+        -300.0,
+        0.0,
+        linked=(("motors.2.x_mm", 1.0),),
+    )
+    assert x.overrides(np.array([-200.0])) == {
+        "motors.0.x_mm": -200.0,
+        "motors.2.x_mm": -200.0,
+    }
+    d = Parameter("d", "a", "float", 10.0, 14.0, linked=(("b", 12.7),))
+    assert d.overrides(12.0) == {"a": 12.0, "b": pytest.approx(152.4)}
+    with pytest.raises(ValueError, match="float parameter"):
+        Parameter("n", "battery.n_series", "integer", 3, 6, linked=(("b", 2.0),))
+    disc = PresizingDiscipline(project, [x], backend=ParabolicAero())
+    variant = disc.project_for({"front_x": np.array([-200.0])})
+    assert variant.motors[0].x_mm == variant.motors[2].x_mm == -200.0
+
+
 def test_design_space_types_and_bounds(parameters):
     space = build_design_space(parameters, {"battery_mass_g": 700.0})
     assert list(space.variable_names) == ["battery_mass_g", "n_series", "lift_motor"]

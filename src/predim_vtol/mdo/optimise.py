@@ -105,13 +105,10 @@ class OptimisationSummary:
         if best is None:
             return {}
         by_name = {p.name: p for p in continuous}
-        return {
-            **best.choice,
-            **{
-                by_name[k].path: by_name[k].to_project_value(v)
-                for k, v in best.x.items()
-            },
-        }
+        out = dict(best.choice)
+        for k, v in best.x.items():
+            out.update(by_name[k].overrides(v))
+        return out
 
     def to_dict(self) -> dict[str, Any]:
         best = self.best

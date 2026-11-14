@@ -108,9 +108,9 @@ class PresizingDiscipline(Discipline):
         """The project corresponding to design values."""
         from predim_vtol.mdo.parameters import expand_overrides  # noqa: PLC0415
 
-        overrides = {
-            p.path: p.to_project_value(input_data[p.name]) for p in self.parameters
-        }
+        overrides = {}
+        for p in self.parameters:
+            overrides.update(p.overrides(input_data[p.name]))
         return self.base_project.with_overrides(expand_overrides(overrides))
 
     def _run(self, input_data):
