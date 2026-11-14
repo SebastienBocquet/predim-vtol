@@ -12,3 +12,9 @@
   in the application); regenerate the interfaces with
   `python -m predim_vtol.core.sync_mic`.
 - Commits: one logical change per commit; branches `fix/...`, `feat/...`, `chore/...`.
+- Release: move the *Unreleased* section of `CHANGELOG.md` under the new version, then push a
+  tag `vX.Y.Z` on `main`. The `Release` workflow builds the Windows zip (never with PredimRC),
+  the wheel, `constraints.txt` and the one-line installers, and publishes the GitHub release
+  that the README links point to (`releases/latest`). To try the Linux installer before a
+  release: `PREDIM_VTOL_VERSION=X.Y.Z PREDIM_VTOL_BASE=<folder URL> UV_NO_MODIFY_PATH=1 sh
+  packaging/linux/install.sh`.

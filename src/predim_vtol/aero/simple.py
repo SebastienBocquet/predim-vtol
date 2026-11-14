@@ -103,7 +103,7 @@ the centre of gravity recommendation on the safe (forward) side."""
 
 POLAR_POINTS = 60
 POLAR_CL_MIN = 0.02
-"""Lowest wing lift coefficient of the polar (highest speed)."""
+"""Lowest wing and total lift coefficients of the polar (highest speed)."""
 
 
 class SimpleAeroError(ValueError):
@@ -490,7 +490,7 @@ class SimpleAeroBackend:
             )
         cl_w = np.geomspace(cl_max, POLAR_CL_MIN, POLAR_POINTS)
         cl_t, cl_tot, _alpha_w = self._trim(ac, cl_w, x_cg, settings.cz_reg)
-        ok = cl_tot > 0.0
+        ok = cl_tot >= POLAR_CL_MIN  # the tail download can cancel the wing lift
         cl_w, cl_t, cl_tot = cl_w[ok], cl_t[ok], cl_tot[ok]
         v = np.sqrt(2.0 * weight / (rho * s_m2 * cl_tot))
         cd = self._drag(ac, cl_w, cl_t, v, rho, mu, s_m2)

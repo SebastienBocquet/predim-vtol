@@ -53,6 +53,12 @@ versions from git tags (setuptools-scm).
   PredimRC. Compared with PredimRC on 52 reference cases
   (`tests/aero/data/predimrc_reference.json`).
 - `$PREDIM_VTOL_HOME`: the tool folder (portable installation, tests).
+- Releases: pushing a tag `vX.Y.Z` publishes a GitHub release (`.github/workflows/release.yml`)
+  with the Windows zip, the wheel, the dependency constraints and one-line installers:
+  `install-windows.ps1` (PowerShell) and `install.sh` (Linux, macOS: uv tool with the
+  release constraints, applications menu entry on Linux). PredimRC is never in a release.
+- README for users who are not developers: one-click and one-line installation, first
+  study in 5 minutes, built-in model or PredimRC, where the files are.
 - One-click Windows package: `packaging/windows/build_zip.py` builds a zip whose `install.bat`
   installs Python, the locked dependencies and a desktop shortcut, without administrator
   rights. PredimRC is left out unless given with a notice of its author and terms

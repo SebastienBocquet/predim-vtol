@@ -1,0 +1,50 @@
+name: Release
+
+# Push a tag vX.Y.Z to publish a release with the Windows zip, the wheel, the dependency
+# constraints and the one-line installers (install-windows.ps1, install.sh). PredimRC is
+# never part of a public release.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # setuptools-scm reads the version from the tag
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@v6
+      - name: Version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+      - name: Windows zip
+        run: python packaging/windows/build_zip.py --output dist
+      - name: Wheel and sdist
+        run: uv build --out-dir dist
+      - name: Dependency constraints of the one-line installers
+        run: >
+          uv export --locked --no-dev --extra mdo --extra ui --no-emit-project --no-hashes
+          --format requirements-txt --output-file dist/constraints.txt --quiet
+      - name: One-line installers
+        run: |
+          sed "s/@VERSION@/$VERSION/g" packaging/windows/install-windows.ps1 > dist/install-windows.ps1
+          sed "s/@VERSION@/$VERSION/g" packaging/linux/install.sh > dist/install.sh
+      - name: Check the release files
+        run: |
+          ls -l dist
+          test -f "dist/predim-vtol-$VERSION-windows.zip"
+          test -f "dist/predim_vtol-$VERSION-py3-none-any.whl"
+          ! grep -q "@VERSION@" dist/install.sh dist/install-windows.ps1
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "predim-vtol $VERSION" --generate-notes

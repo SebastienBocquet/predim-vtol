@@ -51,3 +51,22 @@ def test_wheel_with_a_workbook_is_refused(tmp_path):
 @pytest.mark.parametrize("content", [b"a\nb\n", b"a\r\nb\r\n"])
 def test_crlf(content):
     assert build_zip.crlf(content) == b"a\r\nb\r\n"
+
+
+ONE_LINE = {
+    "install.sh": Path(__file__).parents[1] / "packaging" / "linux" / "install.sh",
+    "install-windows.ps1": SCRIPT.parent / "install-windows.ps1",
+}
+
+
+@pytest.mark.parametrize("name", list(ONE_LINE))
+def test_one_line_installers(name):
+    """The release workflow fills the version; PowerShell 5.1 needs ASCII."""
+    text = ONE_LINE[name].read_bytes()
+    assert b"@VERSION@" in text
+    assert text.isascii()
+    assert b"\r\n" not in text or name.endswith(".ps1")
+    workflow = (
+        Path(__file__).parents[1] / ".github" / "workflows" / "release.yml"
+    ).read_text(encoding="utf-8")
+    assert name in workflow
