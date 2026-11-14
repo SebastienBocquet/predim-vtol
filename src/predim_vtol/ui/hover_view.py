@@ -19,6 +19,27 @@ if TYPE_CHECKING:
 COLORS = ("#1f77b4", "#d62728", "#2ca02c", "#9467bd", "#ff7f0e", "#8c564b")
 
 
+def calibration_warning(metadata: dict) -> str | None:
+    """Warning when the hover powers are recalibrated on a measured hover point, else None.
+
+    The factor k_h is fitted on the current design at every evaluation: it is right only if
+    the measured aircraft had the same motors and propellers.
+    """
+    hover = [p for p in metadata.get("calibration") or [] if p.get("point") == "hover"]
+    if not hover:
+        return None
+    k_h = hover[0].get("factor", metadata.get("hover_power_factor", float("nan")))
+    return (
+        f"**Hover powers recalibrated on the measured hover point** "
+        f"({hover[0].get('measured_w', float('nan')):.0f} W): k_h = {k_h:.3f} multiplies the "
+        "powers of the test data and the surrogate. It is fitted on the motors and propellers "
+        "of this project: if the measurement was made with other propellers or motors, k_h "
+        "and the vertical-phase powers are possibly wrong. Then read k_h on the measured "
+        "configuration, remove the hover reference (Test data tab) and enter that k_h in "
+        "Mission tab > Advanced > hover power factor (overwritten while the reference is on)."
+    )
+
+
 def pairs(r: TwoPhaseResult) -> dict[str, list[MotorHover]]:
     """Hover motors grouped by motor + propeller pair."""
     out: dict[str, list[MotorHover]] = {}

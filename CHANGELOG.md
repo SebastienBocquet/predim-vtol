@@ -5,6 +5,11 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Added
+- GUI, Hover tab: a warning when the hover powers are recalibrated on a measured hover point
+  (k_h fitted on the motors and propellers of the project): if the measurement was made with
+  other propellers or motors, k_h and the vertical-phase powers are possibly wrong.
+
 ## 0.3.0 — predim-vtol (2026-11-14)
 
 ### Changed (breaking)

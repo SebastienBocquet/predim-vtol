@@ -1256,6 +1256,8 @@ with tabs["Hover"]:
     if two is None:
         st.info("Press Run to compute the hover operating points.")
     else:
+        if (warning := hv.calibration_warning(two.metadata)) is not None:
+            st.warning(warning)
         st.markdown(
             f"Thrust of each lift motor from the mass and the balance of moments about the CG "
             f"(x = {two.hover.cg_x_mm:.0f} mm). **Front / rear thrust ratio "
