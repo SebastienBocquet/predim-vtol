@@ -7,7 +7,7 @@
 | Model name | Simple aerodynamic model (wing, stabiliser, fuselage) |
 | Model identifier | MIC-AERO-SIMPLE |
 | Model description | Trimmed speed polar, neutral point and centre of gravity of a winged aircraft from its PredimRC-style geometry, with textbook methods and NeuralFoil section polars; the default aerodynamic backend, PredimRC being optional. |
-| Release / date / type | 0.2.0 / 2026-11-14 / implementation |
+| Release / date / type | 0.3.0 / 2026-11-14 / implementation |
 | Supplier / confidentiality / legal | see [index](index.md) |
 
 ## Purpose and objectives

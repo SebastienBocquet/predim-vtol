@@ -5,6 +5,8 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+## 0.3.0 — predim-vtol (2026-11-14)
+
 ### Changed (breaking)
 - Renamed the project `predimrc_wrapper` to **predim-vtol**, with no compatibility alias:
   - distribution `predim-vtol`, package `predim_vtol`, command `predim-vtol` (was
