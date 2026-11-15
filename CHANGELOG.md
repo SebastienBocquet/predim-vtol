@@ -5,6 +5,8 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+## 0.3.1 — linked design parameters, hover calibration warning (2026-11-15)
+
 ### Added
 - MDO: a design parameter can drive several project fields, `Parameter(..., linked=((path,
   factor), ...))`: the linked paths receive the value times the factor. One variable for

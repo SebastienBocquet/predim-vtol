@@ -6,11 +6,9 @@ on:
       - "*.md"
       - "LICENSE**"
       - ".gitignore"
+  # Every pull request runs: the checks are required by the protection of main, and a
+  # skipped workflow would leave a documentation-only pull request blocked.
   pull_request:
-    paths-ignore:
-      - "*.md"
-      - "LICENSE**"
-      - ".gitignore"
 
 jobs:
   test:
