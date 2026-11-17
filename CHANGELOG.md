@@ -5,6 +5,12 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Changed
+- The example scripts moved from `examples/mvp/` to `docs/examples/`, split between
+  `usage/` (`optim_multicopter.py`, `optim_quadplane.py`) and `performance/`
+  (`benchmark_aero.py`, `doe_timing.py`).
+- `sandbox/` is no longer versioned (local experiments only).
+
 ## 0.3.1 — linked design parameters, hover calibration warning (2026-11-15)
 
 ### Added

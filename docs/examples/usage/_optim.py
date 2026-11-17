@@ -1,4 +1,4 @@
-"""Shared optimisation loop of the MVP examples: ``predim_vtol.mdo.optimise`` with
+"""Shared optimisation loop of the usage examples: ``predim_vtol.mdo.optimise`` with
 the results printed and written to ``outputs/<tag>.json``."""
 
 from __future__ import annotations

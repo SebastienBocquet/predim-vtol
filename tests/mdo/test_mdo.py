@@ -24,7 +24,7 @@ from tests.conftest import ROOT  # noqa: E402
 from tests.conftest import requires_excel  # noqa: E402
 from tests.helpers import ParabolicAero  # noqa: E402
 
-EXAMPLES = ROOT / "examples" / "mvp"
+EXAMPLES = ROOT / "docs" / "examples" / "usage"
 
 
 @pytest.fixture

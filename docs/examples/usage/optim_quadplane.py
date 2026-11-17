@@ -19,7 +19,7 @@ from predim_vtol.aircraft import Project  # noqa: E402
 from predim_vtol.data import default_database  # noqa: E402
 from predim_vtol.mdo import Parameter  # noqa: E402
 
-PROFILES = Path(__file__).resolve().parents[2] / "profiles"
+PROFILES = Path(__file__).resolve().parents[3] / "profiles"
 
 if __name__ == "__main__":
     project = Project.template("quadplane")
