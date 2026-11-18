@@ -16,7 +16,7 @@ from predim_vtol.aero.base import StabGeometry
 from predim_vtol.aero.base import WingGeometry
 from predim_vtol.aero.predimrc import PredimRCWrapper
 
-PROFILES = Path(__file__).resolve().parents[2] / "profiles"
+PROFILES = Path(__file__).resolve().parents[3] / "profiles"
 
 wing = WingGeometry(
     root_chord=200.0,

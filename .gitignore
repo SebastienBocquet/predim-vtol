@@ -6,7 +6,9 @@ env/
 build/
 dist/
 .pytest_cache/
-examples/mvp/outputs/
+docs/examples/*/outputs/
+# Local experiments, not versioned
+sandbox/
 ~$*.xls*
 # PredimRC workbooks: third-party, given by the PredimRC folder setting
 profiles/*.xls*

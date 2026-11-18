@@ -19,7 +19,7 @@ from predim_vtol.mdo import PresizingDiscipline
 from predim_vtol.mdo import build_design_space
 from predim_vtol.mdo import from_database
 
-PROFILES = Path(__file__).resolve().parents[2] / "profiles"
+PROFILES = Path(__file__).resolve().parents[3] / "profiles"
 OUT = Path(__file__).parent / "outputs"
 
 if __name__ == "__main__":

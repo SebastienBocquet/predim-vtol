@@ -156,9 +156,8 @@ convention = "google"
 ]
 # ignore docstring that have not yet be converted to the google style
 "src/*.py" = ["D"]
-"sandbox/*.py" = ["ALL"]
 "tools/*.py" = ["T", "INP"]
-"examples/*.py" = ["T", "INP", "D"]
+"docs/**/*.py" = ["T", "INP", "D"]
 
 [format]
 docstring-code-format = true
