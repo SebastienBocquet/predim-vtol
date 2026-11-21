@@ -1,10 +1,4 @@
-"""GEMSEO integration (MVP-006). Requires the ``[mdo]`` extra."""
-
-try:
-    import gemseo  # ruff: ignore[unused-import]
-except ModuleNotFoundError as error:  # pragma: no cover
-    msg = "predim_vtol.mdo needs GEMSEO: pip install 'predim_vtol[mdo]'."
-    raise ImportError(msg) from error
+"""GEMSEO integration (MVP-006)."""
 
 from predim_vtol.mdo.discipline import OUTPUTS
 from predim_vtol.mdo.discipline import PresizingDiscipline

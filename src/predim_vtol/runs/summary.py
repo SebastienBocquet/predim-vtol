@@ -8,7 +8,6 @@ The inputs are the scalar leaves of the project, by the dotted paths of
 
 from __future__ import annotations
 
-import logging
 import math
 from typing import TYPE_CHECKING
 from typing import Any
@@ -16,7 +15,6 @@ from typing import Any
 if TYPE_CHECKING:
     from predim_vtol.aircraft import Project
 
-LOGGER = logging.getLogger(__name__)
 
 SUMMARY_VERSION = 1
 """Version of the format of ``summary.json``."""
@@ -40,14 +38,12 @@ OUTPUTS_TWO_PHASE = (
     "margin_battery_c",
     "margin_mass",
     "max_sd_rel",
-    "cost_purchase",
-    "cost_per_hour",
-    "motor_out_tw",
     "feasible",
 )
-"""Outputs of the two-phase mode (INC2-007): times s, ranges m, speeds m/s, powers W; costs in
-the currency of the prices (INC3-004); ``motor_out_tw``: worst remaining thrust-to-weight with
-one lift motor stopped (0 when a motor loss is not survivable)."""
+"""Outputs of the two-phase mode (INC2-007): times s, ranges m, speeds m/s, powers W.
+
+Runs stored before 0.4 may also hold ``cost_purchase``, ``cost_per_hour`` and
+``motor_out_tw`` (cost and reliability, removed): kept as stored, no longer computed."""
 
 OUTPUT_RENAMES: dict[str, str] = {}
 """Former name → current name of the outputs, applied to the summaries of older runs."""
@@ -77,27 +73,6 @@ def flatten_inputs(data: Any, prefix: str = "") -> dict[str, Any]:
     return out
 
 
-def _cost_and_reliability(project: Project, r: Any) -> dict[str, float]:
-    """Purchase cost, cost per flight hour and worst motor-out T/W (NaN when they fail)."""
-    from predim_vtol.aircraft import AircraftModel  # noqa: PLC0415
-    from predim_vtol.cost import cost  # noqa: PLC0415
-    from predim_vtol.reliability import motor_out  # noqa: PLC0415
-
-    try:
-        aircraft = AircraftModel(project)
-        c = cost(aircraft, r.cruise[0].flight_time_s)
-        return {
-            "cost_purchase": c.purchase,
-            "cost_per_hour": c.cost_per_hour,
-            "motor_out_tw": motor_out(aircraft).worst_thrust_to_weight,
-        }
-    except Exception as error:  # ruff: ignore[blind-except]
-        LOGGER.warning("Cost / reliability failed: %s", error)
-        return dict.fromkeys(
-            ("cost_purchase", "cost_per_hour", "motor_out_tw"), math.nan
-        )
-
-
 def two_phase_outputs(project: Project, r: Any) -> dict[str, float]:
     """The outputs ``OUTPUTS_TWO_PHASE`` of a ``TwoPhaseResult``."""
     m = r.margins
@@ -121,7 +96,6 @@ def two_phase_outputs(project: Project, r: Any) -> dict[str, float]:
         "margin_battery_c": m["battery_c"],
         "margin_mass": m["mass"],
         "max_sd_rel": max(m_.power_sd_w / m_.power_w for m_ in r.hover.motors),
-        **_cost_and_reliability(project, r),
         "feasible": float(r.feasible),
     }
     return {k: float(v) for k, v in values.items()}

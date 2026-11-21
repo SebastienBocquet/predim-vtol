@@ -73,7 +73,7 @@ def default_gauges(project: Project) -> tuple[int, list[tuple[int, int]]]:
     The cables are installed for the full-throttle current, so each branch is sized for the
     maximum current I_max of its motor (data sheet) and the main cable for the largest of
     Σ I_max of the lift motors and Σ I_max of the cruise motors; the same cables at every
-    operating point (losses, mass, cost).
+    operating point (losses, mass).
     """
     from predim_vtol.aircraft.project import WiringSpec  # noqa: PLC0415
     from predim_vtol.data import default_database  # noqa: PLC0415

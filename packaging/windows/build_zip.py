@@ -85,8 +85,6 @@ def build(output: Path, workbooks: list[Path], notice: Path | None, uv: str) -> 
             "--locked",
             "--no-dev",
             "--extra",
-            "mdo",
-            "--extra",
             "ui",
             "--extra",
             "predimrc",

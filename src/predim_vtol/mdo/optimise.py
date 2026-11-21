@@ -42,9 +42,6 @@ OBJECTIVES = {
     "flight_time_v2": True,
     "range_v1": True,
     "range_v2": True,
-    "cost_purchase": False,
-    "cost_per_hour": False,
-    "motor_out_tw": True,
 }
 """Objectives offered, with whether they are maximised."""
 

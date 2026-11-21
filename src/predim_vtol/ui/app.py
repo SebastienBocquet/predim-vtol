@@ -21,7 +21,6 @@ from predim_vtol.aircraft.project import TEMPLATES
 from predim_vtol.aircraft.project import AeroSpec
 from predim_vtol.aircraft.project import BatterySpec
 from predim_vtol.aircraft.project import BoomSpec
-from predim_vtol.aircraft.project import CostSpec
 from predim_vtol.aircraft.project import CruiseReference
 from predim_vtol.aircraft.project import EnvironmentSpec
 from predim_vtol.aircraft.project import FlightPoint
@@ -44,7 +43,6 @@ from predim_vtol.data import user_data_dir
 from predim_vtol.data.database import USER_FILE as USER_MOTOR_FILE
 from predim_vtol.data.importers import add_user_test
 from predim_vtol.data.importers import csv_table
-from predim_vtol.data.prices import default_prices
 from predim_vtol.data.propellers import USER_FILE as USER_PROPELLER_FILE
 from predim_vtol.data.tests import COLUMNS as TEST_COLUMNS
 from predim_vtol.data.tests import USER_FOLDER as USER_TEST_FOLDER
@@ -53,7 +51,6 @@ from predim_vtol.mission.power_budget import power_budget
 from predim_vtol.settings import Settings
 from predim_vtol.sizing import motor_power_ranges
 from predim_vtol.ui import cg_view
-from predim_vtol.ui import cost_view as cov
 from predim_vtol.ui import cruise_view as cv
 from predim_vtol.ui import drag_view as dv
 from predim_vtol.ui import explanations
@@ -87,17 +84,6 @@ def table(rows: list[dict] | dict, **kwargs) -> None:
     columns = list(dict.fromkeys(k for r in rows for k in r))
     config = {c: st.column_config.Column(c, help=HELP.tooltip(c)) for c in columns}
     st.dataframe(rows, hide_index=True, width="stretch", column_config=config, **kwargs)
-
-
-def cost_and_reliability(project: Project, two=None):
-    """Cost (flight time of an up-to-date Run, else 0 h) and motor-out hover."""
-    from predim_vtol.cost import cost  # noqa: PLC0415
-    from predim_vtol.reliability import motor_out  # noqa: PLC0415
-
-    aircraft = AircraftModel(project)
-    current = two is not None and not app.outdated
-    flight = two.cruise[0].flight_time_s if current else 0.0
-    return cost(aircraft, flight), motor_out(aircraft)
 
 
 OUTDATED = (
@@ -335,7 +321,6 @@ labels = [
     "Propeller sizing",
     "Test data",
     "Results",
-    "Cost and reliability",
 ]
 tabs = dict(zip(labels, st.tabs(labels), strict=False))
 errors = checked.errors
@@ -1821,26 +1806,6 @@ with tabs["Results"]:
                 st.columns(len(row)), row, strict=False
             ):
                 metric(col, label, text, negative)
-        if checked.project is not None and not app.outdated:
-            try:
-                c_res, r_res = cost_and_reliability(checked.project, two)
-                cols = st.columns(3)
-                metric(
-                    cols[0], "Purchase cost", f"{c_res.purchase:.0f} {c_res.currency}"
-                )
-                metric(
-                    cols[1],
-                    "Cost per flight hour",
-                    f"{c_res.cost_per_hour:.2f} {c_res.currency}/h",
-                )
-                metric(
-                    cols[2],
-                    "Motor-out T/W (worst)",
-                    f"{r_res.worst_thrust_to_weight:.2f}",
-                    negative=not r_res.all_survivable,
-                )
-            except Exception as error:  # ruff: ignore[blind-except]
-                st.warning(f"Cost / reliability not computed: {error}")
         for w in two.warnings:
             st.warning(w)
         st.markdown(
@@ -1891,101 +1856,3 @@ with tabs["Results"]:
             c1.plotly_chart(fig, width="stretch", key="results.budget")
             with c2:
                 table(budget_rows(budgets))
-
-with tabs["Cost and reliability"]:
-    left, right = st.columns([2, 3])
-    with left:
-        st.subheader("Prices entered and wear")
-        st.caption(
-            "Costs in euros. Component prices come from the price list (source and date in the "
-            f"table), read in USD and converted at {default_prices().usd_per_eur} USD/EUR (ECB "
-            f"reference rate of {default_prices().exchange_date}; changed in Advanced). Frame, "
-            "avionics and overrides are entered in euros. Overrides replace a database price: "
-            "keys `motor:<id>`, `propeller:<id>`, `esc`, `esc4in1`, `battery_per_wh`, `cable:<awg>`."
-        )
-        spec = dict(data.get("cost") or {})
-        out = forms.render_model(
-            st, CostSpec, spec, "cost", errors, {}, gen, skip=("overrides",)
-        )
-        rows = [
-            {"key": k, "price": v} for k, v in (spec.get("overrides") or {}).items()
-        ]
-        edited = st.data_editor(
-            forms.editor_base(
-                st,
-                f"{gen}:cost.overrides",
-                gen,
-                lambda: rows or [{"key": None, "price": None}],
-            ),
-            key=f"{gen}:cost.overrides",
-            num_rows="dynamic",
-            width="stretch",
-            column_config={
-                "key": st.column_config.TextColumn("override key"),
-                "price": st.column_config.NumberColumn("price (EUR)", min_value=0.0),
-            },
-        )
-        out["overrides"] = {
-            r["key"]: float(r["price"])
-            for r in edited
-            if r.get("key") and r.get("price") is not None
-        }
-        # Stored only once it differs from the defaults (a Run result stays up to date).
-        if data.get("cost") or out != CostSpec().model_dump():
-            data["cost"] = out
-    with right:
-        if checked.project is None:
-            st.info("The cost is computed once the project is valid.")
-        else:
-            c_res, r_res = cost_and_reliability(checked.project, two)
-            st.subheader(
-                f"Purchase cost: {c_res.purchase:.2f} {c_res.currency}"
-                + (
-                    f" (+ {len(c_res.missing)} item(s) without price)"
-                    if c_res.missing
-                    else ""
-                )
-            )
-            if c_res.missing:
-                st.warning(
-                    "No price for: "
-                    + ", ".join(c_res.missing)
-                    + ". Enter an override to "
-                    "include them."
-                )
-            by_cat = c_res.by_category()
-            fig = go.Figure(
-                go.Bar(x=list(by_cat.values()), y=list(by_cat), orientation="h")
-            )
-            fig.update_layout(
-                xaxis_title=f"price ({c_res.currency})",
-                height=260,
-                margin={"l": 10, "r": 10, "t": 10, "b": 10},
-            )
-            st.plotly_chart(fig, width="stretch", key="cost.categories")
-            table(cov.purchase_rows(c_res))
-            st.subheader("Cost of use (wear)")
-            if two is None or app.outdated:
-                st.info("Press Run: the cost of use needs the flight time.")
-            else:
-                st.caption(
-                    f"Per flight of {c_res.flight_time_s / 60:.1f} min (two-phase flight time at "
-                    "V1): battery price / cycle life + motor price × flight time / motor life + "
-                    "propeller price / flights between replacements (MIC-COST)."
-                )
-                table(cov.use_rows(c_res))
-            st.subheader("Reliability: hover with one motor stopped")
-            st.caption(
-                "For each lift motor stopped, the others must balance the weight and the pitch, "
-                "roll"
-                + (
-                    " moments (yaw by the tilting motor)"
-                    if r_res.yaw_by_tilt
-                    else " and yaw (propeller torque, alternating spins) moments"
-                )
-                + " within their maximum thrust (MIC-REL)."
-            )
-            table(cov.reliability_rows(r_res, checked.project))
-            st.markdown(
-                "**Single points of failure:** " + "; ".join(r_res.single_points)
-            )

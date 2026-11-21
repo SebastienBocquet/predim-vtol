@@ -5,6 +5,16 @@ versions from git tags (setuptools-scm).
 
 ## Unreleased
 
+### Removed (breaking)
+- Cost and reliability, without deprecation: the *Cost and reliability* tab, the purchase
+  cost, the cost per flight hour and the motor-out check, the price list
+  (`data/prices.yaml`), the modules `predim_vtol.cost` and `predim_vtol.reliability`, the
+  outputs and objectives `cost_purchase`, `cost_per_hour` and `motor_out_tw`, the project
+  inputs `cost` and `motors.<i>.spin`. A project file holding them still loads: they are
+  dropped. Stored runs keep the outputs they were saved with.
+- The `mdo` extra: GEMSEO (`gemseo[all]`) is now a main dependency. Install with
+  `pip install predim-vtol[ui]`.
+
 ### Changed
 - The example scripts moved from `examples/mvp/` to `docs/examples/`, split between
   `usage/` (`optim_multicopter.py`, `optim_quadplane.py`) and `performance/`

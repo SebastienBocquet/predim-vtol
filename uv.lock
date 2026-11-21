@@ -1915,6 +1915,7 @@ wheels = [
 name = "predim-vtol"
 source = { editable = "." }
 dependencies = [
+    { name = "gemseo", extra = ["all"] },
     { name = "joblib" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
@@ -1926,9 +1927,6 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-mdo = [
-    { name = "gemseo", extra = ["all"] },
-]
 predimrc = [
     { name = "xlwings", marker = "sys_platform == 'win32'" },
 ]
@@ -1971,7 +1969,7 @@ doc = [
 
 [package.metadata]
 requires-dist = [
-    { name = "gemseo", extras = ["all"], marker = "extra == 'mdo'", specifier = ">=6" },
+    { name = "gemseo", extras = ["all"], specifier = ">=6" },
     { name = "joblib" },
     { name = "numpy" },
     { name = "pandas" },
@@ -1983,7 +1981,7 @@ requires-dist = [
     { name = "streamlit", marker = "extra == 'ui'" },
     { name = "xlwings", marker = "sys_platform == 'win32' and extra == 'predimrc'", specifier = ">=0.30" },
 ]
-provides-extras = ["mdo", "ui", "predimrc"]
+provides-extras = ["ui", "predimrc"]
 
 [package.metadata.requires-dev]
 dev = [

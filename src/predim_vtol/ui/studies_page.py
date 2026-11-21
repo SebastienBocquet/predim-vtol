@@ -13,37 +13,29 @@ import streamlit as st
 from predim_vtol.aircraft import Project
 from predim_vtol.data import default_database
 from predim_vtol.data import default_propellers
+from predim_vtol.mdo.explore import explore
+from predim_vtol.mdo.explore import pareto_mask
+from predim_vtol.mdo.explore import study_from_optimisation
+from predim_vtol.mdo.optimise import CONSTRAINTS
+from predim_vtol.mdo.optimise import available_algorithms
+from predim_vtol.mdo.optimise import optimise
+from predim_vtol.mdo.parameters import expand_overrides
+from predim_vtol.mdo.studies import StudyStore
 from predim_vtol.settings import Settings
+from predim_vtol.ui import optimisation as opt
+from predim_vtol.ui import studies_view as sv
 from predim_vtol.ui.help import HelpRegistry
 
 HELP = HelpRegistry.default()
 TABS = ["Exploration", "Optimisation", "Studies"]
 db = default_database()
 
-try:
-    from predim_vtol.mdo.explore import explore
-    from predim_vtol.mdo.explore import pareto_mask
-    from predim_vtol.mdo.explore import study_from_optimisation
-    from predim_vtol.mdo.optimise import CONSTRAINTS
-    from predim_vtol.mdo.optimise import available_algorithms
-    from predim_vtol.mdo.optimise import optimise
-    from predim_vtol.mdo.parameters import expand_overrides
-    from predim_vtol.mdo.studies import StudyStore
-    from predim_vtol.ui import optimisation as opt
-    from predim_vtol.ui import studies_view as sv
-
-    MDO = True
-except ImportError:  # pragma: no cover - GEMSEO not installed
-    MDO = False
 
 TWO_PHASE_OBJECTIVES = {
     "flight_time_v1": "Maximise the flight time at V1",
     "flight_time_v2": "Maximise the flight time at V2",
     "range_v2": "Maximise the range at V2",
     "mass_total": "Minimise the total mass",
-    "cost_purchase": "Minimise the purchase cost",
-    "cost_per_hour": "Minimise the cost per flight hour",
-    "motor_out_tw": "Maximise the motor-out thrust-to-weight",
 }
 
 
@@ -116,9 +108,7 @@ def render(app, checked, ranges, backend_for, table) -> None:
     gen = app.generation
     tabs = dict(zip(TABS, st.tabs(TABS), strict=False))
     with tabs["Exploration"]:
-        if not MDO:
-            st.info("The exploration needs GEMSEO: pip install 'predim_vtol[mdo]'.")
-        elif checked.project is None:
+        if checked.project is None:
             st.info("The exploration is set up once the project is valid.")
         else:
             project = checked.project
@@ -200,11 +190,7 @@ def render(app, checked, ranges, backend_for, table) -> None:
                 table(sv.point_rows(study))
 
     with tabs["Optimisation"]:
-        if not MDO:
-            st.info(
-                "The optimisation needs GEMSEO: pip install 'predim_vtol[mdo]' (gemseo[all] for COBYLA)."
-            )
-        elif checked.project is None:
+        if checked.project is None:
             st.info("The optimisation is set up once the project is valid.")
         else:
             project = checked.project
@@ -317,99 +303,96 @@ def render(app, checked, ranges, backend_for, table) -> None:
                 )
 
     with tabs["Studies"]:
-        if not MDO:
-            st.info("The studies need GEMSEO: pip install 'predim_vtol[mdo]'.")
+        store = StudyStore(Settings.load().studies_root)
+        listing = store.list()
+        st.caption(f"Studies root: `{store.root.resolve()}`")
+        if not listing:
+            st.info("No study yet: run an exploration or an optimisation.")
         else:
-            store = StudyStore(Settings.load().studies_root)
-            listing = store.list()
-            st.caption(f"Studies root: `{store.root.resolve()}`")
-            if not listing:
-                st.info("No study yet: run an exploration or an optimisation.")
-            else:
-                table([
-                    {k: s[k] for k in ("id", "name", "kind", "mode", "date", "points")}
-                    for s in listing
-                ])
-                ids = [s["id"] for s in listing]
-                chosen = st.multiselect(
-                    "Open (one, or two to compare)",
-                    ids,
-                    default=ids[:1],
-                    max_selections=2,
-                    key="studies.open",
+            table([
+                {k: s[k] for k in ("id", "name", "kind", "mode", "date", "points")}
+                for s in listing
+            ])
+            ids = [s["id"] for s in listing]
+            chosen = st.multiselect(
+                "Open (one, or two to compare)",
+                ids,
+                default=ids[:1],
+                max_selections=2,
+                key="studies.open",
+            )
+            studies = [store.load(i) for i in chosen]
+            if studies:
+                cols = sorted(
+                    set.intersection(*[
+                        set(sv.numeric_columns(s.points)) for s in studies
+                    ])
                 )
-                studies = [store.load(i) for i in chosen]
-                if studies:
-                    cols = sorted(
-                        set.intersection(*[
-                            set(sv.numeric_columns(s.points)) for s in studies
-                        ])
+                c1, c2 = st.columns(2)
+                x = c1.selectbox(
+                    "x",
+                    cols,
+                    index=cols.index("mass_total") if "mass_total" in cols else 0,
+                    key="studies.x",
+                )
+                y = c2.selectbox(
+                    "y",
+                    cols,
+                    index=cols.index("flight_time_v2")
+                    if "flight_time_v2" in cols
+                    else 0,
+                    key="studies.y",
+                )
+                masks = [
+                    pareto_mask(
+                        s.points, [("flight_time_v2", True), ("mass_total", False)]
                     )
-                    c1, c2 = st.columns(2)
-                    x = c1.selectbox(
-                        "x",
-                        cols,
-                        index=cols.index("mass_total") if "mass_total" in cols else 0,
-                        key="studies.x",
-                    )
-                    y = c2.selectbox(
-                        "y",
-                        cols,
-                        index=cols.index("flight_time_v2")
-                        if "flight_time_v2" in cols
-                        else 0,
-                        key="studies.y",
-                    )
-                    masks = [
-                        pareto_mask(
-                            s.points, [("flight_time_v2", True), ("mass_total", False)]
+                    for s in studies
+                ]
+                st.plotly_chart(
+                    sv.scatter_figure(studies, x, y, masks),
+                    width="stretch",
+                    key="studies.scatter",
+                )
+                for s in studies:
+                    with st.container(border=True):
+                        st.markdown(
+                            f"**{s.name}** ({s.definition.kind}, {s.definition.mode}) — {s.metadata.get('date')}"
+                            + (
+                                " — :orange[data changed since this study]"
+                                if StudyStore.data_changed(s)
+                                else ""
+                            )
                         )
-                        for s in studies
-                    ]
-                    st.plotly_chart(
-                        sv.scatter_figure(studies, x, y, masks),
-                        width="stretch",
-                        key="studies.scatter",
-                    )
-                    for s in studies:
-                        with st.container(border=True):
-                            st.markdown(
-                                f"**{s.name}** ({s.definition.kind}, {s.definition.mode}) — {s.metadata.get('date')}"
-                                + (
-                                    " — :orange[data changed since this study]"
-                                    if StudyStore.data_changed(s)
-                                    else ""
-                                )
+                        table(sv.point_rows(s))
+                        c1, c2, c3 = st.columns(3)
+                        index = int(
+                            c1.number_input(
+                                "Point to apply (row)",
+                                0,
+                                max(0, len(s.points) - 1),
+                                0,
+                                key=f"studies.apply.{s.id}",
                             )
-                            table(sv.point_rows(s))
-                            c1, c2, c3 = st.columns(3)
-                            index = int(
-                                c1.number_input(
-                                    "Point to apply (row)",
-                                    0,
-                                    max(0, len(s.points) - 1),
-                                    0,
-                                    key=f"studies.apply.{s.id}",
-                                )
+                        )
+                        if c1.button(
+                            "Apply this point to the project",
+                            key=f"studies.applybtn.{s.id}",
+                        ):
+                            _apply(
+                                app,
+                                Project.model_validate(s.base_project),
+                                sv.overrides_of(s, index),
                             )
-                            if c1.button(
-                                "Apply this point to the project",
-                                key=f"studies.applybtn.{s.id}",
-                            ):
-                                _apply(
-                                    app,
-                                    Project.model_validate(s.base_project),
-                                    sv.overrides_of(s, index),
-                                )
-                            new_name = c2.text_input(
-                                "Rename", s.name, key=f"studies.rename.{s.id}"
-                            )
-                            if (
-                                c2.button("Rename", key=f"studies.renamebtn.{s.id}")
-                                and new_name != s.name
-                            ):
-                                store.rename(s.id, new_name)
-                                st.rerun()
-                            if c3.button("Delete", key=f"studies.delete.{s.id}"):
-                                store.delete(s.id)
-                                st.rerun()
+                        new_name = c2.text_input(
+                            "Rename", s.name, key=f"studies.rename.{s.id}"
+                        )
+                        if (
+                            c2.button("Rename", key=f"studies.renamebtn.{s.id}")
+                            and new_name != s.name
+                        ):
+                            store.rename(s.id, new_name)
+                            st.rerun()
+                        if c3.button("Delete", key=f"studies.delete.{s.id}"):
+                            store.delete(s.id)
+                            st.rerun()

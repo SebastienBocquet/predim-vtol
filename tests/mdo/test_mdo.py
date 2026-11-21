@@ -10,19 +10,17 @@ import sys
 import numpy as np
 import pytest
 
-pytest.importorskip("gemseo")
-
-from predim_vtol.aircraft import Project  # noqa: E402
-from predim_vtol.api import evaluate_two_phase  # noqa: E402
-from predim_vtol.mdo import OUTPUTS  # noqa: E402
-from predim_vtol.mdo import Parameter  # noqa: E402
-from predim_vtol.mdo import PresizingDiscipline  # noqa: E402
-from predim_vtol.mdo import build_design_space  # noqa: E402
-from predim_vtol.mdo import categorical  # noqa: E402
-from predim_vtol.mdo import from_database  # noqa: E402
-from tests.conftest import ROOT  # noqa: E402
-from tests.conftest import requires_excel  # noqa: E402
-from tests.helpers import ParabolicAero  # noqa: E402
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
+from predim_vtol.mdo import OUTPUTS
+from predim_vtol.mdo import Parameter
+from predim_vtol.mdo import PresizingDiscipline
+from predim_vtol.mdo import build_design_space
+from predim_vtol.mdo import categorical
+from predim_vtol.mdo import from_database
+from tests.conftest import ROOT
+from tests.conftest import requires_excel
+from tests.helpers import ParabolicAero
 
 EXAMPLES = ROOT / "docs" / "examples" / "usage"
 
