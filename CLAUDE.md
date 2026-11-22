@@ -1,7 +1,9 @@
 # Consignes projet
 
 ## Scripts sous Windows
-Tout script qui évalue PredimRC via `open_backend` (cache HDF5 GEMSEO) doit mettre son
-code dans une fonction appelée sous `if __name__ == "__main__":`. Le cache HDF5 démarre un
-`multiprocessing.Manager` : sous Windows (spawn), le process enfant réimporte le script, et
-un code au niveau module le relance, d'où une erreur de bootstrap ou un blocage.
+Jusqu'à la 0.3, le cache HDF5 GEMSEO de `open_backend` démarrait un
+`multiprocessing.Manager` : un script qui évaluait PredimRC devait mettre son code sous
+`if __name__ == "__main__":` (sous Windows, spawn, le process enfant réimporte le script).
+Le cache est désormais un dossier `joblib.Memory` (INC4-002) qui ne démarre aucun process :
+cette contrainte ne vaut plus que pour un script qui lance lui-même des process
+(`multiprocessing`, `joblib.Parallel`, `ProcessPoolExecutor`).

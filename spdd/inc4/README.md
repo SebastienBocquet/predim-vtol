@@ -6,7 +6,7 @@ than on the local disk. Requirement identifiers are those of the full specificat
 (`spdd/requirements/`); this folder holds the increment statements and the REASONS
 canvases.
 
-Status: **in progress** — INC4-001 implemented on its branch; INC4-002 to INC4-005 to come.
+Status: **in progress** — INC4-001 merged, INC4-002 implemented on its branch; INC4-003 to INC4-005 to come.
 
 ## Review of 2026-11-18 and where it goes
 

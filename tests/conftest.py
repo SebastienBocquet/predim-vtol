@@ -36,7 +36,7 @@ def _isolated_user_folders(tmp_path_factory):
     # A tool folder of their own: the tests never read nor migrate the one of the machine
     # (not through USERPROFILE, which Excel needs).
     mp.setenv("PREDIM_VTOL_HOME", str(tmp_path_factory.mktemp("home")))
-    mp.setenv("PREDIMRC_CACHE", str(tmp_path_factory.mktemp("cache") / "predimrc.h5"))
+    mp.setenv("PREDIMRC_CACHE", str(tmp_path_factory.mktemp("cache") / "predimrc"))
     # The user motors, propellers and tests of the machine do not leak into the tests.
     mp.setenv("PREDIM_VTOL_USER_DATA", str(tmp_path_factory.mktemp("user_data")))
     yield

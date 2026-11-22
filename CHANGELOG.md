@@ -15,6 +15,18 @@ versions from git tags (setuptools-scm).
 - The `mdo` extra: GEMSEO (`gemseo[all]`) is now a main dependency. Install with
   `pip install predim-vtol[ui]`.
 
+### Changed (breaking)
+- The cache of the PredimRC evaluations is a `joblib.Memory` folder,
+  `~/.predim_vtol/predimrc_cache` by default, instead of the GEMSEO HDF5 file
+  `predimrc_cache.h5`. The former file is not read: delete it; the cache fills again as
+  the geometries are evaluated (about 0.3 s of Excel each). A *PredimRC cache* setting or
+  `$PREDIMRC_CACHE` naming a `.h5` file gives the folder of the same name without the
+  suffix. A script and the GUI can now share the cache. `encode_inputs`,
+  `decode_inputs`, `encode_outputs`, `decode_outputs` and `output_names` of
+  `predim_vtol.aero.cache` are removed.
+- Scripts evaluating PredimRC no longer need `if __name__ == "__main__":` (the HDF5
+  cache started a `multiprocessing.Manager`).
+
 ### Changed
 - The example scripts moved from `examples/mvp/` to `docs/examples/`, split between
   `usage/` (`optim_multicopter.py`, `optim_quadplane.py`) and `performance/`

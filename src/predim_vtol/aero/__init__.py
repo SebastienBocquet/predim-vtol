@@ -2,7 +2,7 @@
 
 - ``simple`` (default): the Python model of :mod:`predim_vtol.aero.simple`, on any platform;
 - ``predimrc`` (optional): the PredimRC workbook driven through Excel
-  (:mod:`predim_vtol.aero.predimrc`), Windows only, behind the HDF5 cache.
+  (:mod:`predim_vtol.aero.predimrc`), Windows only, behind the cache of :mod:`predim_vtol.aero.cache`.
 
 A project asking for PredimRC where it cannot run (no Windows, Excel, xlwings or workbook)
 is evaluated with the simple model, with a warning.
@@ -65,7 +65,7 @@ def open_aero_backend(
     Args:
         aero: The project aero block (``backend`` and ``profile``).
         folder: The folder of the PredimRC workbooks.
-        cache_path: The HDF5 cache of the PredimRC evaluations; the settings one by default.
+        cache_path: The cache folder of the PredimRC evaluations; the settings one by default.
 
     Raises:
         KeyError: The simple model is used and has no airfoil of this name.
