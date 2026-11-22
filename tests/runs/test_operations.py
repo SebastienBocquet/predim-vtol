@@ -27,7 +27,7 @@ def _row(
         "architecture": arch,
         "feasible": mass < 900,
         "tool_version": "1.0",
-        "data_hashes.prices": "a",
+        "data_hashes.propellers": "a",
         "inputs.battery.n_series": cells,
         "inputs.battery.mass_g": mass,
         "inputs.motors.0.unit": "lift",
@@ -113,5 +113,5 @@ def test_compare_to_and_provenance(runs):
     )
     assert runs.provenance().empty
     rows = [_row(1, 4, 500.0), _row(2, 4, 700.0)]
-    rows[1]["data_hashes.prices"] = "b"
-    assert list(_runs(rows).provenance().index) == ["prices"]
+    rows[1]["data_hashes.propellers"] = "b"
+    assert list(_runs(rows).provenance().index) == ["propellers"]

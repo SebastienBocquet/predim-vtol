@@ -43,7 +43,6 @@ FAMILY_OUTPUTS = (
     "mass_total",
     "hover_power",
     "margin_motor_power",
-    "cost_purchase",
 )
 """The outputs plotted against the varying input of a family."""
 

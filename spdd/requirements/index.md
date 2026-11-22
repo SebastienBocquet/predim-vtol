@@ -30,7 +30,7 @@ exploration and optimisation, and a Streamlit GUI helps entering the inputs.
 | MDO | [Exploration and optimisation](REQ-MDO.md) | GEMSEO discipline, DOE, optimisation |
 | UI | [User interface](REQ-UI.md) | Streamlit input forms, geometry preview, results |
 | NFR | [Non-functional](REQ-NFR.md) | platform, units, tests, reproducibility, validation |
-| COST | [Cost and reliability](REQ-COST.md) | purchase cost, cost of use, motor-out hover |
+| COST | [Cost and reliability](REQ-COST.md) | deprecated (increment 4): purchase cost, cost of use, motor-out hover |
 
 ## Specifications
 
@@ -62,6 +62,22 @@ questions: [`spdd/inc2/README.md`](../../spdd/inc2/README.md); canvases in `spdd
 | INC2-007 | [Feat] mission — two-phase flight time | INC2-003, -004, -005, -006 |
 | INC2-008 | [Feat] mdo — exploration, optimisation, studies | INC2-007 |
 | INC2-009 | [Feat] ui — workflow tabs, propeller sizing, test data, MIC page, help | INC2-007, INC2-008 |
+
+### Increment 4 — review of 2026-11-18, leaner MDO, result database (2026-11-21)
+
+GEMSEO mandatory, cost and reliability removed, PredimRC cache on `joblib.Memory`,
+exploration through a GEMSEO `DOEScenario`, a result database with a folder and an
+in-memory implementation for a deployed GUI, study points compared with the runs. Scope
+and decisions: [`spdd/inc4/README.md`](../../spdd/inc4/README.md); canvases in
+`spdd/inc4/specs/canvases/`.
+
+| Id | Canvas | Depends on |
+|---|---|---|
+| INC4-001 | [Refactor] GEMSEO mandatory, cost and reliability removed | INC3-007 |
+| INC4-002 | [Refactor] aero — PredimRC cache on `joblib.Memory` | INC4-001 |
+| INC4-003 | [Refactor] mdo — exploration through `DOEScenario` | INC4-001 |
+| INC4-004 | [Feat] runs — `ResultDatabase`, folder and memory, hosted mode | INC4-001 |
+| INC4-005 | [Feat] runs — study points in the run collection, projects | INC4-004 |
 
 ## Writing a requirement
 

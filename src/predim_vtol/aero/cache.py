@@ -250,14 +250,6 @@ class CachedBackend:
         self.backend.close()
 
 
-def gemseo_available() -> bool:
-    try:
-        import gemseo  # noqa: F401, PLC0415
-    except ImportError:
-        return False
-    return True
-
-
 def open_backend(
     profile: str,
     template_dir: str | Path,
@@ -271,12 +263,9 @@ def open_backend(
         cache_path: The HDF5 file; the one of the settings by default.
 
     Returns:
-        The backend (to close after use); without GEMSEO, the uncached Excel backend.
+        The backend, to close after use.
     """
     excel = ExcelThreadBackend(profile, template_dir)
-    if not gemseo_available():
-        LOGGER.info("GEMSEO not installed: PredimRC evaluations are not cached.")
-        return excel
     return CachedBackend(
         excel, cache_path or default_cache_path(), workbook_key(profile, template_dir)
     )

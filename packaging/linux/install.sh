@@ -31,7 +31,7 @@ curl -LsSf -o "$TMP/constraints.txt" "$BASE/constraints.txt"
 
 say "[3/3] Installing predim-vtol and its dependencies (several minutes the first time)"
 "$UV" tool install --force --python 3.12 --constraints "$TMP/constraints.txt" \
-    "predim-vtol[ui,mdo] @ file://$TMP/$WHEEL"
+    "predim-vtol[ui] @ file://$TMP/$WHEEL"
 # Puts ~/.local/bin in the PATH of the shell profiles, unless UV_NO_MODIFY_PATH is set.
 [ -n "${UV_NO_MODIFY_PATH:-}" ] || "$UV" tool update-shell >/dev/null 2>&1 || true
 

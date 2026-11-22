@@ -213,7 +213,6 @@ def test_configuration_switch_updates_the_tabs():
         "Propeller sizing",
         "Test data",
         "Results",
-        "Cost and reliability",
     ]
     assert any("does not use PredimRC" in i.value for i in at.info)
     at.selectbox(key="configuration").set_value("quadplane").run()
@@ -260,7 +259,6 @@ def test_pitch_study_and_tables():
 
 
 def test_optimisation_helpers():
-    pytest.importorskip("gemseo")
     from predim_vtol.mdo.optimise import OptimisationRun  # noqa: PLC0415
     from predim_vtol.mdo.optimise import OptimisationSummary  # noqa: PLC0415
     from predim_vtol.ui import optimisation as opt  # noqa: PLC0415

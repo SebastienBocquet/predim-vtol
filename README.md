@@ -3,8 +3,8 @@
 Pre-sizing of RC VTOL aircraft: quadplanes (wing + lift rotors + pusher), tricopters with a
 wing and tilting motors, and multicopters. Enter your aircraft (wing, motors, propellers,
 battery, masses) and get the flight time of a mission (take-off, hover, transition,
-cruise, landing with a battery reserve), the power drawn by each motor, the centre of
-gravity, the cost, and what happens if a motor fails.
+cruise, landing with a battery reserve), the power drawn by each motor and the centre of
+gravity.
 
 It runs on your computer, in your web browser. No programming needed.
 
@@ -116,7 +116,7 @@ card MIC-AERO-SIMPLE.
   cards are also in [`src/predim_vtol/mic/`](src/predim_vtol/mic/index.md).
 - [Changes between versions](CHANGELOG.md).
 - Developers: [contributing](CONTRIBUTING.md). Quick start:
-  `uv venv --python 3.12 && uv pip install -e ".[mdo,ui]" --group dev && predim-vtol`.
+  `uv venv --python 3.12 && uv pip install -e ".[ui]" --group dev && predim-vtol`.
 
 ## Licence
 

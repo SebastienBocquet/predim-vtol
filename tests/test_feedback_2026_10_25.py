@@ -164,15 +164,12 @@ def test_four_in_one_loss_bar(cruise_on_board):
         assert all(b.sinks["ESC"] > 0 for b in cruise)
 
 
-def test_cruise_on_four_in_one_wiring_and_cost():
-    from predim_vtol.cost.model import cost  # noqa: PLC0415
+def test_cruise_on_four_in_one_wiring():
     from predim_vtol.propulsion.wiring import default_layout  # noqa: PLC0415
 
     p = _four_in_one(True)
     layout = default_layout(p)
     assert all(b.dc_length_mm == 0.0 for b in layout.branches)
-    escs = [i for i in cost(AircraftModel(p), 1200.0).items if i.category == "ESCs"]
-    assert [e.quantity for e in escs] == [1]  # the board alone
 
 
 def test_mt2216_motors_propellers_and_tests_are_shipped():

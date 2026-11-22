@@ -1,8 +1,7 @@
 """GEMSEO discipline of the complete pre-sizing evaluation (REQ-MDO-001, REQ-MDO-005).
 
 Two-phase flight time of the designer's process (``evaluate_two_phase``); outputs
-``OUTPUTS`` (arrays of size 1): flight times, ranges, powers, margins, and the cost and
-reliability outputs ``cost_purchase``, ``cost_per_hour``, ``motor_out_tw``.
+``OUTPUTS`` (arrays of size 1): flight times, ranges, powers, margins and feasibility.
 
 A failing evaluation gives NaN outputs and ``feasible = 0`` instead of stopping the study.
 Evaluations are sequential, with one PredimRC session per discipline.

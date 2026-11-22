@@ -1,4 +1,4 @@
-"""Feedback of 2026-10-22: drag sources by forms, costs in euros, PredimRC session and cache."""
+"""Feedback of 2026-10-22: drag sources by forms, PredimRC session and cache."""
 
 from __future__ import annotations
 
@@ -14,11 +14,7 @@ import pytest
 from predim_vtol.aero.base import AeroResults
 from predim_vtol.aero.base import ImposedSpeed
 from predim_vtol.aero.predimrc import ExcelThreadBackend
-from predim_vtol.aircraft import AircraftModel
-from predim_vtol.aircraft import Project
 from predim_vtol.aircraft.project import DragSource
-from predim_vtol.cost import cost
-from predim_vtol.data.prices import default_prices
 from tests.conftest import PROFILES
 from tests.conftest import ROOT
 from tests.conftest import requires_excel
@@ -81,25 +77,6 @@ def test_drag_tab_add_fill_remove():
     ).click().run()
     assert not at.exception, at.exception
     assert at.session_state["app"].data["drag_sources"] == []
-
-
-def test_costs_in_euros():
-    project = Project.template("quadplane")
-    result = cost(AircraftModel(project), 1200.0)
-    assert result.currency == "EUR"
-    rate = default_prices().usd_per_eur
-    motors = next(i for i in result.items if i.item == "tmotor-mn2806-650kv")
-    assert motors.unit_price == pytest.approx(46.90 / rate)
-    # Rate of the project, then entered prices stay in euros.
-    other = cost(
-        AircraftModel(
-            project.with_overrides({"cost": {"usd_per_eur": 1.0, "frame": 50.0}})
-        ),
-        1200.0,
-    )
-    motors = next(i for i in other.items if i.item == "tmotor-mn2806-650kv")
-    assert motors.unit_price == pytest.approx(46.90)
-    assert other.by_category()["frame"] == 50.0
 
 
 # --- PredimRC session in its own thread, HDF5 cache -------------------------------------
@@ -246,7 +223,6 @@ def test_closing_the_console_kills_excel(event, killed):
 
 
 def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_path):
-    pytest.importorskip("gemseo")
     from predim_vtol.aero.cache import CachedBackend  # noqa: PLC0415
 
     path = tmp_path / "c.h5"
@@ -273,7 +249,6 @@ def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_pa
 
 @requires_excel
 def test_gui_backend_from_several_threads(reference_case, tmp_path, caplog):
-    pytest.importorskip("gemseo")
     from predim_vtol.aero.cache import open_backend  # noqa: PLC0415
 
     backend = open_backend("SD7003", PROFILES, tmp_path / "c.h5")

@@ -32,7 +32,7 @@ jobs:
         run: uv build --out-dir dist
       - name: Dependency constraints of the one-line installers
         run: >
-          uv export --locked --no-dev --extra mdo --extra ui --no-emit-project --no-hashes
+          uv export --locked --no-dev --extra ui --no-emit-project --no-hashes
           --format requirements-txt --output-file dist/constraints.txt --quiet
       - name: One-line installers
         run: |

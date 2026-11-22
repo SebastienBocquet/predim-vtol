@@ -1,7 +1,7 @@
 """Provenance of the stored results: tool version and hashes of the reference data.
 
 Recorded with every stored study and run (``metadata.json``) so that a result computed
-with other reference data (motors, propellers, thrust tests, prices, user data, PredimRC
+with other reference data (motors, propellers, thrust tests, user data, PredimRC
 workbook) can be flagged: :func:`data_changes` names the sources changed since.
 """
 
@@ -16,7 +16,6 @@ from typing import Any
 DATA_FILES = {
     "motors": "motors_mvp.yaml",
     "propellers": "propellers.yaml",
-    "prices": "prices.yaml",
     "drag_shapes": "drag_shapes.yaml",
     "boom_sections": "boom_sections.yaml",
 }

@@ -48,8 +48,6 @@ origin, physical bounds, source.
 | [MIC-PROP-CHAIN](MIC-PROP-CHAIN.md) | Power chain battery – cables – ESC – cables – motors |
 | [MIC-MIS-TWO](MIC-MIS-TWO.md) | Two-phase flight time (hover, cruise at target speeds) |
 | [MIC-MIS-BUDGET](MIC-MIS-BUDGET.md) | Power budget: power sinks per phase |
-| [MIC-COST](MIC-COST.md) | Purchase cost and cost of use |
-| [MIC-REL](MIC-REL.md) | Motor-out hover (redundancy) |
 | [MIC-PROP-UNIT](MIC-PROP-UNIT.md) | Propulsion unit, constant ESC efficiency (MVP) |
 | [MIC-CFG-MASS](MIC-CFG-MASS.md) | Mass budget |
 | [MIC-CFG-DRAG](MIC-CFG-DRAG.md) | Parasitic drag and drag polar |

@@ -5,20 +5,18 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-pytest.importorskip("gemseo")
-
-from predim_vtol.aircraft import Project  # noqa: E402
-from predim_vtol.api import evaluate_two_phase  # noqa: E402
-from predim_vtol.mdo import Parameter  # noqa: E402
-from predim_vtol.mdo import PresizingDiscipline  # noqa: E402
-from predim_vtol.mdo.discipline import OUTPUTS_TWO_PHASE  # noqa: E402
-from predim_vtol.mdo.explore import explore  # noqa: E402
-from predim_vtol.mdo.explore import pareto_mask  # noqa: E402
-from predim_vtol.mdo.explore import samples  # noqa: E402
-from predim_vtol.mdo.explore import study_from_optimisation  # noqa: E402
-from predim_vtol.mdo.optimise import optimise  # noqa: E402
-from predim_vtol.mdo.parameters import expand_overrides  # noqa: E402
-from predim_vtol.mdo.studies import StudyStore  # noqa: E402
+from predim_vtol.aircraft import Project
+from predim_vtol.api import evaluate_two_phase
+from predim_vtol.mdo import Parameter
+from predim_vtol.mdo import PresizingDiscipline
+from predim_vtol.mdo.discipline import OUTPUTS_TWO_PHASE
+from predim_vtol.mdo.explore import explore
+from predim_vtol.mdo.explore import pareto_mask
+from predim_vtol.mdo.explore import samples
+from predim_vtol.mdo.explore import study_from_optimisation
+from predim_vtol.mdo.optimise import optimise
+from predim_vtol.mdo.parameters import expand_overrides
+from predim_vtol.mdo.studies import StudyStore
 
 BATTERY = Parameter("battery_mass_g", "battery.mass_g", "float", 400.0, 1200.0)
 
