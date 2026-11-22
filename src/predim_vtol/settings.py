@@ -4,7 +4,7 @@ File ``settings.yaml`` of the tool folder (``$PREDIM_VTOL_HOME``, else ``~/.pred
 or ``$PREDIM_VTOL_SETTINGS``; environment
 variables override it: ``$PREDIMRC_PROFILES`` (PredimRC folder), ``$PREDIM_VTOL_STUDIES``
 (studies root), ``$PREDIM_VTOL_USER_DATA`` (user data folder), ``$PREDIM_VTOL_TEMPLATES`` (user
-templates folder), ``$PREDIMRC_CACHE`` (cache file of the PredimRC evaluations).
+templates folder), ``$PREDIMRC_CACHE`` (cache folder of the PredimRC evaluations).
 """
 
 from __future__ import annotations
@@ -62,7 +62,7 @@ class Settings:
     templates_folder: str = ""
     """Folder of the user templates (default ``~/.predim_vtol/templates``)."""
     predimrc_cache: str = ""
-    """HDF5 cache of the PredimRC evaluations (default ``~/.predim_vtol/predimrc_cache.h5``)."""
+    """Cache folder of the PredimRC evaluations (default ``~/.predim_vtol/predimrc_cache``)."""
 
     @classmethod
     def load(cls) -> Settings:

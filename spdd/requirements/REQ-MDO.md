@@ -54,7 +54,7 @@
 - **Priority:** Must
 - **Status:** Proposed
 - **Verification:** Test — repeated point hits the cache; injected failure is reported.
-- **Satisfied by:** SPEC-006
+- **Satisfied by:** SPEC-006, INC4-002 (cache on `joblib.Memory`)
 
 ## Added by increment 2 (2026-10-14)
 

@@ -33,7 +33,7 @@ def _session_alive(backend) -> bool:
 )
 def predimrc_session(profile: str, folder: str):
     """The PredimRC backend of the whole GUI: Excel in its own thread (each rerun runs in a new
-    thread, COM objects stay in theirs), behind the HDF5 cache.
+    thread, COM objects stay in theirs), behind the cache of the evaluations.
 
     One Excel at a time (another profile or folder releases the previous one); recreated when
     Excel no longer answers (closed outside). ``on_release`` closes Excel as the ``__exit__``

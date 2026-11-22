@@ -234,18 +234,18 @@ with st.sidebar:
             placeholder="~/.predim_vtol/templates",
             help="Folder of the templates saved with 'Save as template'.",
         )
-        cache_file = st.text_input(
-            "PredimRC cache file",
+        cache_folder = st.text_input(
+            "PredimRC cache folder",
             settings.predimrc_cache,
             key="settings.predimrc_cache",
-            placeholder="~/.predim_vtol/predimrc_cache.h5",
-            help="HDF5 file of the PredimRC evaluations already computed: an evaluation found "
+            placeholder="~/.predim_vtol/predimrc_cache",
+            help="Folder of the PredimRC evaluations already computed: an evaluation found "
             "there is not run again (Excel is not even started). A modified workbook starts new "
-            "entries; delete the file to empty the cache. Needs GEMSEO (mdo extra).",
+            "entries; delete the folder to empty the cache.",
         )
         if st.button("Save the settings"):
             settings.studies_root, settings.templates_folder = root, templates_root
-            settings.predimrc_cache = cache_file
+            settings.predimrc_cache = cache_folder
             st.success(f"Saved {settings.save()}")
         st.caption(
             "The PredimRC folder is set in the first tab (winged configurations)."

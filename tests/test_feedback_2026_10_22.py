@@ -79,7 +79,7 @@ def test_drag_tab_add_fill_remove():
     assert at.session_state["app"].data["drag_sources"] == []
 
 
-# --- PredimRC session in its own thread, HDF5 cache -------------------------------------
+# --- PredimRC session in its own thread, cache -------------------------------------------
 
 
 def _fake_results(settings) -> AeroResults:
@@ -138,20 +138,20 @@ def _in_thread(function):
     return box["out"]
 
 
-def test_inputs_and_outputs_round_trip(reference_case):
-    from predim_vtol.aero import cache as aero_cache  # noqa: PLC0415
+def test_evaluation_key(reference_case):
+    from predim_vtol.aero.cache import evaluation_key  # noqa: PLC0415
 
-    data = aero_cache.encode_inputs(**reference_case)
-    assert all(not np.isnan(v).any() for v in data.values() if v.dtype.kind == "f")
-    assert aero_cache.decode_inputs(data) == reference_case  # accents, None, panels
-    result = _fake_results(reference_case["settings"])
-    back = aero_cache.decode_outputs(aero_cache.encode_outputs(result))
-    assert back.v_min == result.v_min
-    np.testing.assert_array_equal(back.drag_n, result.drag_n)
-    assert np.isnan(back.rho)
-    assert sorted(back.imposed) == [1]
-    assert back.imposed[1].vx_m_s == 13.9
-    np.testing.assert_array_equal(back.imposed[1].power_w, result.imposed[1].power_w)
+    key = evaluation_key(*reference_case.values())
+    assert hash(key) == hash(evaluation_key(*reference_case.values()))
+    as_dict = {(group, name): value for group, name, value in key}
+    assert as_dict["StabGeometry", "profile"] == "Biconvexe fin"
+    assert as_dict["WingGeometry", "tip_chord"] == (200.0, 185.0, 140.0, 50.0, None)
+    settings = reference_case["settings"]
+    as_int = dataclasses.replace(settings, mass=int(settings.mass))
+    cases = (reference_case["wing"], reference_case["stab"], reference_case["fus"])
+    assert evaluation_key(*cases, as_int) == key, "2500 and 2500.0: same entry"
+    heavier = dataclasses.replace(settings, mass=settings.mass + 1.0)
+    assert evaluation_key(*cases, heavier) != key
 
 
 def test_excel_thread_backend_runs_in_one_thread(reference_case):
@@ -225,7 +225,7 @@ def test_closing_the_console_kills_excel(event, killed):
 def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_path):
     from predim_vtol.aero.cache import CachedBackend  # noqa: PLC0415
 
-    path = tmp_path / "c.h5"
+    path = tmp_path / "cache"
     fake = FakeWrapper()
     cached = CachedBackend(fake, path, "SD7003_abc_v1")
     first = cached.evaluate(**reference_case)
@@ -239,19 +239,34 @@ def test_cache_returns_stored_results_without_the_backend(reference_case, tmp_pa
     assert fake.calls == 2
     # A new session reads the file; another workbook (node) does not reuse it.
     fresh = FakeWrapper()
-    assert (
-        CachedBackend(fresh, path, "SD7003_abc_v1").evaluate(**heavier).mass_kg == 2.5
-    )
+    stored = CachedBackend(fresh, path, "SD7003_abc_v1").evaluate(**heavier)
     assert fresh.calls == 0
+    assert stored.mass_kg == 2.5
+    assert np.isnan(stored.rho)
+    assert sorted(stored.imposed) == [1]
+    np.testing.assert_array_equal(stored.imposed[1].power_w, first.imposed[1].power_w)
     CachedBackend(fresh, path, "SD7003_other_v1").evaluate(**heavier)
     assert fresh.calls == 1
+    # Windows limits paths to 260 characters. Entries are written under a temporary name
+    # about 55 characters longer than the final one: with ~/.predim_vtol/predimrc_cache
+    # (about 55 characters), 260 leaves 150 for the cache, 95 for the final names.
+    assert max(len(str(f.relative_to(path))) for f in path.rglob("*")) < 95
+
+
+def test_former_cache_file_setting_gives_a_folder(tmp_path, monkeypatch):
+    from predim_vtol.aero.cache import default_cache_path  # noqa: PLC0415
+
+    monkeypatch.setenv("PREDIMRC_CACHE", str(tmp_path / "predimrc_cache.h5"))
+    assert default_cache_path() == tmp_path / "predimrc_cache"
+    monkeypatch.setenv("PREDIMRC_CACHE", str(tmp_path / "mine"))
+    assert default_cache_path() == tmp_path / "mine"
 
 
 @requires_excel
 def test_gui_backend_from_several_threads(reference_case, tmp_path, caplog):
     from predim_vtol.aero.cache import open_backend  # noqa: PLC0415
 
-    backend = open_backend("SD7003", PROFILES, tmp_path / "c.h5")
+    backend = open_backend("SD7003", PROFILES, tmp_path / "cache")
     first = _in_thread(lambda: backend.evaluate(**reference_case))
     assert _in_thread(backend.is_alive)
     start = time.perf_counter()
